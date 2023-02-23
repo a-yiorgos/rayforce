@@ -57,6 +57,9 @@ extern "C"
     extern g0 new_scalar_i64(i64 value);
     extern g0 new_vector_i64(i64 *ptr, i64 len);
 
+    // Destructor
+    extern void g0_free(g0 value);
+
     // Accessors
 
 #ifdef __cplusplus

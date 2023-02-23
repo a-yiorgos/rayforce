@@ -19,3 +19,21 @@ extern g0 new_vector_i64(i64 *ptr, i64 len)
     vector->list_value.len = len;
     return vector;
 }
+
+extern void g0_free(g0 value)
+{
+    switch (value->type)
+    {
+    case TYPE_I64:
+    {
+        free(value->list_value.ptr);
+        break;
+    }
+    default:
+    {
+        printf("** Free: Invalid type\n");
+        break;
+    }
+    }
+    free(value);
+}

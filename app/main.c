@@ -5,6 +5,7 @@
 #include <string.h>
 #include "../core/storm.h"
 #include "../core/format.h"
+#include "../core/monad.h"
 
 int main()
 {
@@ -18,12 +19,7 @@ int main()
         size_t l = getline(&line, &len, stdin);
         UNUSED(l);
 
-        i64 *vec = (i64 *)malloc(12 * sizeof(i64));
-        for (i64 i = 0; i < 12; i++)
-        {
-            vec[i] = i;
-        }
-        g0 value = new_vector_i64(vec, 12);
+        g0 value = til(123);
         // g0 value = new_scalar_i64(9223372036854775807);
         str buffer;
         Result res = g0_fmt(&buffer, value);
@@ -35,6 +31,7 @@ int main()
         printf("Result: %s\n", buffer);
 
         free(line);
+        g0_free(value);
     }
 
     return 0;

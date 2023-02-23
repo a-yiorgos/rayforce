@@ -1,3 +1,5 @@
 stormdb
 *.o
 .vscode/
+*.a
+*.gch
