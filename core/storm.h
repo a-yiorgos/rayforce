@@ -24,6 +24,7 @@ extern "C"
     typedef enum
     {
         Ok = 0,
+        InitError,
         FormatError,
         InvalidType
     } Result;

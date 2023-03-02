@@ -1,11 +1,13 @@
 #include "storm.h"
-#include <stdlib.h>
 #include "format.h"
 #include <stdio.h>
+#include "alloc.h"
 
 extern g0 new_scalar_i64(i64 value)
 {
-    g0 scalar = malloc(sizeof(struct s0));
+    g0 scalar;
+
+    scalar = a0_alloc(sizeof(struct s0));
     scalar->type = -TYPE_I64;
     scalar->i64_value = value;
     return scalar;
@@ -13,7 +15,9 @@ extern g0 new_scalar_i64(i64 value)
 
 extern g0 new_vector_i64(i64 *ptr, i64 len)
 {
-    g0 vector = malloc(sizeof(struct s0));
+    g0 vector;
+
+    vector = a0_alloc(sizeof(struct s0));
     vector->type = TYPE_I64;
     vector->list_value.ptr = ptr;
     vector->list_value.len = len;
@@ -26,7 +30,7 @@ extern void g0_free(g0 value)
     {
     case TYPE_I64:
     {
-        free(value->list_value.ptr);
+        a0_free(value->list_value.ptr);
         break;
     }
     default:
@@ -35,5 +39,5 @@ extern void g0_free(g0 value)
         break;
     }
     }
-    free(value);
+    a0_free(value);
 }

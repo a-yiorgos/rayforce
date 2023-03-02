@@ -6,9 +6,12 @@
 #include "../core/storm.h"
 #include "../core/format.h"
 #include "../core/monad.h"
+#include "../core/alloc.h"
 
 int main()
 {
+    a0_init();
+
     int run = 1;
     while (run)
     {
@@ -33,6 +36,8 @@ int main()
         free(line);
         g0_free(value);
     }
+
+    a0_deinit();
 
     return 0;
 }

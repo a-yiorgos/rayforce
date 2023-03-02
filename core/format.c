@@ -26,14 +26,17 @@ Result scalar_i64_fmt(str *buffer, g0 value)
 
 Result vector_i64_fmt(str *buffer, g0 value)
 {
+    str buf;
+    i64 count, remains, len;
+
     *buffer = (str)malloc(MAX_ROW_WIDTH + 4);
-    str buf = *buffer;
+    buf = *buffer;
     strncpy(buf, "[", 2);
     buf += 1;
 
-    i64 count = value->list_value.len < 1 ? 0 : value->list_value.len - 1;
-    i64 remains = MAX_ROW_WIDTH;
-    i64 len = 0;
+    count = value->list_value.len < 1 ? 0 : value->list_value.len - 1;
+    remains = MAX_ROW_WIDTH;
+    len = 0;
 
     for (i64 i = 0; i < count; i++)
     {
@@ -118,6 +121,12 @@ extern void result_fmt(str *buffer, Result result)
     {
         *buffer = (str)malloc(12);
         strncpy(*buffer, "InvalidType", 12);
+        break;
+    }
+    default:
+    {
+        *buffer = (str)malloc(10);
+        strncpy(*buffer, "Unknown", 10);
         break;
     }
     }
