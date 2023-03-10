@@ -51,7 +51,7 @@ extern "C"
     typedef struct vector_t
     {
         u64_t len;
-        void *ptr;
+        null_t *ptr;
     } vector_t;
 
     // Generic type

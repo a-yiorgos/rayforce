@@ -9,7 +9,7 @@
 #define MAX_ROW_WIDTH MAX_i64_t_WIDTH * 2
 #define F64_PRECISION 4
 
-const str_t PADDING = "                                                                                     ";
+const str_t PADDING = "                                                                                                   ";
 
 extern str_t str_fmt(u32_t lim, str_t fmt, ...)
 {
@@ -43,12 +43,19 @@ str_t vector_fmt(u32_t pad, u32_t lim, u8_t del, value_t *value)
     i8_t v_type = value->type;
     u8_t slim = lim - 4;
 
+    remains = slim;
     str = buf = (str_t)storm_malloc(lim);
-    strncpy(buf, "[", 2);
-    buf += 1;
+    len = snprintf(buf, remains, "%*.*s[", pad, pad, PADDING);
+
+    if (len < 0)
+    {
+        storm_free(str);
+        return NULL;
+    }
+
+    buf += len;
 
     count = value->list.len < 1 ? 0 : value->list.len - 1;
-    remains = slim;
     len = 0;
 
     for (i64_t i = 0; i < count; i++)
@@ -56,11 +63,11 @@ str_t vector_fmt(u32_t pad, u32_t lim, u8_t del, value_t *value)
         remains = slim - (buf - str);
 
         if (v_type == TYPE_I64)
-            len = snprintf(buf, remains, "%*.*s%lld,%c", pad, pad, PADDING, ((i64_t *)value->list.ptr)[i], del);
+            len = snprintf(buf, remains, "%lld,%c", ((i64_t *)value->list.ptr)[i], del);
         else if (v_type == TYPE_F64)
-            len = snprintf(buf, remains, "%*.*s%.*f,%c", pad, pad, PADDING, F64_PRECISION, ((f64_t *)value->list.ptr)[i], del);
+            len = snprintf(buf, remains, "%.*f,%c", F64_PRECISION, ((f64_t *)value->list.ptr)[i], del);
         else if (v_type == TYPE_SYMBOL)
-            len = snprintf(buf, remains, "%*.*s%s,%c", pad, pad, PADDING, symbols_get(((i64_t *)value->list.ptr)[i]), del);
+            len = snprintf(buf, remains, "%s,%c", symbols_get(((i64_t *)value->list.ptr)[i]), del);
 
         if (len < 0)
         {
@@ -80,11 +87,11 @@ str_t vector_fmt(u32_t pad, u32_t lim, u8_t del, value_t *value)
     if (value->list.len > 0 && remains > 4)
     {
         if (v_type == TYPE_I64)
-            len = snprintf(buf, remains, "%*.*s%lld", pad, pad, PADDING, ((i64_t *)value->list.ptr)[count]);
+            len = snprintf(buf, remains, "%lld", ((i64_t *)value->list.ptr)[count]);
         else if (v_type == TYPE_F64)
-            len = snprintf(buf, remains, "%*.*s%.*f", pad, pad, PADDING, F64_PRECISION, ((f64_t *)value->list.ptr)[count]);
+            len = snprintf(buf, remains, "%.*f", F64_PRECISION, ((f64_t *)value->list.ptr)[count]);
         else if (v_type == TYPE_SYMBOL)
-            len = snprintf(buf, remains, "%*.*s%s", pad, pad, PADDING, symbols_get(((i64_t *)value->list.ptr)[count]));
+            len = snprintf(buf, remains, "%s", symbols_get(((i64_t *)value->list.ptr)[count]));
 
         if (len < 0)
         {
