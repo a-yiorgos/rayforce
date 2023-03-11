@@ -30,6 +30,7 @@
 
 #define MAX_I64_WIDTH 20
 #define MAX_ROW_WIDTH MAX_I64_WIDTH * 2
+#define FORMAT_TRAILER_SIZE 4
 #define F64_PRECISION 4
 
 const str_t PADDING = "                                                                                                   ";
@@ -72,13 +73,13 @@ extern str_t str_fmt(u32_t lim, str_t fmt, ...)
 
 str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
 {
-    if (lim < 4)
+    if (lim < FORMAT_TRAILER_SIZE)
         return NULL;
 
     str_t str, buf;
     i64_t count, remains, len;
     i8_t v_type = value->type;
-    u8_t slim = lim - 4;
+    u8_t slim = lim - FORMAT_TRAILER_SIZE;
 
     remains = slim;
     str = buf = (str_t)storm_malloc(lim);
@@ -112,7 +113,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
             return NULL;
         }
 
-        if (remains < 4)
+        if (remains < FORMAT_TRAILER_SIZE)
         {
             buf = str + slim;
             break;
@@ -121,7 +122,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
     }
 
     remains = slim - (buf - str);
-    if (value->list.len > 0 && remains > 4)
+    if (value->list.len > 0 && remains > FORMAT_TRAILER_SIZE)
     {
         if (v_type == TYPE_I64)
             len = snprintf(buf, remains, "%lld", ((i64_t *)value->list.ptr)[count]);
@@ -141,7 +142,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
             buf += len;
     }
 
-    if (remains < 4)
+    if (remains < FORMAT_TRAILER_SIZE)
         strncpy(buf, "..]", 4);
     else
         strncpy(buf, "]", 2);
@@ -151,7 +152,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
 
 str_t list_fmt(u32_t pad, u32_t lim, value_t *value)
 {
-    if (lim < 4)
+    if (lim < FORMAT_TRAILER_SIZE)
         return NULL;
 
     if (value->list.ptr == NULL)
@@ -202,6 +203,14 @@ str_t error_fmt(u32_t pad, u32_t lim, value_t *value)
     return str_fmt(0, "** %s error: %s", code, value->error.message);
 }
 
+str_t string_fmt(u32_t pad, u32_t lim, value_t *value)
+{
+    if (value->list.ptr == NULL)
+        return str_fmt(0, "\"\"");
+
+    return str_fmt(value->list.len + 3, "\"%s\"", value->list.ptr);
+}
+
 extern str_t value_fmt(value_t *value)
 {
     switch (value->type)
@@ -221,7 +230,7 @@ extern str_t value_fmt(value_t *value)
     case TYPE_SYMBOL:
         return vector_fmt(0, MAX_ROW_WIDTH, value);
     case TYPE_STRING:
-        return str_fmt(value->list.len + 2, "\"%s\"", value->list.ptr);
+        return string_fmt(0, MAX_ROW_WIDTH, value);
     case TYPE_ERROR:
         return error_fmt(0, 0, value);
     default:

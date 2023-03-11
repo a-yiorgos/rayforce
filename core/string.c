@@ -38,6 +38,9 @@ string_t string_create(str_t str, u64_t len)
 
 str_t string_clone(string_t string)
 {
+    if (string.len == 0)
+        return NULL;
+
     str_t res = (str_t)storm_malloc(string.len + 1);
     strncpy(res, string.str, string.len + 1);
     return res;

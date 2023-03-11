@@ -274,22 +274,27 @@ value_t parse_symbol(parser_t *parser)
 
 value_t parse_string(parser_t *parser)
 {
+    parser->current++; // skip '"'
     str_t pos = parser->current, new_str;
     u32_t len;
     value_t res;
 
     while (!at_eof(*pos))
     {
-        pos++;
 
         if (*(pos - 1) == '\\' && *pos == '"')
             pos++;
         else if (*pos == '"')
             break;
+
+        pos++;
     }
 
+    if ((*pos) != '"')
+        return error(ERR_PARSE, "Expected '\"'");
+
     len = pos - parser->current;
-    new_str = string_clone(string_create(parser->current + 1, len));
+    new_str = string_clone(string_create(parser->current, len));
     res = string(new_str, len);
     parser->current = pos + 1;
 
