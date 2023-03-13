@@ -24,7 +24,7 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 
 extern value_t list_flatten(value_t *value);
 

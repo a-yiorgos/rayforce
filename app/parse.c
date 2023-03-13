@@ -26,11 +26,14 @@
 #include <errno.h>
 #include <limits.h>
 #include "parse.h"
-#include "../core/bitspire.h"
+#include "../core/rayforce.h"
 #include "../core/alloc.h"
 #include "../core/format.h"
 #include "../core/string.h"
 #include "../core/vector.h"
+#include "../core/util.h"
+
+#define TYPE_TOKEN 126
 
 u8_t is_whitespace(u8_t c)
 {
@@ -55,6 +58,35 @@ u8_t is_alphanum(u8_t c)
 u8_t at_eof(u8_t c)
 {
     return c == '\0' || c == '\n';
+}
+
+u8_t at_term(u8_t c)
+{
+    return c == ')' || c == ']' || c == '}' || c == ':' || c == '\0' || c == '\n';
+}
+
+u8_t is_at(value_t *token, u8_t c)
+{
+    // debug("is_at: %lld %d IS: %d\n", token->i64, c, token->type == TYPE_TOKEN && token->i64 == (i64_t)c);
+    return token->type == TYPE_TOKEN && token->i64 == (i64_t)c;
+}
+
+u8_t shift(str_t *current)
+{
+    if (at_eof(**current))
+        return '\0';
+
+    u8_t res = **current;
+    (*current)++;
+
+    return res;
+}
+
+value_t to_token(u8_t c)
+{
+    value_t tok = i64(c);
+    tok.type = TYPE_TOKEN;
+    return tok;
 }
 
 value_t parse_number(parser_t *parser)
@@ -101,30 +133,27 @@ value_t parse_vector(parser_t *parser)
     value_t token, vec, lst = list(0);
 
     (*current)++; // skip '['
+    token = advance(parser);
 
-    while (!at_eof(**current) && (**current) != ']')
+    while (!is_at(&token, ']'))
     {
-        token = advance(parser);
-
         if (is_error(&token))
         {
             value_free(&lst);
             return token;
         }
 
+        if (at_eof(**current))
+        {
+            value_free(&lst);
+            return error(ERR_PARSE, "Expected ']'");
+        }
+
         list_push(&lst, token);
+
+        token = advance(parser);
     }
 
-    if ((**current) != ']')
-    {
-        value_free(&lst);
-        return error(ERR_PARSE, "Expected ']'");
-    }
-
-    (*current)++;
-
-    printf("FFFLLL");
-    fflush(stdout);
     vec = list_flatten(&lst);
     value_free(&lst);
 
@@ -133,34 +162,33 @@ value_t parse_vector(parser_t *parser)
 
 value_t parse_list(parser_t *parser)
 {
-    u64_t cap = 8;
-    value_t vec = list(0), token;
+    value_t lst = list(0), token;
     str_t *current = &parser->current;
 
     (*current)++; // skip '('
+    token = advance(parser);
 
-    while (!at_eof(**current) && (**current) != ')')
+    while (!is_at(&token, ')'))
     {
-        token = advance(parser);
 
         if (is_error(&token))
         {
-            value_free(&vec);
+            value_free(&lst);
             return token;
         }
 
-        list_push(&vec, token);
+        if (at_eof(**current))
+        {
+            value_free(&lst);
+            return error(ERR_PARSE, "Expected ')'");
+        }
+
+        list_push(&lst, token);
+
+        token = advance(parser);
     }
 
-    if ((**current) != ')')
-    {
-        value_free(&vec);
-        return error(ERR_PARSE, "Expected ')'");
-    }
-
-    (*current)++;
-
-    return vec;
+    return lst;
 }
 
 value_t parse_symbol(parser_t *parser)
@@ -215,16 +243,14 @@ value_t parse_string(parser_t *parser)
 
 value_t parse_dict(parser_t *parser)
 {
-    i64_t cap = 8;
     str_t *current = &parser->current;
     value_t token, keys = list(0), vals = list(0);
 
     (*current)++; // skip '{'
+    token = advance(parser);
 
-    while (!at_eof(**current) && (**current) != '}')
+    while (!is_at(&token, '}'))
     {
-        token = advance(parser);
-
         if (is_error(&token))
         {
             value_free(&keys);
@@ -232,17 +258,24 @@ value_t parse_dict(parser_t *parser)
             return token;
         }
 
+        if (at_eof(**current))
+        {
+            value_free(&keys);
+            value_free(&vals);
+            return error(ERR_PARSE, "Expected key");
+        }
+
         list_push(&keys, token);
 
-        if ((**current) != ':')
+        token = advance(parser);
+
+        if (!is_at(&token, ':'))
         {
             value_free(&keys);
             value_free(&vals);
             return error(ERR_PARSE, "Expected ':'");
         }
 
-        (*current)++;
-
         token = advance(parser);
 
         if (is_error(&token))
@@ -252,17 +285,17 @@ value_t parse_dict(parser_t *parser)
             return token;
         }
 
+        if (at_eof(**current))
+        {
+            value_free(&keys);
+            value_free(&vals);
+            return error(ERR_PARSE, "Expected value");
+        }
+
         list_push(&vals, token);
-    }
 
-    if ((**current) != '}')
-    {
-        value_free(&keys);
-        value_free(&vals);
-        return error(ERR_PARSE, "Expected '}'");
+        token = advance(parser);
     }
-
-    (*current)++;
 
     return dict(keys, vals);
 }
@@ -274,6 +307,7 @@ value_t advance(parser_t *parser)
     if (at_eof(**current))
         return null();
 
+    // Skip all whitespaces
     while (is_whitespace(**current))
         (*current)++;
 
@@ -295,23 +329,35 @@ value_t advance(parser_t *parser)
     if ((**current) == '"')
         return parse_string(parser);
 
-    return null();
+    if (at_term(**current))
+        return to_token(shift(current));
+
+    return error(ERR_PARSE, str_fmt(0, "Unexpected token: %s", parser->current));
 }
 
 value_t parse_program(parser_t *parser)
 {
     str_t err_msg;
-    value_t token;
+    value_t token, list = list(0);
 
-    // do
-    // {
-    token = advance(parser);
-    // } while (token != NULL);
+    while (!at_eof(*parser->current))
+    {
+        token = advance(parser);
 
-    if (!is_error(&token) && !at_eof(*parser->current))
-        return error(ERR_PARSE, str_fmt(0, "Unexpected token: %s", parser->current));
+        if (is_at(&token, '\0'))
+            break;
 
-    return token;
+        if (is_error(&token))
+        {
+            err_msg = str_fmt(0, "%s:%d:%d: %s", parser->filename, parser->line, parser->column, as_string(&token));
+            value_free(&token);
+            return error(ERR_PARSE, err_msg);
+        }
+
+        list_push(&list, token);
+    }
+
+    return list;
 }
 
 extern value_t parse(str_t filename, str_t input)

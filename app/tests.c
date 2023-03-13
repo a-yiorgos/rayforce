@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
-#include "../core/bitspire.h"
+#include "../core/rayforce.h"
 #include "../core/format.h"
 #include "../core/monad.h"
 #include "../core/alloc.h"
@@ -124,9 +124,9 @@ int test_symbols()
 
 int main()
 {
-    bitspire_alloc_init();
+    rayforce_alloc_init();
 
     test_symbols();
 
-    bitspire_alloc_deinit();
+    rayforce_alloc_deinit();
 }

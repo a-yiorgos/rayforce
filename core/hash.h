@@ -24,7 +24,7 @@
 #ifndef HASH_H
 #define HASH_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 
 #define DEFAULT_SIZE 4096 * 1024
 

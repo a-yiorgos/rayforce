@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../core/bitspire.h"
+#include "../core/rayforce.h"
 #include "../core/format.h"
 #include "../core/monad.h"
 #include "../core/alloc.h"
@@ -37,10 +37,10 @@
 
 int main()
 {
-    bitspire_alloc_init();
+    rayforce_alloc_init();
 
     i8_t run = 1;
-    str_t line = (str_t)bitspire_malloc(LINE_SIZE), ptr;
+    str_t line = (str_t)rayforce_malloc(LINE_SIZE), ptr;
     memset(line, 0, LINE_SIZE);
     value_t value;
     vm_t vm;
@@ -68,10 +68,10 @@ int main()
         value_free(&value);
     }
 
-    bitspire_free(line);
+    rayforce_free(line);
     vm_free(vm);
 
-    bitspire_alloc_deinit();
+    rayforce_alloc_deinit();
 
     return 0;
 }

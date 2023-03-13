@@ -24,14 +24,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "vm.h"
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 
 vm_t vm_create()
 {
     vm_t vm;
 
-    vm = (vm_t)bitspire_malloc(sizeof(struct vm_t));
+    vm = (vm_t)rayforce_malloc(sizeof(struct vm_t));
     memset(vm, 0, sizeof(struct vm_t));
     return vm;
 }
@@ -74,7 +74,7 @@ null_t vm_exec(vm_t vm, u8_t *code)
 
 null_t vm_free(vm_t vm)
 {
-    bitspire_free(vm);
+    rayforce_free(vm);
 }
 
 // str_t vm_code_fmt(u8_t *code)

@@ -24,11 +24,11 @@
 #ifndef MONAD_H
 #define MONAD_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 
 // Monadic functions
 value_t til(i64_t count);
 
 u8_t *compile(value_t value);
-value_t bitspire_add(value_t a, value_t b);
+value_t rayforce_add(value_t a, value_t b);
 #endif

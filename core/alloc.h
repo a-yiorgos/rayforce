@@ -24,7 +24,7 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 #include "symbols.h"
 
 #define MIN_ORDER 2
@@ -43,12 +43,12 @@ typedef struct alloc_t
 
 CASSERT(sizeof(struct alloc_t) % PAGE_SIZE == 0, alloc_h)
 
-extern null_t *bitspire_malloc(i32_t size);
-extern null_t *bitspire_realloc(null_t *ptr, i32_t size);
-extern null_t bitspire_free(null_t *block);
+extern null_t *rayforce_malloc(i32_t size);
+extern null_t *rayforce_realloc(null_t *ptr, i32_t size);
+extern null_t rayforce_free(null_t *block);
 
-extern null_t bitspire_alloc_init();
-extern null_t bitspire_alloc_deinit();
+extern null_t rayforce_alloc_init();
+extern null_t rayforce_alloc_deinit();
 
 extern alloc_t alloc_get();
 

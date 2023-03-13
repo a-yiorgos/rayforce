@@ -21,9 +21,10 @@
  *   SOFTWARE.
  */
 
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 #include "vector.h"
+#include "util.h"
 
 /*
  * Each vector capacity is always factor of 8
@@ -32,16 +33,33 @@
 #define CAPACITY_FACTOR 8
 #define alignup(x, a) (((x) + (a)-1) & ~((a)-1))
 #define capacity(x) (alignup(x, CAPACITY_FACTOR))
-#define push(vector, type, value)                                                      \
-    i64_t len = (vector)->list.len;                                                    \
-    i64_t cap = capacity(len);                                                         \
-    if (cap == 0)                                                                      \
-        (vector)->list.ptr = bitspire_malloc(CAPACITY_FACTOR * sizeof(type));          \
-    else if (cap == len)                                                               \
-        (vector)->list.ptr = bitspire_realloc((vector)->list.ptr, cap * sizeof(type)); \
+#define push(vector, type, value)                                                                    \
+    i64_t len = (vector)->list.len;                                                                  \
+    i64_t cap = capacity(len);                                                                       \
+    if (cap == 0)                                                                                    \
+        (vector)->list.ptr = rayforce_malloc(CAPACITY_FACTOR * sizeof(type));                        \
+    else if (cap == len)                                                                             \
+        (vector)->list.ptr = rayforce_realloc((vector)->list.ptr, capacity(len + 1) * sizeof(type)); \
     ((type *)((vector)->list.ptr))[(vector)->list.len++] = (value);
 
 #define pop(vector, type) ((type *)((vector)->list.ptr))[(vector)->list.len--]
+
+#define list_i64_flatten(list, vec)            \
+    value_t *member;                           \
+    vec = vector_i64(0);                       \
+                                               \
+    for (u64_t i = 0; i < list->list.len; i++) \
+    {                                          \
+        member = &as_list(list)[i];            \
+                                               \
+        if (member->type != type)              \
+        {                                      \
+            value_free(&vec);                  \
+            return value_clone(list);          \
+        }                                      \
+                                               \
+        vector_i64_push(&vec, member->i64);    \
+    }
 
 extern value_t vector(i8_t type, u8_t size_of_val, i64_t len)
 {
@@ -56,7 +74,7 @@ extern value_t vector(i8_t type, u8_t size_of_val, i64_t len)
     if (len == 0)
         return v;
 
-    v.list.ptr = bitspire_malloc(capacity(size_of_val * len));
+    v.list.ptr = rayforce_malloc(size_of_val * capacity(len));
 
     return v;
 }
@@ -91,30 +109,19 @@ extern value_t list_pop(value_t *list)
     return pop(list, value_t);
 }
 
-extern value_t list_flatten(value_t *value)
+extern value_t list_flatten(value_t *list)
 {
-    if (value->type != TYPE_LIST)
-        return value_clone(value);
+    if (list->type != TYPE_LIST)
+        return value_clone(list);
 
-    value_t *first = &as_list(value)[0],
-            vec = vector(first->type, sizeof(value_t), 1);
-    i8_t type = first->type, current_type;
+    i8_t type = as_list(list)[0].type;
 
-    push(&vec, i64_t, first->i64);
+    // Only scalar types can be flattened
+    if (type > -1)
+        return value_clone(list);
 
-    printf("LEN: %ld", value->list.len);
-
-    for (i64_t i = 1; i < value->list.len; i++)
-    {
-        // List of lists could not be flattened
-        // if (!is_scalar(first))
-        // {
-        //     value_free(&vec);
-        //     return value_clone(value);
-        // }
-
-        // push(&vec, i64_t, as_list(value)[i].i64);
-    }
+    value_t vec;
+    list_i64_flatten(list, vec);
 
     return vec;
 }

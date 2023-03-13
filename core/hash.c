@@ -27,14 +27,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "hash.h"
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 
 hash_table_t *ht_create(u64_t (*hasher)(null_t *a), i32_t (*compare)(null_t *a, null_t *b))
 {
-    hash_table_t *table = (hash_table_t *)bitspire_malloc(sizeof(hash_table_t));
+    hash_table_t *table = (hash_table_t *)rayforce_malloc(sizeof(hash_table_t));
 
-    bucket_t **buckets = (bucket_t **)bitspire_malloc(sizeof(bucket_t *) * DEFAULT_SIZE);
+    bucket_t **buckets = (bucket_t **)rayforce_malloc(sizeof(bucket_t *) * DEFAULT_SIZE);
     memset(buckets, 0, sizeof(bucket_t *) * DEFAULT_SIZE);
 
     table->cap = DEFAULT_SIZE;
@@ -56,7 +56,7 @@ null_t ht_free(hash_table_t *table)
         while (bucket)
         {
             next = bucket->next;
-            bitspire_free(bucket);
+            rayforce_free(bucket);
             bucket = next;
         }
     }
@@ -82,7 +82,7 @@ null_t *ht_insert(hash_table_t *table, null_t *key, null_t *val)
     }
 
     // Add new bucket to the end of the list
-    (*bucket) = (bucket_t *)bitspire_malloc(sizeof(bucket_t));
+    (*bucket) = (bucket_t *)rayforce_malloc(sizeof(bucket_t));
     (*bucket)->key = key;
     (*bucket)->val = val;
     (*bucket)->next = NULL;
@@ -111,7 +111,7 @@ null_t *ht_insert_with(hash_table_t *table, null_t *key, null_t *val, null_t *(*
     }
 
     // Add new bucket to the end of the list
-    (*bucket) = (bucket_t *)bitspire_malloc(sizeof(bucket_t));
+    (*bucket) = (bucket_t *)rayforce_malloc(sizeof(bucket_t));
     (*bucket)->next = NULL;
 
     table->size++;

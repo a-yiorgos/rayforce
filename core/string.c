@@ -23,12 +23,12 @@
 
 #include <string.h>
 #include "string.h"
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 
 extern value_t string(i64_t len)
 {
-    str_t ptr = bitspire_malloc(len + 1);
+    str_t ptr = rayforce_malloc(len + 1);
     ptr[len] = '\0';
 
     value_t string = {

@@ -21,7 +21,7 @@
  *   SOFTWARE.
  */
 
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 #include "vm.h"
 
@@ -29,7 +29,7 @@
 // {
 //     i64_t *vec;
 
-//     vec = (i64_t *)bitspire_malloc(count * sizeof(i64_t));
+//     vec = (i64_t *)rayforce_malloc(count * sizeof(i64_t));
 //     for (i64_t i = 0; i < count; i++)
 //     {
 //         vec[i] = i;
@@ -37,7 +37,7 @@
 //     return vector_i64(vec, count);
 // }
 
-// value_t bitspire_add(value_t *a, value_t *b)
+// value_t rayforce_add(value_t *a, value_t *b)
 // {
 //     i64_t a_len, b_len, sum = 0;
 //     i64_t *a_vec;
@@ -61,7 +61,7 @@ u8_t *compile(value_t *value)
 
     UNUSED(value);
 
-    code = (u8_t *)bitspire_malloc(1024);
+    code = (u8_t *)rayforce_malloc(1024);
 
     code[0] = VM_ADD;
 

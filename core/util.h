@@ -24,7 +24,22 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <stdio.h>
+#include <stdarg.h>
+#include "rayforce.h"
+
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
+
+#ifdef DEBUG
+#define debug(fmt, ...)                      \
+    do                                       \
+    {                                        \
+        fprintf(stderr, fmt, ##__VA_ARGS__); \
+        fflush(stderr);                      \
+    } while (0)
+#else
+#define debug(fmt, ...) (null_t)0
+#endif
 
 #endif

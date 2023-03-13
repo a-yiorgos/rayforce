@@ -24,27 +24,27 @@
 #include <stdio.h>
 #include <assert.h>
 #include "alloc.h"
-#include "bitspire.h"
+#include "rayforce.h"
 
 // Global allocator reference
 alloc_t GLOBAL_A0 = NULL;
 
-extern null_t *bitspire_malloc(i32_t size)
+extern null_t *rayforce_malloc(i32_t size)
 {
     return malloc(size);
 }
 
-extern null_t bitspire_free(null_t *block)
+extern null_t rayforce_free(null_t *block)
 {
     free(block);
 }
 
-extern null_t *bitspire_realloc(null_t *ptr, i32_t size)
+extern null_t *rayforce_realloc(null_t *ptr, i32_t size)
 {
     return realloc(ptr, size);
 }
 
-extern null_t bitspire_alloc_init()
+extern null_t rayforce_alloc_init()
 {
     alloc_t alloc;
 
@@ -56,7 +56,7 @@ extern null_t bitspire_alloc_init()
     GLOBAL_A0 = alloc;
 }
 
-extern null_t bitspire_alloc_deinit()
+extern null_t rayforce_alloc_deinit()
 {
     alloc_t alloc = alloc_get();
     symbols_free(alloc->symbols);

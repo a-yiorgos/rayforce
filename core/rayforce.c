@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "bitspire.h"
+#include "rayforce.h"
 #include "format.h"
 #include "alloc.h"
 #include "string.h"
@@ -127,12 +127,12 @@ extern null_t value_free(value_t *value)
     {
     case TYPE_I64:
     {
-        bitspire_free(value->list.ptr);
+        rayforce_free(value->list.ptr);
         break;
     }
     case TYPE_F64:
     {
-        bitspire_free(value->list.ptr);
+        rayforce_free(value->list.ptr);
         break;
     }
     default:

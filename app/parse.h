@@ -24,7 +24,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "../core/bitspire.h"
+#include "../core/rayforce.h"
 
 typedef struct parser_t
 {

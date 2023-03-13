@@ -24,7 +24,7 @@
 #ifndef FORMAT_H
 #define FORMAT_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 
 extern str_t str_fmt(u32_t lim, str_t fmt, ...);
 extern str_t value_fmt(value_t *value);

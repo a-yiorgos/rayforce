@@ -24,7 +24,7 @@
 #ifndef SYMBOLS_H
 #define SYMBOLS_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 #include "hash.h"
 #include "mmap.h"
 #include "string.h"

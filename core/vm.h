@@ -24,7 +24,7 @@
 #ifndef VM_H
 #define VM_H
 
-#include "bitspire.h"
+#include "rayforce.h"
 
 #define VM_STACK_SIZE 4096
 

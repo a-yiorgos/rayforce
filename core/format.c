@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "format.h"
-#include "bitspire.h"
+#include "rayforce.h"
 #include "alloc.h"
 
 #define MAX_I64_WIDTH 20
@@ -46,7 +46,7 @@ typedef struct padding_t
 extern str_t str_fmt(u32_t lim, str_t fmt, ...)
 {
     i32_t n, size = lim > 0 ? lim : MAX_ROW_WIDTH;
-    str_t p = (str_t)bitspire_malloc(size);
+    str_t p = (str_t)rayforce_malloc(size);
 
     while (1)
     {
@@ -57,7 +57,7 @@ extern str_t str_fmt(u32_t lim, str_t fmt, ...)
 
         if (n < 0)
         {
-            bitspire_free(p);
+            rayforce_free(p);
             return NULL;
         }
 
@@ -65,7 +65,7 @@ extern str_t str_fmt(u32_t lim, str_t fmt, ...)
             break;
 
         size *= 2;
-        p = bitspire_realloc(p, size);
+        p = rayforce_realloc(p, size);
     }
 
     return p;
@@ -82,12 +82,12 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
     u8_t slim = lim - FORMAT_TRAILER_SIZE;
 
     remains = slim;
-    str = buf = (str_t)bitspire_malloc(lim);
+    str = buf = (str_t)rayforce_malloc(lim);
     len = snprintf(buf, remains, "%*.*s[", pad, pad, PADDING);
 
     if (len < 0)
     {
-        bitspire_free(str);
+        rayforce_free(str);
         return NULL;
     }
 
@@ -109,7 +109,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
 
         if (len < 0)
         {
-            bitspire_free(str);
+            rayforce_free(str);
             return NULL;
         }
 
@@ -133,7 +133,7 @@ str_t vector_fmt(u32_t pad, u32_t lim, value_t *value)
 
         if (len < 0)
         {
-            bitspire_free(str);
+            rayforce_free(str);
             return NULL;
         }
         if (remains < len)
@@ -162,13 +162,13 @@ str_t list_fmt(u32_t pad, u32_t lim, value_t *value)
     u8_t slim = lim - FORMAT_TRAILER_SIZE;
     i64_t count, remains = slim, len;
 
-    str = buf = (str_t)bitspire_malloc(2048);
+    str = buf = (str_t)rayforce_malloc(2048);
     len = snprintf(buf, remains, "%*.*s(\n", pad, pad, PADDING);
     buf += len;
 
     if (len < 0)
     {
-        bitspire_free(str);
+        rayforce_free(str);
         return NULL;
     }
 
@@ -224,7 +224,7 @@ str_t dict_fmt(u32_t pad, u32_t lim, value_t *value)
     u8_t slim = lim - FORMAT_TRAILER_SIZE;
     i64_t count, remains = slim;
 
-    str = buf = (str_t)bitspire_malloc(2048);
+    str = buf = (str_t)rayforce_malloc(2048);
     len = snprintf(buf, remains, "%*.*s{\n", pad, pad, PADDING);
     buf += len;
 

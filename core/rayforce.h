@@ -21,8 +21,8 @@
  *   SOFTWARE.
  */
 
-#ifndef BITSPIRE_H
-#define BITSPIRE_H
+#ifndef RAYFORCE_H
+#define RAYFORCE_H
 
 // #ifdef __cplusplus
 // extern "C"
@@ -99,7 +99,7 @@ typedef struct value_t
     };
 } __attribute__((aligned(16))) value_t;
 
-CASSERT(sizeof(struct value_t) == 32, bitspire_h)
+CASSERT(sizeof(struct value_t) == 32, rayforce_h)
 
 // Constructors
 extern value_t i64(i64_t value);                               // i64 scalar
@@ -142,6 +142,8 @@ extern null_t vector_i64_push(value_t *vector, i64_t value);
 extern i64_t vector_i64_pop(value_t *vector);
 extern null_t vector_f64_push(value_t *vector, f64_t value);
 extern f64_t vector_f64_pop(value_t *vector);
+extern null_t list_push(value_t *list, value_t value);
+extern value_t list_pop(value_t *list);
 
 // #ifdef __cplusplus
 // }
