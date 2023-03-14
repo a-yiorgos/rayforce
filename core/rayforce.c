@@ -105,6 +105,33 @@ extern value_t dict(value_t keys, value_t vals)
     return dict;
 }
 
+extern value_t table(value_t keys, value_t vals)
+{
+    if (keys.type < 0 || vals.type != 0)
+        return error(ERR_TYPE, "Keys and values must be lists");
+
+    if (keys.list.len != vals.list.len)
+        return error(ERR_LENGTH, "Keys and values must have the same length");
+
+    value_t *v = as_list(&vals);
+    // i64_t len = 0;
+
+    // for (i64_t i = 0; i < v.list.len; i++)
+    // {
+    //     if (v[i].type < 0)
+    //         return error(ERR_TYPE, "Values must be scalars");
+    // }
+
+    value_t table = list(2);
+
+    as_list(&table)[0] = keys;
+    as_list(&table)[1] = vals;
+
+    table.type = TYPE_TABLE;
+
+    return table;
+}
+
 extern value_t value_clone(value_t *value)
 {
     switch (value->type)
