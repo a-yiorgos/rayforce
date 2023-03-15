@@ -34,6 +34,7 @@
 #include "../core/monad.h"
 #include "../core/alloc.h"
 #include "../core/vm.h"
+#include "../core/vector.h"
 #include "parse.h"
 
 #define LINE_SIZE 2048
@@ -51,11 +52,50 @@
 
 #define PROMPT "> "
 
-str_t open_file(str_t filename)
+null_t usage()
+{
+    printf("%s%s%s", BOLD, YELLOW, "Usage: rayforce [-f] [file...]\n");
+    exit(EXIT_FAILURE);
+}
+
+value_t parse_cmdline(i32_t argc, str_t argv[])
+{
+    u64_t opt, len;
+    value_t keys = list(0), vals = list(0);
+
+    for (opt = 1; opt < argc && argv[opt][0] == '-'; opt++)
+    {
+        switch (argv[opt][1])
+        {
+        case 'f':
+            opt++;
+
+            if (argv[opt] == '\0')
+                usage();
+
+            list_push(&keys, symbol("file"));
+            len = strlen(argv[opt]) + 1;
+            value_t str = string(len);
+            strncpy(as_string(&str), argv[opt], len);
+            list_push(&vals, str);
+            break;
+        default:
+            usage();
+        }
+    }
+
+    argv += opt;
+    keys = list_flatten(keys);
+
+    return dict(keys, vals);
+}
+
+null_t load_file(str_t filename)
 {
     i32_t fd;
-    str_t buffer;
+    str_t file, buf;
     struct stat st;
+    value_t value;
 
     fd = open(filename, O_RDONLY); // open the file for reading
 
@@ -67,24 +107,37 @@ str_t open_file(str_t filename)
 
     fstat(fd, &st); // get the size of the file
 
-    buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0); // memory-map the file
+    file = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0); // memory-map the file
 
-    if (buffer == MAP_FAILED)
+    if (file == MAP_FAILED)
     { // error handling if memory-mapping fails
         printf("Error mapping the file.\n");
         return NULL;
     }
 
-    // munmap(buffer, st.st_size); // unmap the buffer
-    // close(fd);                  // close the file
+    value = parse(filename, file);
+    buf = value_fmt(&value);
 
-    return buffer;
+    if (is_error(&value))
+        printf("%s%s%s\n", TOMATO, buf, RESET);
+    else
+        printf("%s\n", buf);
+
+    munmap(file, st.st_size); // unmap the buffer
+    close(fd);                // close the file
+
+    value_free(&value);
+    rayforce_free(buf);
 }
 
-int main()
+i32_t main(i32_t argc, str_t argv[])
 {
     rayforce_alloc_init();
 
+    value_t args = parse_cmdline(argc, argv);
+    load_file("test.ray");
+
+    str_t filename = NULL;
     i8_t run = 1;
     str_t line = (str_t)rayforce_malloc(LINE_SIZE), ptr;
     memset(line, 0, LINE_SIZE);
@@ -93,15 +146,6 @@ int main()
     u8_t *code;
 
     vm = vm_create();
-
-    str_t file = open_file("test.ray");
-    value = parse("test.ray", file);
-    str_t buf = value_fmt(&value);
-
-    if (is_error(&value))
-        printf("%s%s%s\n", TOMATO, buf, RESET);
-    else
-        printf("%s\n", buf);
 
     while (run)
     {

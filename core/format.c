@@ -42,7 +42,7 @@ const str_t TABLE_HEADER_SEPARATOR = "------------------------------------------
 
 extern str_t value_fmt_ind(u32_t indent, u32_t limit, value_t *value);
 
-extern i32_t str_fmt_into(u32_t limit, u64_t offset, str_t *dst, str_t fmt, ...)
+extern i32_t str_fmt_into(u32_t limit, i32_t offset, str_t *dst, str_t fmt, ...)
 {
     i32_t n = 0, size = limit > 0 ? limit : MAX_ROW_WIDTH;
     str_t p;
@@ -114,7 +114,7 @@ str_t vector_fmt(u32_t limit, value_t *value)
         return str_fmt(3, "[]");
 
     str_t str, buf;
-    i64_t count, len, remains = limit;
+    i64_t len, remains = limit;
     i8_t v_type = value->type;
 
     str = buf = (str_t)rayforce_malloc(limit + FORMAT_TRAILER_SIZE);
@@ -136,7 +136,7 @@ str_t vector_fmt(u32_t limit, value_t *value)
     buf += len;
     remains -= len;
 
-    for (i64_t i = 1; i < value->list.len; i++)
+    for (u64_t i = 1; i < value->list.len; i++)
     {
         if (v_type == TYPE_I64)
             len = snprintf(buf, remains, "%lld ", as_vector_i64(value)[i]);
@@ -219,7 +219,6 @@ str_t dict_fmt(u32_t indent, u32_t limit, value_t *value)
         return "";
 
     value_t *keys = &as_list(value)[0], *vals = &as_list(value)[1];
-    u32_t len = keys->list.len;
     str_t k, v, str = str_fmt(limit, "{");
     u32_t offset = 1;
 

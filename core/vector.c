@@ -32,10 +32,19 @@
  */
 #define CAPACITY_FACTOR 8
 
+/*
+ * Aligns x to the nearest multiple of a
+ */
 #define alignup(x, a) (((x) + (a)-1) & ~((a)-1))
 
+/*
+ * Calculates capacity for vector of length x
+ */
 #define capacity(x) (alignup(x, CAPACITY_FACTOR))
 
+/*
+ * Appends value to the end of vector (dynamically grows vector if needed)
+ */
 #define push(vector, type, value)                                                                    \
     i64_t len = (vector)->list.len;                                                                  \
     i64_t cap = capacity(len);                                                                       \
@@ -47,23 +56,26 @@
 
 #define pop(vector, type) ((type *)((vector)->list.ptr))[(vector)->list.len--]
 
-#define flatten(list, vec, fpush, mem)             \
-    {                                              \
-        value_t *member;                           \
-        vec = vector_##mem(0);                     \
-                                                   \
-        for (u64_t i = 0; i < list->list.len; i++) \
-        {                                          \
-            member = &as_list(list)[i];            \
-                                                   \
-            if (member->type != type)              \
-            {                                      \
-                value_free(&vec);                  \
-                return value_clone(list);          \
-            }                                      \
-                                                   \
-            fpush(&vec, member->mem);              \
-        }                                          \
+/*
+ * Attemts to make vector from list if all elements are of the same type
+ */
+#define flatten(list, vec, fpush, mem)            \
+    {                                             \
+        value_t *member;                          \
+        vec = vector_##mem(0);                    \
+                                                  \
+        for (u64_t i = 0; i < list.list.len; i++) \
+        {                                         \
+            member = &as_list(&list)[i];          \
+                                                  \
+            if (member->type != type)             \
+            {                                     \
+                value_free(&vec);                 \
+                return list;                      \
+            }                                     \
+                                                  \
+            fpush(&vec, member->mem);             \
+        }                                         \
     }
 
 extern value_t vector(i8_t type, u8_t size_of_val, i64_t len)
@@ -114,18 +126,27 @@ extern value_t list_pop(value_t *list)
     return pop(list, value_t);
 }
 
-extern value_t list_flatten(value_t *list)
+/*
+ * Try to flatten list in a vector if all elements are of the same type
+ */
+extern value_t list_flatten(value_t list)
 {
-    if (list->type != TYPE_LIST)
-        return value_clone(list);
+    if (list.type != TYPE_LIST)
+        return list;
 
-    i8_t type = as_list(list)[0].type;
+    u64_t len = list.list.len;
+    i8_t type;
+    value_t vec;
+
+    if (len == 0)
+        return list;
+
+    type = as_list(&list)[0].type;
 
     // Only scalar types can be flattened
     if (type > -1)
-        return value_clone(list);
+        return list;
 
-    value_t vec;
     switch (type)
     {
     case -TYPE_I64:
@@ -140,8 +161,10 @@ extern value_t list_flatten(value_t *list)
             vec.type = TYPE_SYMBOL;
         break;
     default:
-        return value_clone(list);
+        return list;
     }
+
+    value_free(&list);
 
     return vec;
 }

@@ -26,6 +26,6 @@
 
 #include "rayforce.h"
 
-extern value_t list_flatten(value_t *value);
+extern value_t list_flatten(value_t value);
 
 #endif

@@ -113,7 +113,7 @@ extern value_t table(value_t keys, value_t vals)
     if (keys.list.len != vals.list.len)
         return error(ERR_LENGTH, "Keys and values must have the same length");
 
-    value_t *v = as_list(&vals);
+    // value_t *v = as_list(&vals);
     // i64_t len = 0;
 
     // for (i64_t i = 0; i < v.list.len; i++)
