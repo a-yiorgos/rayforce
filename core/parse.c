@@ -59,18 +59,18 @@ span_t span(parser_t *parser)
 rf_object_t label(span_t *span, str_t name)
 {
     rf_object_t l = dict(vector_symbol(0), list(0));
-    dict_set(&l, symbol("name"), string(name));
-    // dict_set(&l, symbol("start_line"), i64(span->line_start));
-    // dict_set(&l, symbol("start_col"), i64(span->col_start));
-    // dict_set(&l, symbol("end_line"), i64(span->line_end));
-    // dict_set(&l, symbol("end_col"), i64(span->col_end));
+    dict_set(&l, symbol("name"), string_from_str(name));
+    dict_set(&l, symbol("start_line"), i64(span->line_start));
+    dict_set(&l, symbol("start_col"), i64(span->col_start));
+    dict_set(&l, symbol("end_line"), i64(span->line_end));
+    dict_set(&l, symbol("end_col"), i64(span->col_end));
     return l;
 }
 
 null_t add_label(rf_object_t *error, span_t *span, str_t name)
 {
     rf_object_t l = label(span, name);
-    // dict_set(&error, symbol("labels"), l);
+    dict_set(error, symbol("labels"), l);
 }
 
 u8_t is_whitespace(i8_t c)
@@ -234,13 +234,13 @@ rf_object_t parse_vector(parser_t *parser)
     {
         if (is_error(&token))
         {
-            value_free(&vec);
+            object_free(&vec);
             return token;
         }
 
         if (is_at(&token, '\0'))
         {
-            value_free(&vec);
+            object_free(&vec);
             err = error(ERR_PARSE, "Expected ']'");
             add_label(&err, &s, "started here");
             return err;
@@ -254,7 +254,7 @@ rf_object_t parse_vector(parser_t *parser)
                 vector_f64_push(&vec, (f64_t)token.i64);
             else
             {
-                value_free(&vec);
+                object_free(&vec);
                 return error(ERR_PARSE, "Invalid token in vector");
             }
         }
@@ -273,7 +273,7 @@ rf_object_t parse_vector(parser_t *parser)
             }
             else
             {
-                value_free(&vec);
+                object_free(&vec);
                 return error(ERR_PARSE, "Invalid token in vector");
             }
         }
@@ -286,13 +286,13 @@ rf_object_t parse_vector(parser_t *parser)
             }
             else
             {
-                value_free(&vec);
+                object_free(&vec);
                 return error(ERR_PARSE, "Invalid token in vector");
             }
         }
         else
         {
-            value_free(&vec);
+            object_free(&vec);
             return error(ERR_PARSE, "Invalid token in vector");
         }
 
@@ -315,13 +315,13 @@ rf_object_t parse_list(parser_t *parser)
 
         if (is_error(&token))
         {
-            value_free(&lst);
+            object_free(&lst);
             return token;
         }
 
         if (at_eof(**current))
         {
-            value_free(&lst);
+            object_free(&lst);
             return error(ERR_PARSE, "Expected ')'");
         }
 
@@ -345,15 +345,15 @@ rf_object_t parse_dict(parser_t *parser)
     {
         if (is_error(&token))
         {
-            value_free(&keys);
-            value_free(&vals);
+            object_free(&keys);
+            object_free(&vals);
             return token;
         }
 
         if (at_eof(**current))
         {
-            value_free(&keys);
-            value_free(&vals);
+            object_free(&keys);
+            object_free(&vals);
             return error(ERR_PARSE, "Expected '}'");
         }
 
@@ -363,8 +363,8 @@ rf_object_t parse_dict(parser_t *parser)
 
         if (!is_at(&token, ':'))
         {
-            value_free(&keys);
-            value_free(&vals);
+            object_free(&keys);
+            object_free(&vals);
             return error(ERR_PARSE, "Expected ':'");
         }
 
@@ -372,16 +372,16 @@ rf_object_t parse_dict(parser_t *parser)
 
         if (is_error(&token))
         {
-            value_free(&keys);
-            value_free(&vals);
+            object_free(&keys);
+            object_free(&vals);
             return token;
         }
 
         if (at_eof(**current))
         {
-            value_free(&keys);
-            value_free(&vals);
-            return error(ERR_PARSE, "Expected value");
+            object_free(&keys);
+            object_free(&vals);
+            return error(ERR_PARSE, "Expected object");
         }
 
         list_push(&vals, token);
@@ -441,24 +441,15 @@ rf_object_t parse_program(parser_t *parser)
 
         if (is_error(&token))
         {
-            // err_msg = str_fmt(0, "%s:%d:%d: %s", parser->filename, parser->line, parser->column, value_fmt(&token));
-            // value_free(&token);
+            // err_msg = str_fmt(0, "%s:%d:%d: %s", parser->filename, parser->line, parser->column, object_fmt(&token));
+            // object_free(&token);
             // return error(ERR_PARSE, err_msg);
-            value_free(&list);
+            object_free(&list);
             return token;
         }
 
-        if (is_at(&token, '\0'))
+        if (is_at(&token, '\0') || is_at_term(&token))
             break;
-
-        if (is_at_term(&token))
-        {
-            // err_msg = str_fmt(0, "%s:%d:%d: %s", parser->filename, parser->line, parser->column, "Unexpected token");
-            // value_free(&token);
-            // return error(ERR_PARSE, err_msg);
-            value_free(&list);
-            return token;
-        }
 
         list_push(&list, token);
     }

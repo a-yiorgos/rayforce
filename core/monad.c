@@ -55,11 +55,11 @@
 //     return i64(sum);
 // }
 
-u8_t *compile(rf_object_t *value)
+u8_t *compile(rf_object_t *object)
 {
     u8_t *code;
 
-    UNUSED(value);
+    UNUSED(object);
 
     code = (u8_t *)rayforce_malloc(1024);
 

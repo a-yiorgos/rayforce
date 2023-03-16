@@ -95,7 +95,7 @@ rf_object_t string_from_const_str(str_t str)
 
 /*
  * match() function takes in two pointers to character arrays: pattern and text.
- * It returns a u8_t value indicating whether the text string matches the pattern string.
+ * It returns a u8_t object indicating whether the text string matches the pattern string.
  * Note that this implementation assumes that the pattern and text strings do not contain any null characters ('\0').
  * If this is not the case, a more sophisticated implementation may be required.
  */

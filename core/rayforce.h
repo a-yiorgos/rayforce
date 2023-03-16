@@ -93,8 +93,8 @@ typedef struct rf_object_t
 CASSERT(sizeof(struct rf_object_t) == 32, rayforce_h)
 
 // Constructors
-extern rf_object_t i64(i64_t value);                               // i64 scalar
-extern rf_object_t f64(f64_t value);                               // f64 scalar
+extern rf_object_t i64(i64_t object);                              // i64 scalar
+extern rf_object_t f64(f64_t object);                              // f64 scalar
 extern rf_object_t symbol(str_t ptr);                              // symbol
 extern rf_object_t vector(i8_t type, u8_t size_of_val, i64_t len); // vector of type
 extern rf_object_t string(i64_t len);                              // string (allocates len + 1 for \0 but sets len to a 'len')
@@ -108,32 +108,32 @@ extern rf_object_t str(str_t ptr, i64_t len);                 // str non-duplica
 extern rf_object_t null();                                    // null (as null list)
 extern rf_object_t table(rf_object_t keys, rf_object_t vals); // table
 extern rf_object_t dict(rf_object_t keys, rf_object_t vals);  // dict
-extern rf_object_t value_clone(rf_object_t *value);
+extern rf_object_t object_clone(rf_object_t *object);
 
 // Error
 extern rf_object_t error(i8_t code, str_t message);
 
 // Destructor
-extern null_t value_free(rf_object_t *value);
+extern null_t object_free(rf_object_t *object);
 
 // Accessors
-#define as_vector_i64(value) ((i64_t *)(value)->list.ptr)
-#define as_vector_f64(value) ((f64_t *)(value)->list.ptr)
-#define as_vector_symbol(value) ((i64_t *)(value)->list.ptr)
-#define as_string(value) ((str_t)(value)->list.ptr)
-#define as_list(value) ((rf_object_t *)(value)->list.ptr)
+#define as_vector_i64(object) ((i64_t *)(object)->list.ptr)
+#define as_vector_f64(object) ((f64_t *)(object)->list.ptr)
+#define as_vector_symbol(object) ((i64_t *)(object)->list.ptr)
+#define as_string(object) ((str_t)(object)->list.ptr)
+#define as_list(object) ((rf_object_t *)(object)->list.ptr)
 
 // Checkers
-#define is_null(value) ((value)->type == TYPE_LIST && (value)->list.ptr == NULL)
-#define is_error(value) ((value)->type == TYPE_ERROR)
-#define is_scalar(value) ((value)->type < 0)
+#define is_null(object) ((object)->type == TYPE_LIST && (object)->list.ptr == NULL)
+#define is_error(object) ((object)->type == TYPE_ERROR)
+#define is_scalar(object) ((object)->type < 0)
 
 // Mutators
-extern u64_t vector_push(rf_object_t *vector, rf_object_t value);
-extern u64_t vector_pop(rf_object_t *vector);
+extern u64_t vector_push(rf_object_t *vector, rf_object_t object);
+extern rf_object_t vector_pop(rf_object_t *vector);
 
 // Compare
-extern i8_t value_eq(rf_object_t *a, rf_object_t *b);
+extern i8_t object_eq(rf_object_t *a, rf_object_t *b);
 
 // #ifdef __cplusplus
 // }

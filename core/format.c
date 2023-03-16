@@ -41,7 +41,7 @@ const str_t PADDING = "                                                         
 const str_t TABLE_SEPARATOR = " | ";
 const str_t TABLE_HEADER_SEPARATOR = "------------------------------------------------------------------------------------";
 
-extern str_t value_fmt_ind(u32_t indent, u32_t limit, rf_object_t *value);
+extern str_t object_fmt_ind(u32_t indent, u32_t limit, rf_object_t *object);
 
 extern i32_t str_fmt_into(u32_t limit, i32_t offset, str_t *dst, str_t fmt, ...)
 {
@@ -52,7 +52,7 @@ extern i32_t str_fmt_into(u32_t limit, i32_t offset, str_t *dst, str_t fmt, ...)
 
     if (n < (size + offset))
     {
-        size = size + offset;
+        size = size + offset + n;
         *dst = rayforce_realloc(*dst, size);
     }
 
@@ -106,27 +106,27 @@ extern str_t str_fmt(u32_t limit, str_t fmt, ...)
     return p;
 }
 
-str_t vector_fmt(u32_t limit, rf_object_t *value)
+str_t vector_fmt(u32_t limit, rf_object_t *object)
 {
     if (!limit)
         return "";
 
-    if (value->list.len == 0)
+    if (object->list.len == 0)
         return str_fmt(3, "[]");
 
     str_t str, buf;
     i64_t len = 0, remains = limit;
-    i8_t v_type = value->type;
+    i8_t v_type = object->type;
 
     str = buf = (str_t)rayforce_malloc(limit + FORMAT_TRAILER_SIZE);
 
     // Print '[' with the first element
     if (v_type == TYPE_I64)
-        len = snprintf(buf, remains, "[%lld ", as_vector_i64(value)[0]);
+        len = snprintf(buf, remains, "[%lld ", as_vector_i64(object)[0]);
     else if (v_type == TYPE_F64)
-        len = snprintf(buf, remains, "[%.*f ", F64_PRECISION, as_vector_f64(value)[0]);
+        len = snprintf(buf, remains, "[%.*f ", F64_PRECISION, as_vector_f64(object)[0]);
     else if (v_type == TYPE_SYMBOL)
-        len = snprintf(buf, remains, "[%s ", symbols_get(as_vector_symbol(value)[0]));
+        len = snprintf(buf, remains, "[%s ", symbols_get(as_vector_symbol(object)[0]));
 
     if (len < 0)
     {
@@ -137,14 +137,14 @@ str_t vector_fmt(u32_t limit, rf_object_t *value)
     buf += len;
     remains -= len;
 
-    for (u64_t i = 1; i < value->list.len; i++)
+    for (u64_t i = 1; i < object->list.len; i++)
     {
         if (v_type == TYPE_I64)
-            len = snprintf(buf, remains, "%lld ", as_vector_i64(value)[i]);
+            len = snprintf(buf, remains, "%lld ", as_vector_i64(object)[i]);
         else if (v_type == TYPE_F64)
-            len = snprintf(buf, remains, "%.*f ", F64_PRECISION, as_vector_f64(value)[i]);
+            len = snprintf(buf, remains, "%.*f ", F64_PRECISION, as_vector_f64(object)[i]);
         else if (v_type == TYPE_SYMBOL)
-            len = snprintf(buf, remains, "%s ", symbols_get(as_vector_symbol(value)[i]));
+            len = snprintf(buf, remains, "%s ", symbols_get(as_vector_symbol(object)[i]));
 
         if (len < 0)
         {
@@ -152,7 +152,7 @@ str_t vector_fmt(u32_t limit, rf_object_t *value)
             return "";
         }
 
-        // printf("len: %lld, remains: %lld val: %lld\n", len, remains, ((i64_t *)value->list.ptr)[i]);
+        // printf("len: %lld, remains: %lld val: %lld\n", len, remains, ((i64_t *)object->list.ptr)[i]);
 
         if (len >= remains)
         {
@@ -174,12 +174,12 @@ str_t vector_fmt(u32_t limit, rf_object_t *value)
     return str;
 }
 
-str_t list_fmt(u32_t indent, u32_t limit, rf_object_t *value)
+str_t list_fmt(u32_t indent, u32_t limit, rf_object_t *object)
 {
     if (!limit)
         return "";
 
-    if (value->list.ptr == NULL)
+    if (object->list.ptr == NULL)
         return str_fmt(limit, "null");
 
     str_t s, str = str_fmt(limit, "(");
@@ -187,9 +187,9 @@ str_t list_fmt(u32_t indent, u32_t limit, rf_object_t *value)
 
     indent += 2;
 
-    for (u64_t i = 0; i < value->list.len; i++)
+    for (u64_t i = 0; i < object->list.len; i++)
     {
-        s = value_fmt_ind(indent, limit - indent, ((rf_object_t *)value->list.ptr) + i);
+        s = object_fmt_ind(indent, limit - indent, ((rf_object_t *)object->list.ptr) + i);
         offset += str_fmt_into(0, offset, &str, "\n%*.*s%s", indent, indent, PADDING, s);
         rayforce_free(s);
     }
@@ -198,23 +198,23 @@ str_t list_fmt(u32_t indent, u32_t limit, rf_object_t *value)
     return str;
 }
 
-str_t string_fmt(u32_t indent, u32_t limit, rf_object_t *value)
+str_t string_fmt(u32_t indent, u32_t limit, rf_object_t *object)
 {
     if (!limit)
         return "";
 
-    if (value->list.ptr == NULL)
+    if (object->list.ptr == NULL)
         return str_fmt(0, "\"\"");
 
-    return str_fmt(value->list.len + 3, "\"%s\"", value->list.ptr);
+    return str_fmt(object->list.len + 3, "\"%s\"", object->list.ptr);
 }
 
-str_t dict_fmt(u32_t indent, u32_t limit, rf_object_t *value)
+str_t dict_fmt(u32_t indent, u32_t limit, rf_object_t *object)
 {
     if (!limit)
         return "";
 
-    rf_object_t *keys = &as_list(value)[0], *vals = &as_list(value)[1];
+    rf_object_t *keys = &as_list(object)[0], *vals = &as_list(object)[1];
     str_t k, v, str = str_fmt(limit, "{");
     u32_t offset = 1;
 
@@ -235,10 +235,10 @@ str_t dict_fmt(u32_t indent, u32_t limit, rf_object_t *value)
             k = str_fmt(limit, "%s", symbols_get(as_vector_symbol(keys)[i]));
             break;
         default:
-            k = value_fmt_ind(indent, limit - indent, &as_list(keys)[i]);
+            k = object_fmt_ind(indent, limit - indent, &as_list(keys)[i]);
             break;
         }
-        // Dispatch values type
+        // Dispatch objects type
         switch (vals->type)
         {
         case TYPE_I64:
@@ -251,7 +251,7 @@ str_t dict_fmt(u32_t indent, u32_t limit, rf_object_t *value)
             v = str_fmt(limit, "%s", symbols_get(as_vector_symbol(vals)[i]));
             break;
         default:
-            v = value_fmt_ind(indent, limit - indent, &as_list(vals)[i]);
+            v = object_fmt_ind(indent, limit - indent, &as_list(vals)[i]);
             break;
         }
 
@@ -264,19 +264,19 @@ str_t dict_fmt(u32_t indent, u32_t limit, rf_object_t *value)
     return str;
 }
 
-str_t table_fmt(u32_t indent, u32_t limit, rf_object_t *value)
+str_t table_fmt(u32_t indent, u32_t limit, rf_object_t *object)
 {
     if (!limit)
         return "";
 
-    i64_t *header = as_vector_symbol(&as_list(value)[0]);
-    rf_object_t *columns = &as_list(value)[1], column_widths;
+    i64_t *header = as_vector_symbol(&as_list(object)[0]);
+    rf_object_t *columns = &as_list(object)[1], column_widths;
     u32_t table_width, width, table_height;
     str_t str = str_fmt(0, "|"), s;
     str_t formatted_columns[TABLE_MAX_WIDTH][TABLE_MAX_HEIGHT] = {{NULL}};
     i32_t offset = 1;
 
-    table_width = (&as_list(value)[0])->list.len;
+    table_width = (&as_list(object)[0])->list.len;
     if (table_width > TABLE_MAX_WIDTH)
         table_width = TABLE_MAX_WIDTH;
 
@@ -310,7 +310,7 @@ str_t table_fmt(u32_t indent, u32_t limit, rf_object_t *value)
                 s = str_fmt(limit, "%s", symbols_get(as_vector_symbol(column)[j]));
                 break;
             default:
-                s = value_fmt_ind(indent, limit - indent, &as_list(column)[j]);
+                s = object_fmt_ind(indent, limit - indent, &as_list(column)[j]);
                 break;
             }
 
@@ -357,47 +357,49 @@ str_t table_fmt(u32_t indent, u32_t limit, rf_object_t *value)
     return str;
 }
 
-str_t error_fmt(u32_t indent, u32_t limit, rf_object_t *value)
+str_t error_fmt(u32_t indent, u32_t limit, rf_object_t *object)
 {
-    rf_object_t code = dict_get(value, symbol("code"));
-    rf_object_t message = dict_get(value, symbol("message"));
+    rf_object_t code = dict_get(object, symbol("code"));
+    rf_object_t message = dict_get(object, symbol("message"));
+    rf_object_t labels = dict_get(object, symbol("labels"));
 
-    return str_fmt(0, "** [E%.3d] error: %s", code.i64, as_string(&message));
+    return str_fmt(0, "** [E%.3d] error: %s\n%s", code.i64, as_string(&message),
+                   object_fmt_ind(indent, limit - indent, &labels));
 }
 
-extern str_t value_fmt_ind(u32_t indent, u32_t limit, rf_object_t *value)
+extern str_t object_fmt_ind(u32_t indent, u32_t limit, rf_object_t *object)
 {
-    switch (value->type)
+    switch (object->type)
     {
     case TYPE_LIST:
-        return list_fmt(indent, limit, value);
+        return list_fmt(indent, limit, object);
     case -TYPE_I64:
-        return str_fmt(limit, "%lld", value->i64);
+        return str_fmt(limit, "%lld", object->i64);
     case -TYPE_F64:
-        return str_fmt(limit, "%.*f", F64_PRECISION, value->f64);
+        return str_fmt(limit, "%.*f", F64_PRECISION, object->f64);
     case -TYPE_SYMBOL:
-        return str_fmt(limit, "%s", symbols_get(value->i64));
+        return str_fmt(limit, "%s", symbols_get(object->i64));
     case TYPE_I64:
-        return vector_fmt(limit, value);
+        return vector_fmt(limit, object);
     case TYPE_F64:
-        return vector_fmt(limit, value);
+        return vector_fmt(limit, object);
     case TYPE_SYMBOL:
-        return vector_fmt(limit, value);
+        return vector_fmt(limit, object);
     case TYPE_STRING:
-        return string_fmt(indent, limit, value);
+        return string_fmt(indent, limit, object);
     case TYPE_DICT:
-        return dict_fmt(indent, limit, value);
+        return dict_fmt(indent, limit, object);
     case TYPE_TABLE:
-        return table_fmt(indent, limit, value);
+        return table_fmt(indent, limit, object);
     case TYPE_ERROR:
-        return error_fmt(indent, limit, value);
+        return error_fmt(indent, limit, object);
     default:
         return str_fmt(limit, "null");
     }
 }
 
-extern str_t value_fmt(rf_object_t *value)
+extern str_t object_fmt(rf_object_t *object)
 {
     u32_t indent = 0, limit = MAX_ROW_WIDTH - FORMAT_TRAILER_SIZE;
-    return value_fmt_ind(indent, limit, value);
+    return object_fmt_ind(indent, limit, object);
 }

@@ -31,11 +31,11 @@
 typedef enum vm_opcode_t
 {
     VM_HALT = 0, // Halt the VM
-    VM_PUSH,     // Push a value to the stack
-    VM_POP,      // Pop a value from the stack
-    VM_ADD,      // Add two values from the stack
-    VM_SUB,      // Subtract two values from the stack
-    VM_MUL,      // Multiply two values from the stack
+    VM_PUSH,     // Push a object to the stack
+    VM_POP,      // Pop a object from the stack
+    VM_ADD,      // Add two objects from the stack
+    VM_SUB,      // Subtract two objects from the stack
+    VM_MUL,      // Multiply two objects from the stack
 } vm_opcode_t;
 
 typedef struct vm_t

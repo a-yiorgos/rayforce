@@ -43,16 +43,15 @@
 #define capacity(x) (alignup(x, CAPACITY_FACTOR))
 
 /*
- * Appends value to the end of vector (dynamically grows vector if needed)
+ * Appends object to the end of vector (dynamically grows vector if needed)
  */
 #define push(vector, type, value)                                                                    \
     i64_t len = (vector)->list.len;                                                                  \
-    i64_t cap = capacity(len);                                                                       \
-    if (cap == 0)                                                                                    \
+    if (len == 0)                                                                                    \
         (vector)->list.ptr = rayforce_malloc(CAPACITY_FACTOR * sizeof(type));                        \
-    else if (cap == len)                                                                             \
+    else if (len == capacity(len))                                                                   \
         (vector)->list.ptr = rayforce_realloc((vector)->list.ptr, capacity(len + 1) * sizeof(type)); \
-    ((type *)((vector)->list.ptr))[(vector)->list.len++] = (value);
+    ((type *)((vector)->list.ptr))[(vector)->list.len++] = value;
 
 #define pop(vector, type) ((type *)((vector)->list.ptr))[(vector)->list.len--]
 
@@ -70,7 +69,7 @@
                                                   \
             if (member->type != type)             \
             {                                     \
-                value_free(&vec);                 \
+                object_free(&vec);                \
                 return list;                      \
             }                                     \
                                                   \
@@ -102,10 +101,9 @@ extern u64_t vector_i64_push(rf_object_t *vector, i64_t value)
     return vector->list.len;
 }
 
-extern u64_t vector_i64_pop(rf_object_t *vector)
+extern i64_t vector_i64_pop(rf_object_t *vector)
 {
-    pop(vector, i64_t);
-    return vector->list.len;
+    return pop(vector, i64_t);
 }
 
 extern u64_t vector_f64_push(rf_object_t *vector, f64_t value)
@@ -119,34 +117,41 @@ extern f64_t vector_f64_pop(rf_object_t *vector)
     return pop(vector, f64_t);
 }
 
-extern u64_t list_push(rf_object_t *list, rf_object_t value)
+extern u64_t list_push(rf_object_t *list, rf_object_t object)
 {
-    push(list, rf_object_t, value);
+    push(list, rf_object_t, object);
     return list->list.len;
 }
 
 extern rf_object_t list_pop(rf_object_t *list)
 {
-    return pop(list, rf_object_t);
+    rf_object_t object = pop(list, rf_object_t);
+    return object_clone(&object);
 }
 
-extern u64_t vector_push(rf_object_t *vector, rf_object_t value)
+extern u64_t vector_push(rf_object_t *vector, rf_object_t object)
 {
     i8_t type = vector->type;
+
+    if (type != 0 && type != -object.type)
+        panic("vector_push: type mismatch");
 
     switch (type)
     {
     case TYPE_I64:
-        vector_i64_push(vector, value.i64);
+        vector_i64_push(vector, object.i64);
         break;
     case TYPE_F64:
-        vector_f64_push(vector, value.f64);
+        vector_f64_push(vector, object.f64);
+        break;
+    case TYPE_SYMBOL:
+        vector_i64_push(vector, object.i64);
         break;
     case TYPE_LIST:
-        list_push(vector, value);
+        list_push(vector, object);
         break;
     default:
-        return vector->list.len;
+        exit(1);
     }
 
     return vector->list.len;
@@ -184,7 +189,7 @@ extern u64_t list_find(rf_object_t *list, rf_object_t key)
 
     for (u64_t i = 0; i < list->list.len; i++)
     {
-        if (value_eq(&ptr[i], &key))
+        if (object_eq(&ptr[i], &key))
             return i;
     }
 
@@ -246,7 +251,7 @@ extern rf_object_t list_flatten(rf_object_t list)
         return list;
     }
 
-    value_free(&list);
+    object_free(&list);
 
     return vec;
 }

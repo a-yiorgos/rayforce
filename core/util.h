@@ -42,4 +42,10 @@
 #define debug(fmt, ...) (null_t)0
 #endif
 
+#define panic(x)                                                 \
+    {                                                            \
+        fprintf(stderr, "Process panicked with message: %s", x); \
+        exit(1);                                                 \
+    }
+
 #endif

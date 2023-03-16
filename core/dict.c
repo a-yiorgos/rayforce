@@ -21,16 +21,19 @@
  *   SOFTWARE.
  */
 
+#include <stdio.h>
 #include "dict.h"
 #include "vector.h"
+#include "format.h"
+#include "util.h"
 
 extern rf_object_t dict(rf_object_t keys, rf_object_t vals)
 {
     if (keys.type < 0 || vals.type < 0)
-        return error(ERR_TYPE, "Keys and values must be lists");
+        return error(ERR_TYPE, "Keys and objects must be lists");
 
     if (keys.list.len != vals.list.len)
-        return error(ERR_LENGTH, "Keys and values must have the same length");
+        return error(ERR_LENGTH, "Keys and objects must have the same length");
 
     rf_object_t dict = list(2);
 
@@ -54,7 +57,7 @@ extern rf_object_t dict_get(rf_object_t *dict, rf_object_t key)
     if (index == keys->list.len)
         return null();
 
-    return value_clone(&as_list(vals)[index]);
+    return object_clone(&as_list(vals)[index]);
 }
 
 extern rf_object_t dict_set(rf_object_t *dict, rf_object_t key, rf_object_t val)
@@ -69,11 +72,25 @@ extern rf_object_t dict_set(rf_object_t *dict, rf_object_t key, rf_object_t val)
     if (index == keys->list.len)
     {
         vector_push(keys, key);
-        vector_push(vals, val);
+        vector_push(vals, object_clone(&val));
+        return val;
     }
 
-    else
-        as_list(vals)[index] = val;
+    switch (vals->type)
+    {
+    case TYPE_I64:
+        as_vector_i64(vals)[index] = val.i64;
+        break;
+    case TYPE_F64:
+        as_vector_f64(vals)[index] = val.f64;
+        break;
+    case TYPE_SYMBOL:
+        as_vector_i64(vals)[index] = val.i64;
+        break;
+    case TYPE_LIST:
+        as_list(vals)[index] = object_clone(&val);
+        break;
+    }
 
-    return null();
+    return val;
 }

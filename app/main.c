@@ -115,7 +115,7 @@ null_t load_file(str_t filename)
     i32_t fd;
     str_t file, buf;
     struct stat st;
-    rf_object_t value;
+    rf_object_t object;
 
     fd = open(filename, O_RDONLY); // open the file for reading
 
@@ -135,10 +135,10 @@ null_t load_file(str_t filename)
         return;
     }
 
-    value = parse(filename, file);
-    buf = value_fmt(&value);
+    object = parse(filename, file);
+    buf = object_fmt(&object);
 
-    if (is_error(&value))
+    if (is_error(&object))
         printf("%s%s%s\n", TOMATO, buf, RESET);
     else
         printf("%s\n", buf);
@@ -146,7 +146,7 @@ null_t load_file(str_t filename)
     munmap(file, st.st_size); // unmap the buffer
     close(fd);                // close the file
 
-    value_free(&value);
+    object_free(&object);
     rayforce_free(buf);
 }
 
@@ -162,7 +162,7 @@ i32_t main(i32_t argc, str_t argv[])
     i8_t run = 1;
     str_t line = (str_t)rayforce_malloc(LINE_SIZE), ptr;
     memset(line, 0, LINE_SIZE);
-    rf_object_t value;
+    rf_object_t object;
     vm_t vm;
     u8_t *code;
 
@@ -174,21 +174,21 @@ i32_t main(i32_t argc, str_t argv[])
         ptr = fgets(line, LINE_SIZE, stdin);
         UNUSED(ptr);
 
-        value = parse("REPL", line);
+        object = parse("REPL", line);
 
-        str_t buf = value_fmt(&value);
+        str_t buf = object_fmt(&object);
         if (buf == NULL)
             continue;
 
-        if (is_error(&value))
+        if (is_error(&object))
             printf("%s%s%s\n", TOMATO, buf, RESET);
         else
             printf("%s\n", buf);
 
-        code = compile(value);
+        code = compile(object);
         vm_exec(vm, code);
 
-        value_free(&value);
+        object_free(&object);
     }
 
     rayforce_free(line);

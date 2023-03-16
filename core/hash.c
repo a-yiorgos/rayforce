@@ -93,7 +93,7 @@ null_t *ht_insert(hash_table_t *table, null_t *key, null_t *val)
 }
 
 /*
- * Does the same as ht_insert, but uses a function to set the value of the bucket.
+ * Does the same as ht_insert, but uses a function to set the object of the bucket.
  */
 null_t *ht_insert_with(hash_table_t *table, null_t *key, null_t *val, null_t *(*func)(null_t *key, null_t *val, bucket_t *bucket))
 {
@@ -120,7 +120,7 @@ null_t *ht_insert_with(hash_table_t *table, null_t *key, null_t *val, null_t *(*
 }
 
 /*
- * Returns the value of the node with the given key.
+ * Returns the object of the node with the given key.
  * Returns NULL if the key does not exist.
  */
 null_t *ht_get(hash_table_t *table, null_t *key)

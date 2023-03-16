@@ -27,39 +27,34 @@
 #include "alloc.h"
 #include "string.h"
 #include "vector.h"
+#include "dict.h"
 
 extern rf_object_t error(i8_t code, str_t message)
 {
-    rf_object_t keys = vector_symbol(2), vals = list(2), c, error;
-    c = string_from_const_str("code");
-    as_vector_symbol(&keys)[0] = symbols_intern(&c);
-    c = string_from_const_str("message");
-    as_vector_symbol(&keys)[1] = symbols_intern(&c);
-    as_list(&vals)[0] = i64(code);
-    c = string_from_str(message);
-    as_list(&vals)[1] = c;
+    rf_object_t err = dict(vector_symbol(0), list(0));
+    dict_set(&err, symbol("code"), i64(code));
+    dict_set(&err, symbol("message"), string_from_str(message));
 
-    error = dict(keys, vals);
-    error.type = TYPE_ERROR;
+    err.type = TYPE_ERROR;
 
-    return error;
+    return err;
 }
 
-extern rf_object_t i64(i64_t value)
+extern rf_object_t i64(i64_t object)
 {
     rf_object_t scalar = {
         .type = -TYPE_I64,
-        .i64 = value,
+        .i64 = object,
     };
 
     return scalar;
 }
 
-extern rf_object_t f64(f64_t value)
+extern rf_object_t f64(f64_t object)
 {
     rf_object_t scalar = {
         .type = -TYPE_F64,
-        .f64 = value,
+        .f64 = object,
     };
 
     return scalar;
@@ -71,12 +66,12 @@ extern rf_object_t symbol(str_t ptr)
     rf_object_t string = str(ptr, strlen(ptr));
     string.list.ptr = ptr;
     i64_t id = symbols_intern(&string);
-    rf_object_t list = {
+    rf_object_t sym = {
         .type = -TYPE_SYMBOL,
         .i64 = id,
     };
 
-    return list;
+    return sym;
 }
 
 extern rf_object_t null()
@@ -95,10 +90,10 @@ extern rf_object_t null()
 extern rf_object_t table(rf_object_t keys, rf_object_t vals)
 {
     if (keys.type != TYPE_SYMBOL || vals.type != 0)
-        return error(ERR_TYPE, "Keys must be a symbol vector and values must be list");
+        return error(ERR_TYPE, "Keys must be a symbol vector and objects must be list");
 
     if (keys.list.len != vals.list.len)
-        return error(ERR_LENGTH, "Keys and values must have the same length");
+        return error(ERR_LENGTH, "Keys and objects must have the same length");
 
     // rf_object_t *v = as_list(&vals);
     // i64_t len = 0;
@@ -119,23 +114,23 @@ extern rf_object_t table(rf_object_t keys, rf_object_t vals)
     return table;
 }
 
-extern rf_object_t value_clone(rf_object_t *value)
+extern rf_object_t object_clone(rf_object_t *object)
 {
-    switch (value->type)
+    switch (object->type)
     {
     case TYPE_I64:
-        return *value;
+        return *object;
     case TYPE_F64:
-        return *value;
+        return *object;
     default:
     {
         // printf("** Clone: Invalid type\n");
-        return *value;
+        return *object;
     }
     }
 }
 
-extern i8_t value_eq(rf_object_t *a, rf_object_t *b)
+extern i8_t object_eq(rf_object_t *a, rf_object_t *b)
 {
     if (a->type != b->type)
         return 0;
@@ -150,7 +145,7 @@ extern i8_t value_eq(rf_object_t *a, rf_object_t *b)
             return 1;
         if (a->list.len != b->list.len)
             return 0;
-        for (i64_t i = 0; i < a->list.len; i++)
+        for (u64_t i = 0; i < a->list.len; i++)
         {
             if (as_vector_i64(a)[i] != as_vector_i64(b)[i])
                 return 0;
@@ -163,7 +158,7 @@ extern i8_t value_eq(rf_object_t *a, rf_object_t *b)
             return 1;
         if (a->list.len != b->list.len)
             return 0;
-        for (i64_t i = 0; i < a->list.len; i++)
+        for (u64_t i = 0; i < a->list.len; i++)
         {
             if (as_vector_f64(a)[i] != as_vector_f64(b)[i])
                 return 0;
@@ -175,18 +170,18 @@ extern i8_t value_eq(rf_object_t *a, rf_object_t *b)
     return 0;
 }
 
-extern null_t value_free(rf_object_t *value)
+extern null_t object_free(rf_object_t *object)
 {
-    switch (value->type)
+    switch (object->type)
     {
     case TYPE_I64:
     {
-        rayforce_free(value->list.ptr);
+        rayforce_free(object->list.ptr);
         break;
     }
     case TYPE_F64:
     {
-        rayforce_free(value->list.ptr);
+        rayforce_free(object->list.ptr);
         break;
     }
     default:
