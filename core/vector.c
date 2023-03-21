@@ -60,24 +60,24 @@
 /*
  * Attemts to make vector from list if all elements are of the same type
  */
-#define flatten(list, vec, fpush, mem)    \
-    {                                     \
-        rf_object_t *member;              \
-        vec = vector_##mem(0);            \
-        i64_t i;                          \
-                                          \
-        for (i = 0; i < vec.adt.len; i++) \
-        {                                 \
-            member = &as_list(&list)[i];  \
-                                          \
-            if (member->type != type)     \
-            {                             \
-                object_free(&vec);        \
-                return list;              \
-            }                             \
-                                          \
-            fpush(&vec, member->mem);     \
-        }                                 \
+#define flatten(list, vec, fpush, mem)     \
+    {                                      \
+        rf_object_t *member;               \
+        vec = vector_##mem(0);             \
+        i64_t i;                           \
+                                           \
+        for (i = 0; i < list.adt.len; i++) \
+        {                                  \
+            member = &as_list(&list)[i];   \
+                                           \
+            if (member->type != type)      \
+            {                              \
+                object_free(&vec);         \
+                return list;               \
+            }                              \
+                                           \
+            fpush(&vec, member->mem);      \
+        }                                  \
     }
 
 extern rf_object_t vector(i8_t type, i8_t size_of_val, i64_t len)

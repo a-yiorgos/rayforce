@@ -31,6 +31,8 @@ extern null_t runtime_init()
     alloc_t alloc = rayforce_alloc_init();
     runtime_t runtime = rayforce_malloc(sizeof(struct runtime_t));
     runtime->alloc = alloc;
+    runtime->debuginfo = rayforce_malloc(sizeof(struct debuginfo_t));
+    debuginfo_init(runtime->debuginfo);
     _RUNTIME = runtime;
 }
 

@@ -21,25 +21,22 @@
  *   SOFTWARE.
  */
 
-#ifndef PARSE_H
-#define PARSE_H
+#include "debuginfo.h"
 
-#include "../core/rayforce.h"
-
-/*
- * Parser structure
- */
-typedef struct parser_t
+extern null_t debuginfo_init(debuginfo_t *debuginfo)
 {
-    str_t filename; // filename
-    str_t input;    // input string
-    str_t current;  // current character
-    i64_t line;     // current line
-    i64_t column;   // current column
-} __attribute__((aligned(16))) parser_t;
+    debuginfo->count = 0;
+}
 
-rf_object_t advance(parser_t *parser);
+extern u32_t debuginfo_insert(debuginfo_t *debuginfo, span_t span)
+{
+    u32_t index = debuginfo->count;
+    debuginfo->span[index] = span;
+    debuginfo->count++;
+    return index;
+}
 
-extern rf_object_t parse(str_t filename, str_t input);
-
-#endif
+extern span_t *debuginfo_get(debuginfo_t *debuginfo, u32_t index)
+{
+    return &debuginfo->span[index];
+}

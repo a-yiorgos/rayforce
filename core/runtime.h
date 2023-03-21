@@ -26,6 +26,7 @@
 
 #include "rayforce.h"
 #include "alloc.h"
+#include "debuginfo.h"
 
 /*
  * Runtime structure.
@@ -33,6 +34,7 @@
 typedef struct runtime_t
 {
     alloc_t alloc;
+    debuginfo_t *debuginfo;
 } *runtime_t;
 
 extern null_t runtime_init();

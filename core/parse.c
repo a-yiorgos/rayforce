@@ -33,6 +33,8 @@
 #include "vector.h"
 #include "util.h"
 #include "dict.h"
+#include "debuginfo.h"
+#include "runtime.h"
 
 #define TYPE_TOKEN 126
 
@@ -48,35 +50,18 @@ span_t span_start(parser_t *parser)
     return s;
 }
 
-null_t span_end(parser_t *parser, span_t *span)
+null_t span_extend(parser_t *parser, span_t *span)
 {
-    // span->line_end = parser->line;
-    // span->col_end = parser->column;
+    span->end_line = parser->line;
+    span->end_column = parser->column;
+
+    return;
 }
 
-rf_object_t label(span_t *span, str_t name)
+u32_t span_commit(parser_t *parser, span_t span)
 {
-    // rf_object_t l = dict(vector_symbol(0), list(0));
-    // dict_set(&l, symbol("name"), string_from_str(name));
-    // dict_set(&l, symbol("start_line"), i64(span->line_start));
-    // dict_set(&l, symbol("start_col"), i64(span->col_start));
-    // dict_set(&l, symbol("end_line"), i64(span->line_end));
-    // dict_set(&l, symbol("end_col"), i64(span->col_end));
-    // return l;
-}
-
-set_span(rf_object_t *token, span_t span)
-{
-    // token->span.start_line = span.line_start;
-    // token->span.start_col = span.col_start;
-    // token->span.end_line = span.line_end;
-    // token->span.end_col = span.col_end;
-}
-
-null_t add_label(rf_object_t *error, span_t *span, str_t name)
-{
-    rf_object_t l = label(span, name);
-    dict_set(error, symbol("labels"), l);
+    debuginfo_t *debuginfo = runtime_get()->debuginfo;
+    return debuginfo_insert(debuginfo, span);
 }
 
 i8_t is_whitespace(i8_t c)
@@ -144,6 +129,7 @@ rf_object_t parse_number(parser_t *parser)
     i64_t num_i64;
     f64_t num_f64;
     rf_object_t num;
+    span_t span = span_start(parser);
 
     errno = 0;
 
@@ -166,21 +152,22 @@ rf_object_t parse_number(parser_t *parser)
         num = f64(num_f64);
     }
     else
-    {
         num = i64(num_i64);
-    }
 
     shift(parser, end - parser->current);
+    span_extend(parser, &span);
+    num.id = span_commit(parser, span);
 
     return num;
 }
 
 rf_object_t parse_string(parser_t *parser)
 {
+    span_t span = span_start(parser);
     parser->current++; // skip '"'
     str_t pos = parser->current;
     i32_t len;
-    rf_object_t res;
+    rf_object_t str, err;
 
     while (!at_eof(*pos))
     {
@@ -194,14 +181,21 @@ rf_object_t parse_string(parser_t *parser)
     }
 
     if ((*pos) != '"')
-        return error(ERR_PARSE, "Expected '\"'");
+    {
+        span.end_column += (pos - parser->current);
+        err = error(ERR_PARSE, "Expected '\"'");
+        err.id = span_commit(parser, span);
+        return err;
+    }
 
     len = pos - parser->current;
-    res = string(len);
-    strncpy(as_string(&res), parser->current, len);
+    str = string(len);
+    strncpy(as_string(&str), parser->current, len);
     shift(parser, len + 1);
+    span_extend(parser, &span);
+    str.id = span_commit(parser, span);
 
-    return res;
+    return str;
 }
 
 rf_object_t parse_symbol(parser_t *parser)
@@ -209,6 +203,7 @@ rf_object_t parse_symbol(parser_t *parser)
     str_t pos = parser->current;
     rf_object_t res, s;
     i64_t id;
+    span_t span = span_start(parser);
 
     // Skip first char and proceed until the end of the symbol
     do
@@ -221,6 +216,8 @@ rf_object_t parse_symbol(parser_t *parser)
     res = i64(id);
     res.type = -TYPE_SYMBOL;
     shift(parser, pos - parser->current);
+    span_extend(parser, &span);
+    res.id = span_commit(parser, span);
 
     return res;
 }
@@ -228,10 +225,8 @@ rf_object_t parse_symbol(parser_t *parser)
 rf_object_t parse_vector(parser_t *parser)
 {
     rf_object_t token, vec = vector_i64(0), err;
-    i32_t i;
-
-    // save current span
-    span_t s = span_start(parser);
+    i32_t i, id;
+    span_t span = span_start(parser);
 
     shift(parser, 1); // skip '['
     token = advance(parser);
@@ -247,9 +242,8 @@ rf_object_t parse_vector(parser_t *parser)
         if (is_at(&token, '\0'))
         {
             object_free(&vec);
-            span_end(parser, &s);
             err = error(ERR_PARSE, "Expected ']'");
-            add_label(&err, &s, "started here");
+            err.id = span_commit(parser, span);
             return err;
         }
 
@@ -262,7 +256,9 @@ rf_object_t parse_vector(parser_t *parser)
             else
             {
                 object_free(&vec);
-                return error(ERR_PARSE, "Invalid token in vector");
+                err = error(ERR_PARSE, "Invalid token in vector");
+                err.id = token.id;
+                return err;
             }
         }
         else if (token.type == -TYPE_F64)
@@ -281,7 +277,9 @@ rf_object_t parse_vector(parser_t *parser)
             else
             {
                 object_free(&vec);
-                return error(ERR_PARSE, "Invalid token in vector");
+                err = error(ERR_PARSE, "Invalid token in vector");
+                err.id = token.id;
+                return err;
             }
         }
         else if (token.type == -TYPE_SYMBOL)
@@ -294,15 +292,20 @@ rf_object_t parse_vector(parser_t *parser)
             else
             {
                 object_free(&vec);
-                return error(ERR_PARSE, "Invalid token in vector");
+                err = error(ERR_PARSE, "Invalid token in vector");
+                err.id = token.id;
+                return err;
             }
         }
         else
         {
             object_free(&vec);
-            return error(ERR_PARSE, "Invalid token in vector");
+            err = error(ERR_PARSE, "Invalid token in vector");
+            err.id = token.id;
+            return err;
         }
 
+        span_extend(parser, &span);
         token = advance(parser);
     }
 
@@ -311,7 +314,8 @@ rf_object_t parse_vector(parser_t *parser)
 
 rf_object_t parse_list(parser_t *parser)
 {
-    rf_object_t lst = list(0), token;
+    rf_object_t lst = list(0), token, err;
+    span_t span = span_start(parser);
 
     shift(parser, 1); // skip '('
     token = advance(parser);
@@ -328,17 +332,22 @@ rf_object_t parse_list(parser_t *parser)
         if (at_eof(*parser->current))
         {
             object_free(&lst);
-            return error(ERR_PARSE, "Expected ')'");
+            err = error(ERR_PARSE, "Expected ')'");
+            err.id = span_commit(parser, span);
+            return err;
         }
 
         if (is_at_term(&token))
         {
             object_free(&lst);
-            return error(ERR_PARSE, str_fmt(0, "There is no opening found for: '%c'", token.i64));
+            err = error(ERR_PARSE, str_fmt(0, "There is no opening found for: '%c'", token.i64));
+            err.id = token.id;
+            return err;
         }
 
         list_push(&lst, token);
 
+        span_extend(parser, &span);
         token = advance(parser);
     }
 
@@ -347,7 +356,8 @@ rf_object_t parse_list(parser_t *parser)
 
 rf_object_t parse_dict(parser_t *parser)
 {
-    rf_object_t token, keys = list(0), vals = list(0);
+    rf_object_t token, keys = list(0), vals = list(0), err;
+    span_t span = span_start(parser);
 
     shift(parser, 1); // skip '{'
     token = advance(parser);
@@ -365,18 +375,23 @@ rf_object_t parse_dict(parser_t *parser)
         {
             object_free(&keys);
             object_free(&vals);
-            return error(ERR_PARSE, "Expected '}'");
+            err = error(ERR_PARSE, "Expected '}'");
+            err.id = span_commit(parser, span);
+            return err;
         }
 
         list_push(&keys, token);
 
+        span_extend(parser, &span);
         token = advance(parser);
 
         if (!is_at(&token, ':'))
         {
             object_free(&keys);
             object_free(&vals);
-            return error(ERR_PARSE, "Expected ':'");
+            err = error(ERR_PARSE, "Expected ':'");
+            err.id = token.id;
+            return err;
         }
 
         token = advance(parser);
@@ -392,11 +407,14 @@ rf_object_t parse_dict(parser_t *parser)
         {
             object_free(&keys);
             object_free(&vals);
-            return error(ERR_PARSE, "Expected object");
+            err = error(ERR_PARSE, "Expected object");
+            err.id = span_commit(parser, span);
+            return err;
         }
 
         list_push(&vals, token);
 
+        span_extend(parser, &span);
         token = advance(parser);
     }
 
@@ -412,6 +430,7 @@ rf_object_t advance(parser_t *parser)
     // Skip all whitespaces
     while (is_whitespace(*parser->current))
     {
+        // Update line and column (if next line is not empty)
         if (*parser->current == '\n')
         {
             parser->line++;

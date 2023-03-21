@@ -184,17 +184,17 @@ extern null_t object_free(rf_object_t *object)
         return;
     }
 
-    i64_t rc = __atomic_sub_fetch(&object->adt.attrs->rc, 1, __ATOMIC_RELAXED);
+    // i64_t rc = __atomic_sub_fetch(&object->adt.attrs->rc, 1, __ATOMIC_RELAXED);
 
-    if (object->type == TYPE_LIST)
-    {
-        for (i64_t i = 0; i < object->adt.len; i++)
-            object_free(&as_list(object)[i]);
-    }
+    // if (object->type == TYPE_LIST)
+    // {
+    //     for (i64_t i = 0; i < object->adt.len; i++)
+    //         object_free(&as_list(object)[i]);
+    // }
 
-    if (rc == 0)
-    {
-        rayforce_free(object->adt.ptr);
-        rayforce_free(object->adt.attrs);
-    }
+    // if (rc == 0)
+    // {
+    //     rayforce_free(object->adt.ptr);
+    //     rayforce_free(object->adt.attrs);
+    // }
 }

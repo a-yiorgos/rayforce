@@ -29,6 +29,8 @@
 #include "alloc.h"
 #include "util.h"
 #include "dict.h"
+#include "debuginfo.h"
+#include "runtime.h"
 
 #define MAX_I64_WIDTH 20
 #define MAX_ROW_WIDTH MAX_I64_WIDTH * 2
@@ -359,6 +361,8 @@ str_t table_fmt(i32_t indent, i32_t limit, rf_object_t *object)
 
 str_t error_fmt(i32_t indent, i32_t limit, rf_object_t *error)
 {
+    span_t *span = debuginfo_get(runtime_get()->debuginfo, error->id);
+    debug("--\nstart_line: %d\nend_line: %d\nstart_column: %d\nend_column: %d\n", span->start_line, span->end_line, span->start_column, span->end_column);
     return str_fmt(0, "** [E%.3d] error: %s", error->adt.code, as_string(error));
 }
 
