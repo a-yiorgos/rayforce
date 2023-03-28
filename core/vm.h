@@ -34,7 +34,8 @@ typedef enum vm_opcode_t
     OP_HALT = 0, // Halt the VM
     OP_PUSH,     // Push an object to the stack
     OP_POP,      // Pop an object from the stack
-    OP_ADD,      // Add two objects from the stack
+    OP_ADDI,     // Add two i64 from the stack
+    OP_ADDF,     // Add two f64 from the stack
     OP_SUB,      // Subtract two objects from the stack
     OP_MUL,      // Multiply two objects from the stack
 } vm_opcode_t;
@@ -50,7 +51,7 @@ typedef struct vm_t
 } vm_t;
 
 vm_t *vm_create();
-rf_object_t vm_exec(vm_t *vm, str_t code);
+rf_object_t vm_exec(vm_t *vm, str_t code) __attribute__((__noinline__, __noclone__));
 null_t vm_free(vm_t *vm);
 
 // void vm_print_stack(int *stack, int count);

@@ -84,6 +84,11 @@ i8_t is_alphanum(i8_t c)
     return is_alpha(c) || is_digit(c);
 }
 
+i8_t is_op(i8_t c)
+{
+    return strchr("+-*/%&|^~<>!=", c);
+}
+
 i8_t at_eof(i8_t c)
 {
     return c == '\0' || c == EOF;
@@ -210,7 +215,7 @@ rf_object_t parse_symbol(parser_t *parser)
     do
     {
         pos++;
-    } while (is_alphanum(*pos));
+    } while (is_alphanum(*pos) || is_op(*pos));
 
     s = str(parser->current, pos - parser->current);
     id = symbols_intern(&s);
@@ -458,7 +463,7 @@ rf_object_t advance(parser_t *parser)
     if ((*parser->current) == '-' || is_digit(*parser->current))
         return parse_number(parser);
 
-    if (is_alpha(*parser->current))
+    if (is_alpha(*parser->current) || is_op(*parser->current))
         return parse_symbol(parser);
 
     if ((*parser->current) == '"')

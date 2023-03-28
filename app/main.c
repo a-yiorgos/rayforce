@@ -98,6 +98,9 @@ null_t print_error(rf_object_t *error, str_t filename, str_t source, u32_t len)
     case ERR_INDEX:
         error_desc = "index";
         break;
+    case ERR_LENGTH:
+        error_desc = "length";
+        break;
     default:
         error_desc = "unknown";
     }
@@ -238,11 +241,10 @@ null_t load_file(str_t filename)
 
 i32_t main(i32_t argc, str_t argv[])
 {
-    rf_object_t args = parse_cmdline(argc, argv), parsed, executed;
+    rf_object_t args = parse_cmdline(argc, argv), parsed, executed, compiled;
     i8_t run = 1;
     str_t line = (str_t)rayforce_malloc(LINE_SIZE), ptr, filename = NULL;
     vm_t *vm;
-    str_t code;
 
     memset(line, 0, LINE_SIZE);
 
@@ -259,6 +261,7 @@ i32_t main(i32_t argc, str_t argv[])
         ptr = fgets(line, LINE_SIZE, stdin);
 
         parsed = parse("REPL", line);
+        // printf("%s\n", object_fmt(&parsed));
 
         if (is_error(&parsed))
         {
@@ -266,17 +269,25 @@ i32_t main(i32_t argc, str_t argv[])
             continue;
         }
 
-        code = cc_compile(parsed);
-        executed = vm_exec(vm, code);
+        compiled = cc_compile(&parsed);
+        if (is_error(&compiled))
+        {
+            print_error(&compiled, "REPL", line, LINE_SIZE);
+            object_free(&parsed);
+            object_free(&compiled);
+            continue;
+        }
+
+        executed = vm_exec(vm, as_string(&compiled));
 
         if (is_error(&executed))
             print_error(&executed, "REPL", line, LINE_SIZE);
         else
             printf("%s\n", object_fmt(&executed));
 
+        object_free(&parsed);
         object_free(&executed);
-        // object_free(&parsed);
-        rayforce_free(code);
+        object_free(&compiled);
     }
 
     rayforce_free(line);

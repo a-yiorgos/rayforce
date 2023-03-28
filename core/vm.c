@@ -31,6 +31,7 @@
 
 #define push(v, x) (v->stack[v->sp++] = x)
 #define pop(v) (v->stack[--v->sp])
+#define peek(v) (&v->stack[v->sp - 1])
 
 vm_t *vm_create()
 {
@@ -52,14 +53,14 @@ vm_t *vm_create()
  */
 rf_object_t vm_exec(vm_t *vm, str_t code)
 {
-    rf_object_t ob;
+    rf_object_t x, y, z, k;
 
     vm->ip = 0;
     vm->sp = 0;
 
     // The indices of labels in the dispatch_table are the relevant opcodes
     static null_t *dispatch_table[] = {
-        &&op_halt, &&op_push, &&op_pop};
+        &&op_halt, &&op_push, &&op_pop, &&op_addi, &&op_addf};
 
 #define dispatch() goto *dispatch_table[(i32_t)code[vm->ip]]
 
@@ -67,17 +68,27 @@ rf_object_t vm_exec(vm_t *vm, str_t code)
 
 op_halt:
     vm->halted = 1;
-    ob = pop(vm);
-    return ob;
+    x = pop(vm);
+    return x;
 op_push:
     vm->ip++;
-    ob = *(rf_object_t *)(code + vm->ip);
-    push(vm, ob);
+    x = *(rf_object_t *)(code + vm->ip);
+    push(vm, x);
     vm->ip += sizeof(rf_object_t);
     dispatch();
 op_pop:
     vm->ip++;
-    ob = pop(vm);
+    x = pop(vm);
+    dispatch();
+op_addi:
+    vm->ip++;
+    x = pop(vm);
+    peek(vm)->i64 += x.i64;
+    dispatch();
+op_addf:
+    vm->ip++;
+    x = pop(vm);
+    peek(vm)->f64 += x.f64;
     dispatch();
 }
 

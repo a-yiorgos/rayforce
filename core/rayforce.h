@@ -58,6 +58,8 @@
 #define ERR_INDEX 6
 #define ERR_ALLOC 7
 #define ERR_IO 8
+#define ERR_NOT_FOUND 9
+#define ERR_NOT_IMPLEMENTED 10
 #define ERR_UNKNOWN 127
 
 typedef char i8_t;
@@ -73,8 +75,7 @@ typedef void null_t;
 // Generic type
 typedef struct rf_object_t
 {
-    i16_t type;
-    i8_t flags, reserved;
+    i8_t type, flags;
     u32_t id;
 
     union

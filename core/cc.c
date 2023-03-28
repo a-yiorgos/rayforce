@@ -45,16 +45,123 @@
     *(rf_object_t *)(code + offset) = x;                                 \
     offset += sizeof(rf_object_t)
 
-str_t cc_compile(rf_object_t object)
+typedef struct dispatch_record_t
 {
-    u32_t len = 2 * sizeof(rf_object_t), offset = 0;
+    str_t name;
+    i8_t args[8];
+    i8_t ret;
+    vm_opcode_t opcode;
+} dispatch_record_t;
+
+#define DISPATCH_RECORD_SIZE 3
+#define DISPATCH_TABLE_SIZE 5
+
+// clang-format off
+static dispatch_record_t _DISPATCH_TABLE[DISPATCH_TABLE_SIZE][DISPATCH_RECORD_SIZE] = {
+    // Nilary
+    {{0}},
+    // Unary
+    {
+        {"-", {-TYPE_I64}, -TYPE_I64, OP_HALT}, 
+        {"halt", {0}, 0, OP_HALT},
+    },
+    // Binary
+    {
+        {"+", {-TYPE_I64, -TYPE_I64}, -TYPE_I64, OP_ADDI}, {"+", {-TYPE_F64, -TYPE_F64}, -TYPE_F64, OP_ADDF},
+    },
+    // Ternary
+    {{0}},
+    // Quaternary
+    {{0}},
+};
+// clang-format on
+
+i8_t cc_compile_code(rf_object_t *object, str_t *code, u32_t *len)
+{
+}
+
+rf_object_t cc_compile(rf_object_t *object)
+{
+    u32_t len = 2 * sizeof(rf_object_t);
     str_t code = (str_t)rayforce_malloc(len);
+    u32_t offset = 0, arity, i = 0, j = 0, match = 0;
+    rf_object_t *car, err;
+    dispatch_record_t *rec;
 
-    push_opcode(OP_PUSH);
-    push_object(object);
-    push_opcode(OP_HALT);
+    switch (object->type)
+    {
+    case TYPE_LIST:
+        if (object->adt.len == 0)
+        {
+            push_object(object_clone(object));
+            break;
+        }
 
-    return code;
+        car = &as_list(object)[0];
+        if (car->type != -TYPE_SYMBOL)
+        {
+            rayforce_free(code);
+            err = error(ERR_LENGTH, "compile list: expected symbol in a head");
+            err.id = car->id;
+            return err;
+        }
+
+        arity = object->adt.len - 1;
+        if (arity > 4)
+        {
+            rayforce_free(code);
+            err = error(ERR_LENGTH, "compile list: too many arguments");
+            err.id = object->id;
+            return err;
+        }
+
+        while (rec = &_DISPATCH_TABLE[arity][i++])
+        {
+            if (i > DISPATCH_RECORD_SIZE)
+                break;
+
+            if (rec->name != 0 && strcmp(symbols_get(car->i64), rec->name) == 0)
+            {
+                for (j = 0; j < arity; j++)
+                {
+                    if (as_list(object)[j + 1].type != rec->args[j])
+                        break;
+
+                    match++;
+                }
+
+                if (match < arity)
+                {
+                    match = 0;
+                    continue;
+                }
+
+                for (j = 1; j < object->adt.len; j++)
+                {
+                    push_opcode(OP_PUSH);
+                    push_object(object_clone(&as_list(object)[j]));
+                }
+
+                push_opcode(rec->opcode);
+
+                break;
+            }
+        }
+
+        if (!match)
+        {
+            push_opcode(OP_PUSH);
+            err = error(ERR_LENGTH, "compile list: function proto or arity mismatch");
+            err.id = object->id;
+            push_object(err);
+        }
+
+        push_opcode(OP_HALT);
+
+        // debug("CODE: %s\n", cc_code_fmt(code));
+    }
+
+    return str(code, len);
 }
 
 str_t cc_code_fmt(str_t code)
@@ -76,8 +183,11 @@ str_t cc_code_fmt(str_t code)
         case OP_POP:
             p += str_fmt_into(0, p, &s, "%.4d: pop\n", c++);
             break;
-        case OP_ADD:
-            p += str_fmt_into(0, p, &s, "%.4d: add\n", c++);
+        case OP_ADDI:
+            p += str_fmt_into(0, p, &s, "%.4d: addi\n", c++);
+            break;
+        case OP_ADDF:
+            p += str_fmt_into(0, p, &s, "%.4d: addf\n", c++);
             break;
         default:
             p += str_fmt_into(0, p, &s, "%.4d: unknown %d\n", c++, *ip);

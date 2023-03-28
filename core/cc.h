@@ -26,7 +26,7 @@
 
 #include "rayforce.h"
 
-str_t cc_compile(rf_object_t object);
+rf_object_t cc_compile(rf_object_t *object);
 str_t cc_code_fmt(str_t code);
 
 #endif
