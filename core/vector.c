@@ -44,55 +44,69 @@
 
 /*
  * Reserves memory for n elements
+ * v - vector to reserve memory for
+ * t - type of element
+ * n - number of elements
  */
-#define reserve(vector, ty, n)                                                \
-    {                                                                         \
-        i64_t occup = (vector)->adt.len * sizeof(ty);                         \
-        i64_t cap = capacity(occup);                                          \
-        i64_t req_cap = n * sizeof(ty);                                       \
-        i64_t new_cap = capacity(cap + req_cap);                              \
-        if (cap >= req_cap + occup)                                           \
-            ;                                                                 \
-        else if ((vector)->adt.len == 0)                                      \
-            (vector)->adt.ptr = rayforce_malloc(new_cap);                     \
-        else                                                                  \
-            (vector)->adt.ptr = rayforce_realloc((vector)->adt.ptr, new_cap); \
+#define reserve(v, t, n)                                            \
+    {                                                               \
+        i64_t occup = (v)->adt.len * sizeof(t);                     \
+        i64_t cap = capacity(occup);                                \
+        i64_t req_cap = n * sizeof(t);                              \
+        i64_t new_cap = capacity(cap + req_cap);                    \
+        if (cap >= req_cap + occup)                                 \
+            ;                                                       \
+        else if ((v)->adt.len == 0)                                 \
+            (v)->adt.ptr = rayforce_malloc(new_cap);                \
+        else                                                        \
+            (v)->adt.ptr = rayforce_realloc((v)->adt.ptr, new_cap); \
     }
 
 /*
  * Appends object to the end of vector (dynamically grows vector if needed)
+ * v - vector to append to
+ * t - type of object to append
+ * x - object to append
  */
-#define push(vector, type, value)                                   \
-    {                                                               \
-        reserve(vector, type, 1);                                   \
-        ((type *)((vector)->adt.ptr))[(vector)->adt.len++] = value; \
+#define push(v, t, x)                              \
+    {                                              \
+        reserve(v, t, 1);                          \
+        ((t *)((v)->adt.ptr))[(v)->adt.len++] = x; \
     }
 
-#define pop(vector, type) ((type *)((vector)->adt.ptr))[--(vector)->adt.len]
+#define pop(v, t) ((t *)((v)->adt.ptr))[--(v)->adt.len]
 
 /*
  * Attemts to make vector from list if all elements are of the same type
+ * l - list
+ * v - vector
+ * f - function to push element to vector
+ * t - member type of element to push
  */
-#define flatten(list, vec, fpush, mem)     \
-    {                                      \
-        rf_object_t *member;               \
-        vec = vector_##mem(0);             \
-        i64_t i;                           \
-                                           \
-        for (i = 0; i < list.adt.len; i++) \
-        {                                  \
-            member = &as_list(&list)[i];   \
-                                           \
-            if (member->type != type)      \
-            {                              \
-                object_free(&vec);         \
-                return list;               \
-            }                              \
-                                           \
-            fpush(&vec, member->mem);      \
-        }                                  \
+#define flatten(l, v, t)                        \
+    {                                           \
+        rf_object_t *member;                    \
+        i64_t i;                                \
+        i8_t type = &as_list(&l)[0];            \
+        v = vector_##t(0);                      \
+                                                \
+        for (i = 0; i < l.adt.len; i++)         \
+        {                                       \
+            member = &as_list(&l)[i];           \
+                                                \
+            if (member->type != t)              \
+            {                                   \
+                object_free(&vec);              \
+                return list;                    \
+            }                                   \
+                                                \
+            vector_##t##_push(&vec, member->t); \
+        }                                       \
     }
 
+/*
+ * Creates new vector of type type
+ */
 extern rf_object_t vector(i8_t type, i8_t size_of_val, i64_t len)
 {
     struct attrs_t *attrs = rayforce_malloc(sizeof(struct attrs_t));
@@ -205,8 +219,6 @@ extern rf_object_t vector_pop(rf_object_t *vector)
 
 null_t vector_reserve(rf_object_t *vector, u32_t len)
 {
-    debug("Reserving %d elements for vector\n", len);
-    return;
     switch (vector->type)
     {
     case TYPE_I64:
@@ -312,13 +324,13 @@ extern rf_object_t list_flatten(rf_object_t list)
     switch (type)
     {
     case -TYPE_I64:
-        flatten(list, vec, vector_i64_push, i64);
+        flatten(list, vec, i64);
         break;
     case -TYPE_F64:
-        flatten(list, vec, vector_f64_push, f64);
+        flatten(list, vec, f64);
         break;
     case -TYPE_SYMBOL:
-        flatten(list, vec, vector_i64_push, i64);
+        flatten(list, vec, i64);
         if (vec.type == TYPE_I64)
             vec.type = TYPE_SYMBOL;
         break;

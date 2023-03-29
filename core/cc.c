@@ -50,8 +50,8 @@ typedef struct dispatch_record_t
     vm_opcode_t opcode;
 } dispatch_record_t;
 
-#define DISPATCH_RECORD_SIZE 3
 #define DISPATCH_TABLE_SIZE 5
+#define DISPATCH_RECORD_SIZE 4
 
 // clang-format off
 static dispatch_record_t _DISPATCH_TABLE[DISPATCH_TABLE_SIZE][DISPATCH_RECORD_SIZE] = {
@@ -81,7 +81,7 @@ i8_t cc_compile_code(rf_object_t *object, rf_object_t *code)
     u32_t arity, i = 0, j = 0, match = 0;
     rf_object_t *car, err;
     dispatch_record_t *rec;
-    i8_t ret = TYPE_ERROR, arg_types[8];
+    i8_t ret = TYPE_ERROR, arg_types[8], type;
 
     switch (object->type)
     {
@@ -130,7 +130,14 @@ i8_t cc_compile_code(rf_object_t *object, rf_object_t *code)
 
         // compile arguments from right to left
         for (j = arity; j > 0; j--)
-            arg_types[j - 1] = cc_compile_code(&as_list(object)[j], code);
+        {
+            type = cc_compile_code(&as_list(object)[j], code);
+
+            if (type == TYPE_ERROR)
+                return TYPE_ERROR;
+
+            arg_types[j - 1] = type;
+        }
 
         // try to find matching function prototype
         while ((rec = &_DISPATCH_TABLE[arity][i++]))
