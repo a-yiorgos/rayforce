@@ -26,6 +26,7 @@
 
 #include "rayforce.h"
 #include "mmap.h"
+#include <time.h>
 
 #define VM_STACK_SIZE PAGE_SIZE * 4
 
@@ -38,9 +39,12 @@ typedef enum vm_opcode_t
     OP_ADDF,     // Add two f64 from the stack
     // OP_SUB,      // Subtract two objects from the stack
     // OP_MUL,      // Multiply two objects from the stack
-    OP_SUMI, // Sum i64 vector elements with scalar i64
-    OP_LIKE, // Compare string with regex
-    OP_TYPE, // Get type of object
+    OP_SUMI,        // Sum i64 vector elements with scalar i64
+    OP_LIKE,        // Compare string with regex
+    OP_TYPE,        // Get type of object
+    OP_TIMER_START, // Start timer
+    OP_TIMER_GET,   // Get timer value
+    OP_TIL,         // Create i64 vector of length n
 } vm_opcode_t;
 
 typedef struct vm_t
@@ -50,6 +54,7 @@ typedef struct vm_t
     i8_t halted; // Halt flag
     rf_object_t r0, r1, r2, r3, r4,
         r5, r6, r7, r8; // Registers of objects
+    clock_t timer;      // Timer for execution time
     rf_object_t *stack; // Stack of objects
 } vm_t;
 

@@ -63,7 +63,8 @@ static dispatch_record_t _DISPATCH_TABLE[DISPATCH_TABLE_SIZE][DISPATCH_RECORD_SI
     // Unary
     {
         {"-",    {-TYPE_I64}, -TYPE_I64,    OP_HALT},            
-        {"type", {TYPE_ANY }, -TYPE_SYMBOL, OP_TYPE}
+        {"type", {TYPE_ANY }, -TYPE_SYMBOL, OP_TYPE},
+        {"til",  {-TYPE_I64},  TYPE_I64,     OP_TIL}
     },
     // Binary
     {
@@ -140,6 +141,24 @@ i8_t cc_compile_code(rf_object_t *object, rf_object_t *code)
                 return TYPE_ERROR;
 
             arg_types[j - 1] = type;
+        }
+
+        // special cases
+        if (strcmp(symbols_get(car->i64), "time") == 0)
+        {
+            if (arity != 1)
+            {
+                object_free(code);
+                err = error(ERR_LENGTH, "compile list: time takes one argument");
+                err.id = object->id;
+                *code = err;
+                return TYPE_ERROR;
+            }
+
+            push_opcode(code, OP_TIMER_START);
+            cc_compile_code(&as_list(object)[1], code);
+            push_opcode(code, OP_TIMER_GET);
+            return -TYPE_F64;
         }
 
         // try to find matching function prototype
