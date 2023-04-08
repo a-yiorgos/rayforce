@@ -36,14 +36,3 @@ rf_object_t rf_flip(rf_object_t *x)
         return error(ERR_NOT_IMPLEMENTED, "flip: not implemented");
     }
 }
-
-rf_object_t rf_add(rf_object_t *x, rf_object_t *y)
-{
-    i64_t *v = as_vector_i64(x);
-    i32_t l = x->adt->len, i;
-
-    for (i = 0; i < l; i++)
-        v[i] = ADDI64(v[i], y->i64);
-
-    return rf_object_clone(x);
-}
