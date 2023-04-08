@@ -62,6 +62,7 @@ null_t init_functions(rf_object_t *variables)
     // Unary
     REC(variables, 1, "flip", TYPE_LIST, rf_flip,       { TYPE_ANY              });
     // Binary
+    REC(variables, 2, "add",   TYPE_I64, rf_add,         { TYPE_I64, -TYPE_I64    });
     // Ternary
     // Quaternary
 }

@@ -60,6 +60,11 @@ rf_object_t vm_exec(vm_t *vm, str_t code)
 {
     rf_object_t x, y, z, w, p, v, *addr;
     i32_t i;
+    nilary_t f0;
+    unary_t f1;
+    binary_t f2;
+    ternary_t f3;
+    quaternary_t f4;
 
     vm->ip = 0;
     vm->sp = 0;
@@ -68,8 +73,8 @@ rf_object_t vm_exec(vm_t *vm, str_t code)
     static null_t *dispatch_table[] = {
         &&op_halt, &&op_push, &&op_pop, &&op_addi, &&op_addf, &&op_subi, &&op_subf,
         &&op_muli, &&op_mulf, &&op_divi, &&op_divf, &&op_sumi, &&op_like, &&op_type,
-        &&op_timer_set, &&op_timer_get, &&op_til, &&op_call1, &&op_call2, &&op_call3,
-        &&op_call4, &&op_set, &&op_get};
+        &&op_timer_set, &&op_timer_get, &&op_til, &&op_call0, &&op_call1, &&op_call2,
+        &&op_call3, &&op_call4, &&op_calln, &&op_set, &&op_get};
 
 #define dispatch() goto *dispatch_table[(i32_t)code[vm->ip]]
 
@@ -176,13 +181,21 @@ op_til:
         as_vector_i64(&x)[i] = i;
     stack_push(vm, x);
     dispatch();
+op_call0:
+    vm->ip++;
+    y = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    f0 = (nilary_t)y.i64;
+    z = f0();
+    stack_push(vm, z);
+    dispatch();
 op_call1:
     vm->ip++;
     y = *(rf_object_t *)(code + vm->ip);
     vm->ip += sizeof(rf_object_t);
     x = stack_pop(vm);
-    unary_t f = (unary_t)y.i64;
-    z = f(&x);
+    f1 = (unary_t)y.i64;
+    z = f1(&x);
     // TODO: unwind
     if (z.type == TYPE_ERROR)
     {
@@ -193,12 +206,12 @@ op_call1:
     dispatch();
 op_call2:
     vm->ip++;
-    y = *(rf_object_t *)(code + vm->ip);
+    z = *(rf_object_t *)(code + vm->ip);
     vm->ip += sizeof(rf_object_t);
+    y = stack_pop(vm);
     x = stack_pop(vm);
-    z = stack_pop(vm);
-    binary_t g = (binary_t)y.i64;
-    w = g(&x, &z);
+    f2 = (binary_t)z.i64;
+    w = f2(&x, &y);
     // TODO: unwind
     if (w.type == TYPE_ERROR)
     {
@@ -214,8 +227,8 @@ op_call3:
     x = stack_pop(vm);
     z = stack_pop(vm);
     w = stack_pop(vm);
-    ternary_t h = (ternary_t)y.i64;
-    v = h(&x, &z, &w);
+    f3 = (ternary_t)y.i64;
+    v = f3(&x, &z, &w);
     // TODO: unwind
     if (v.type == TYPE_ERROR)
     {
@@ -232,8 +245,8 @@ op_call4:
     z = stack_pop(vm);
     w = stack_pop(vm);
     v = stack_pop(vm);
-    quaternary_t q = (quaternary_t)y.i64;
-    p = q(&x, &z, &w, &v);
+    f4 = (quaternary_t)y.i64;
+    p = f4(&x, &z, &w, &v);
     // TODO: unwind
     if (p.type == TYPE_ERROR)
     {
@@ -241,6 +254,13 @@ op_call4:
         return p;
     }
     stack_push(vm, p);
+    dispatch();
+op_calln:
+    vm->ip++;
+    y = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    x = stack_pop(vm);
+    // nary_t f = (nary_t)y.i64;
     dispatch();
 op_set:
     vm->ip++;

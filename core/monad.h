@@ -26,6 +26,8 @@
 
 #include "rayforce.h"
 
+rf_object_t rf_add(rf_object_t *__restrict x, rf_object_t *__restrict y);
+
 rf_object_t rf_flip(rf_object_t *x);
 
 #endif

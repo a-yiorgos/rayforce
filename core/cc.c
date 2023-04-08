@@ -89,7 +89,25 @@ i8_t cc_compile_call(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t 
     if (!rec)
         return TYPE_ERROR;
 
-    push_opcode(code, OP_CALL1);
+    switch (arity)
+    {
+    case 0:
+        push_opcode(code, OP_CALL0);
+        break;
+    case 1:
+        push_opcode(code, OP_CALL1);
+        break;
+    case 2:
+        push_opcode(code, OP_CALL2);
+        break;
+    case 3:
+        push_opcode(code, OP_CALL3);
+        break;
+    default:
+        push_opcode(code, OP_CALLN);
+        break;
+    }
+
     fn = i64(rec->op);
     fn.id = car->id;
     push_rf_object(code, fn);

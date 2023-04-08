@@ -25,6 +25,8 @@
 #include "alloc.h"
 #include "vm.h"
 #include "ops.h"
+#include "util.h"
+#include "format.h"
 
 rf_object_t rf_flip(rf_object_t *x)
 {
@@ -33,4 +35,20 @@ rf_object_t rf_flip(rf_object_t *x)
     default:
         return error(ERR_NOT_IMPLEMENTED, "flip: not implemented");
     }
+}
+
+rf_object_t rf_add(rf_object_t *__restrict x, rf_object_t *__restrict y)
+{
+    i64_t *v = as_vector_i64(x);
+
+    for (i32_t i = 0; i < x->adt->len; i++)
+    {
+        v[i] = v[i] + y->i64;
+    }
+
+    // for (i32_t i = 0; i < x->adt->len; i++)
+
+    // ADDI64(as_vector_i64(x)[i], y->i64);
+
+    return *x;
 }
