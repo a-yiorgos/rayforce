@@ -58,7 +58,7 @@ vm_t *vm_create()
  */
 rf_object_t vm_exec(vm_t *vm, str_t code)
 {
-    rf_object_t x1, x2, x3, x4, x5, *addr;
+    rf_object_t x1, x2, x3, x4, x5, x6, *addr;
     i64_t *v;
     i32_t i, l;
     nilary_t f0;
@@ -66,6 +66,7 @@ rf_object_t vm_exec(vm_t *vm, str_t code)
     binary_t f2;
     ternary_t f3;
     quaternary_t f4;
+    nary_t fn;
 
     vm->ip = 0;
     vm->sp = 0;
@@ -231,47 +232,57 @@ op_call2:
     stack_push(vm, x1);
     dispatch();
 op_call3:
-    // vm->ip++;
-    // y = *(rf_object_t *)(code + vm->ip);
-    // vm->ip += sizeof(rf_object_t);
-    // x = stack_pop(vm);
-    // z = stack_pop(vm);
-    // w = stack_pop(vm);
-    // f3 = (ternary_t)y.i64;
-    // v = f3(&x, &z, &w);
-    // // TODO: unwind
-    // if (v.type == TYPE_ERROR)
-    // {
-    //     v.id = y.id;
-    //     return v;
-    // }
-    // stack_push(vm, v);
-    // dispatch();
+    vm->ip++;
+    x5 = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    x4 = stack_pop(vm);
+    x3 = stack_pop(vm);
+    x2 = stack_pop(vm);
+    f3 = (ternary_t)x5.i64;
+    x1 = f3(&x2, &x3, &x4);
+    // TODO: unwind
+    if (x1.type == TYPE_ERROR)
+    {
+        x1.id = x5.id;
+        return x1;
+    }
+    stack_push(vm, x1);
+    dispatch();
 op_call4:
-    // vm->ip++;
-    // y = *(rf_object_t *)(code + vm->ip);
-    // vm->ip += sizeof(rf_object_t);
-    // x = stack_pop(vm);
-    // z = stack_pop(vm);
-    // w = stack_pop(vm);
-    // v = stack_pop(vm);
-    // f4 = (quaternary_t)y.i64;
-    // p = f4(&x, &z, &w, &v);
-    // // TODO: unwind
-    // if (p.type == TYPE_ERROR)
-    // {
-    //     p.id = y.id;
-    //     return p;
-    // }
-    // stack_push(vm, p);
-    // dispatch();
+    vm->ip++;
+    x6 = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    x5 = stack_pop(vm);
+    x4 = stack_pop(vm);
+    x3 = stack_pop(vm);
+    x2 = stack_pop(vm);
+    f4 = (quaternary_t)x6.i64;
+    x1 = f4(&x2, &x3, &x4, &x5);
+    // TODO: unwind
+    if (x1.type == TYPE_ERROR)
+    {
+        x1.id = x6.id;
+        return x1;
+    }
+    stack_push(vm, x1);
+    dispatch();
 op_calln:
-    // vm->ip++;
-    // y = *(rf_object_t *)(code + vm->ip);
-    // vm->ip += sizeof(rf_object_t);
-    // x = stack_pop(vm);
-    // // nary_t f = (nary_t)y.i64;
-    // dispatch();
+    vm->ip++;
+    l = code[vm->ip++];
+    x2 = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    fn = (nary_t)x2.i64;
+    addr = (rf_object_t *)(&vm->stack[vm->sp - l]);
+    x1 = fn(addr, l);
+    // TODO: unwind
+    if (x1.type == TYPE_ERROR)
+    {
+        x1.id = x2.id;
+        return x1;
+    }
+    vm->sp -= l;
+    stack_push(vm, x1);
+    dispatch();
 op_set:
     vm->ip++;
     x2 = *(rf_object_t *)(code + vm->ip);

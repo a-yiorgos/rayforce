@@ -61,6 +61,8 @@ typedef enum vm_opcode_t
     OP_INVALID, // Invalid opcode
 } vm_opcode_t;
 
+CASSERT(OP_INVALID < 127, vm_h)
+
 typedef struct vm_t
 {
     i32_t ip;           // Instruction pointer

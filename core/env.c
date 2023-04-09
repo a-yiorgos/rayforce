@@ -25,6 +25,8 @@
 #include "monad.h"
 #include "dict.h"
 
+#define REC_SIZE (MAX_ARITY + 2)
+
 #define REC(records, arity, name, ret, op, ...)                             \
     {                                                                       \
         env_record_t rec = {symbol(name).i64, ret, (i64_t)op, __VA_ARGS__}; \
@@ -56,27 +58,29 @@ null_t init_instructions(rf_object_t *records)
 // clang-format on
 
 // clang-format off
-null_t init_functions(rf_object_t *variables)
+null_t init_functions(rf_object_t *functions)
 {
     // Nilary
     // Unary
-    REC(variables, 1, "flip", TYPE_LIST, rf_flip,       { TYPE_ANY              });
+    REC(functions, 1, "flip", TYPE_LIST, rf_flip,       { TYPE_ANY              });
     // Binary
     // Ternary
     // Quaternary
+    // Nary
+    REC(functions, 5, "enlist", TYPE_LIST, rf_enlist,   {0                      });
 }
 // clang-format on
 
 env_t create_env()
 {
-    rf_object_t instructions = list(MAX_ARITY + 1);
-    rf_object_t functions = list(MAX_ARITY + 1);
+    rf_object_t instructions = list(REC_SIZE);
+    rf_object_t functions = list(REC_SIZE);
     rf_object_t variables = dict(vector_symbol(0), vector_i64(0));
 
-    for (i32_t i = 0; i <= MAX_ARITY; i++)
+    for (i32_t i = 0; i < REC_SIZE; i++)
         as_list(&instructions)[i] = vector(TYPE_STRING, sizeof(env_record_t), 0);
 
-    for (i32_t i = 0; i <= MAX_ARITY; i++)
+    for (i32_t i = 0; i < REC_SIZE; i++)
         as_list(&functions)[i] = vector(TYPE_STRING, sizeof(env_record_t), 0);
 
     init_instructions(&instructions);
@@ -94,10 +98,10 @@ env_t create_env()
 null_t free_env(env_t *env)
 {
 
-    for (i32_t i = 0; i <= MAX_ARITY; i++)
+    for (i32_t i = 0; i < REC_SIZE; i++)
         rf_object_free(&as_list(&env->instructions)[i]);
 
-    for (i32_t i = 0; i <= MAX_ARITY; i++)
+    for (i32_t i = 0; i < REC_SIZE; i++)
         rf_object_free(&as_list(&env->functions)[i]);
 
     rf_object_free(&env->instructions);

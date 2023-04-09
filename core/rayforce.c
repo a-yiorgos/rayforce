@@ -199,3 +199,8 @@ extern null_t rf_object_free(rf_object_t *rf_object)
     //     rf_free(rf_object->adt.attrs);
     // }
 }
+
+extern rf_object_t rf_object_cow(rf_object_t *object)
+{
+    return *object;
+}

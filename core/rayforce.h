@@ -127,7 +127,10 @@ extern rf_object_t string(i64_t len);                              // string (al
 extern rf_object_t null();                                    // null (as null list)
 extern rf_object_t table(rf_object_t keys, rf_object_t vals); // table
 extern rf_object_t dict(rf_object_t keys, rf_object_t vals);  // dict
-extern rf_object_t rf_object_clone(rf_object_t *rf_object);
+
+// Reference counting
+extern rf_object_t rf_object_clone(rf_object_t *rf_object); // clone
+extern rf_object_t rf_object_cow(rf_object_t *rf_object);   // clone if refcount > 1
 
 // Error
 extern rf_object_t error(i8_t code, str_t message);

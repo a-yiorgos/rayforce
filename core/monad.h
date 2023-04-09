@@ -27,5 +27,6 @@
 #include "rayforce.h"
 
 rf_object_t rf_flip(rf_object_t *x);
+rf_object_t rf_enlist(rf_object_t *x, u32_t n);
 
 #endif

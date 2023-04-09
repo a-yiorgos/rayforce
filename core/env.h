@@ -36,6 +36,7 @@ typedef rf_object_t (*unary_t)(rf_object_t *);
 typedef rf_object_t (*binary_t)(rf_object_t *, rf_object_t *);
 typedef rf_object_t (*ternary_t)(rf_object_t *, rf_object_t *, rf_object_t *);
 typedef rf_object_t (*quaternary_t)(rf_object_t *, rf_object_t *, rf_object_t *, rf_object_t *);
+typedef rf_object_t (*nary_t)(rf_object_t *, i64_t);
 
 /*
  *  Environment record entry

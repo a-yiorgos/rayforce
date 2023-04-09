@@ -52,15 +52,18 @@ env_record_t *find_record(rf_object_t *records, rf_object_t *car, i8_t *arg_type
     u32_t i = 0, j = 0, match = 0, records_len;
     env_record_t *rec;
 
-    records_len = get_records_len(records, arity);
+    records_len = arity > 4 ? get_records_len(records, 5) : get_records_len(records, arity);
 
     // try to find matching function prototype
     while (i < records_len)
     {
         rec = get_record(records, arity, i++);
-
         if (car->i64 == rec->id)
         {
+            // for functions with variable number of arguments we don't check types
+            if (arity > 4)
+                return rec;
+
             for (j = 1; j <= arity; j++)
             {
                 if (rec->args[j - 1] != TYPE_ANY && arg_types[j - 1] != rec->args[j - 1])
@@ -103,9 +106,12 @@ i8_t cc_compile_call(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t 
     case 3:
         push_opcode(code, OP_CALL3);
         break;
+    case 4:
+        push_opcode(code, OP_CALL4);
+        break;
     default:
         push_opcode(code, OP_CALLN);
-        break;
+        push_opcode(code, arity);
     }
 
     fn = i64(rec->op);
@@ -114,7 +120,7 @@ i8_t cc_compile_call(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t 
     return rec->ret;
 }
 
-i8_t cc_compile_instriction(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t *code)
+i8_t cc_compile_instruction(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t *code)
 {
     env_record_t *rec;
 
@@ -130,7 +136,7 @@ i8_t cc_compile_instriction(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_ob
 i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
 {
     rf_object_t *car, err, *addr;
-    i8_t type, arg_types[MAX_ARITY];
+    i8_t type, arg_types[8];
     u32_t i, arity;
 
     switch (rf_object->type)
@@ -191,14 +197,6 @@ i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
         }
 
         arity = rf_object->adt->len - 1;
-        if (arity > 4)
-        {
-            rf_object_free(code);
-            err = error(ERR_LENGTH, "compile list: too many arguments");
-            err.id = rf_object->id;
-            *code = err;
-            return TYPE_ERROR;
-        }
 
         // compile special forms
         if (car->i64 == symbol("time").i64)
@@ -276,7 +274,7 @@ i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
             arg_types[i - 1] = type;
         }
 
-        type = cc_compile_instriction(car, arg_types, arity, code);
+        type = cc_compile_instruction(car, arg_types, arity, code);
 
         if (type != TYPE_ERROR)
             return type;
