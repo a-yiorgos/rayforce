@@ -132,10 +132,10 @@ i8_t cc_compile_op(rf_object_t *car, i32_t args, u32_t arity, rf_object_t *code)
  * return TYPE_ANY if it is not a special form
  * return type of the special form if it is a special form
  */
-i8_t cc_compile_special_forms(rf_object_t *rf_object, i32_t args, u32_t arity, rf_object_t *code)
+i8_t cc_compile_special_forms(rf_object_t *rf_object, u32_t arity, rf_object_t *code)
 {
     i8_t type;
-    rf_object_t *car = &as_list(rf_object)[0], *addr, err, fn;
+    rf_object_t *car = &as_list(rf_object)[0], *addr, err;
 
     // compile special forms
     if (car->i64 == symbol("time").i64)
@@ -302,7 +302,7 @@ i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
 
         arity = rf_object->adt->len - 1;
 
-        type = cc_compile_special_forms(rf_object, args, arity, code);
+        type = cc_compile_special_forms(rf_object, arity, code);
 
         if (type == TYPE_ERROR)
             return type;
