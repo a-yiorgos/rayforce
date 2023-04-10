@@ -44,9 +44,9 @@ typedef rf_object_t (*nary_t)(rf_object_t *, i64_t);
 typedef struct env_record_t
 {
     i64_t id;
+    i64_t op;   // opcode or function ptr
+    u32_t args; // four argument types encoded in a one u32_t
     i8_t ret;
-    i64_t op; // opcode or function id
-    i8_t args[MAX_ARITY];
 } env_record_t;
 
 /*
@@ -54,9 +54,8 @@ typedef struct env_record_t
  */
 typedef struct env_t
 {
-    rf_object_t instructions; // list, containing records of instructions
-    rf_object_t functions;    // list, containing records of functions
-    rf_object_t variables;    // dict, containing mappings variables names to their values
+    rf_object_t functions; // list, containing records of instructions/functions
+    rf_object_t variables; // dict, containing mappings variables names to their values
 } env_t;
 
 env_t create_env();

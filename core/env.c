@@ -21,73 +21,61 @@
  *   SOFTWARE.
  */
 
+#include <stdarg.h>
 #include "env.h"
 #include "monad.h"
 #include "dict.h"
 
 #define REC_SIZE (MAX_ARITY + 2)
 
-#define REC(records, arity, name, ret, op, ...)                             \
-    {                                                                       \
-        env_record_t rec = {symbol(name).i64, ret, (i64_t)op, __VA_ARGS__}; \
-        push(&as_list(records)[arity], env_record_t, rec);                  \
+#define REC(records, arity, name, ret, op, ...)                        \
+    {                                                                  \
+        i8_t _args[4] = __VA_ARGS__;                                   \
+        u32_t _pargs = 0;                                              \
+        for (u32_t i = 0; i < MAX_ARITY; i++)                          \
+            _pargs |= (u32_t)_args[i] << (MAX_ARITY - 1 - i) * 8;      \
+        env_record_t rec = {symbol(name).i64, (i64_t)op, _pargs, ret}; \
+        push(&as_list(records)[arity], env_record_t, rec);             \
     }
 
 // clang-format off
-null_t init_instructions(rf_object_t *records)
+null_t init_functions(rf_object_t *records)
 {
     // Nilary
-    REC(records, 0, "halt",   TYPE_LIST,    OP_HALT, {0                        });
-    // Unary
-    REC(records, 1, "type",  -TYPE_SYMBOL,  OP_TYPE, { TYPE_ANY                });
-    REC(records, 1, "til" ,   TYPE_I64,     OP_TIL,  {-TYPE_I64                });
+    REC(records, 0, "halt",   TYPE_LIST,    OP_HALT,   { 0                       });
+    // Unary  
+    REC(records, 1, "type",  -TYPE_SYMBOL,  OP_TYPE,   { TYPE_ANY                });
+    REC(records, 1, "til" ,   TYPE_I64,     OP_TIL,    {-TYPE_I64                });
+    REC(records, 1, "flip",   TYPE_LIST,    rf_flip,   { TYPE_ANY                });
     // Binary
-    REC(records, 2, "+",     -TYPE_I64,     OP_ADDI, {-TYPE_I64,   -TYPE_I64   });
-    REC(records, 2, "+",     -TYPE_F64,     OP_ADDF, {-TYPE_F64,   -TYPE_F64   });
-    REC(records, 2, "-",     -TYPE_I64,     OP_SUBI, {-TYPE_I64,   -TYPE_I64   });
-    REC(records, 2, "-",     -TYPE_F64,     OP_SUBF, {-TYPE_F64,   -TYPE_F64   });
-    REC(records, 2, "*",     -TYPE_I64,     OP_MULI, {-TYPE_I64,   -TYPE_I64   });
-    REC(records, 2, "*",     -TYPE_F64,     OP_MULF, {-TYPE_F64,   -TYPE_F64   });
-    REC(records, 2, "/",     -TYPE_F64,     OP_DIVI, {-TYPE_I64,   -TYPE_I64   });
-    REC(records, 2, "/",     -TYPE_F64,     OP_DIVF, {-TYPE_F64,   -TYPE_F64   });
-    REC(records, 2, "sum",    TYPE_I64,     OP_SUMI, { TYPE_I64,   -TYPE_I64   });
-    REC(records, 2, "like",  -TYPE_I64,     OP_LIKE, { TYPE_STRING, TYPE_STRING});
-    // Ternary
-    // Quaternary
-}
-// clang-format on
-
-// clang-format off
-null_t init_functions(rf_object_t *functions)
-{
-    // Nilary
-    // Unary
-    REC(functions, 1, "flip", TYPE_LIST, rf_flip,       { TYPE_ANY              });
-    // Binary
+    REC(records, 2, "+",     -TYPE_I64,     OP_ADDI,   {-TYPE_I64,   -TYPE_I64   });
+    REC(records, 2, "+",     -TYPE_F64,     OP_ADDF,   {-TYPE_F64,   -TYPE_F64   });
+    REC(records, 2, "-",     -TYPE_I64,     OP_SUBI,   {-TYPE_I64,   -TYPE_I64   });
+    REC(records, 2, "-",     -TYPE_F64,     OP_SUBF,   {-TYPE_F64,   -TYPE_F64   });
+    REC(records, 2, "*",     -TYPE_I64,     OP_MULI,   {-TYPE_I64,   -TYPE_I64   });
+    REC(records, 2, "*",     -TYPE_F64,     OP_MULF,   {-TYPE_F64,   -TYPE_F64   });
+    REC(records, 2, "/",     -TYPE_F64,     OP_DIVI,   {-TYPE_I64,   -TYPE_I64   });
+    REC(records, 2, "/",     -TYPE_F64,     OP_DIVF,   {-TYPE_F64,   -TYPE_F64   });
+    REC(records, 2, "sum",    TYPE_I64,     OP_SUMI,   { TYPE_I64,   -TYPE_I64   });
+    REC(records, 2, "like",  -TYPE_I64,     OP_LIKE,   { TYPE_STRING, TYPE_STRING});
     // Ternary
     // Quaternary
     // Nary
-    REC(functions, 5, "enlist", TYPE_LIST, rf_enlist,   {0                      });
+    REC(records, 5, "enlist", TYPE_LIST,    rf_enlist, {0                      });
 }
 // clang-format on
 
 env_t create_env()
 {
-    rf_object_t instructions = list(REC_SIZE);
     rf_object_t functions = list(REC_SIZE);
     rf_object_t variables = dict(vector_symbol(0), vector_i64(0));
 
     for (i32_t i = 0; i < REC_SIZE; i++)
-        as_list(&instructions)[i] = vector(TYPE_STRING, sizeof(env_record_t), 0);
-
-    for (i32_t i = 0; i < REC_SIZE; i++)
         as_list(&functions)[i] = vector(TYPE_STRING, sizeof(env_record_t), 0);
 
-    init_instructions(&instructions);
     init_functions(&functions);
 
     env_t env = {
-        .instructions = instructions,
         .functions = functions,
         .variables = variables,
     };
@@ -99,12 +87,8 @@ null_t free_env(env_t *env)
 {
 
     for (i32_t i = 0; i < REC_SIZE; i++)
-        rf_object_free(&as_list(&env->instructions)[i]);
-
-    for (i32_t i = 0; i < REC_SIZE; i++)
         rf_object_free(&as_list(&env->functions)[i]);
 
-    rf_object_free(&env->instructions);
     rf_object_free(&env->functions);
     rf_object_free(&env->variables);
 }

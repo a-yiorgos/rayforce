@@ -47,52 +47,64 @@ i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code);
         (c)->adt->len += sizeof(rf_object_t);               \
     }
 
-env_record_t *find_record(rf_object_t *records, rf_object_t *car, i8_t *arg_types, u32_t arity)
+env_record_t *find_record(rf_object_t *records, rf_object_t *car, u32_t args, u32_t *arity)
 {
-    u32_t i = 0, j = 0, match = 0, records_len;
+    u32_t i = 0, records_len;
     env_record_t *rec;
 
-    records_len = arity > 4 ? get_records_len(records, 5) : get_records_len(records, arity);
+    *arity = *arity > MAX_ARITY ? MAX_ARITY + 1 : *arity;
+    records_len = get_records_len(records, *arity);
 
     // try to find matching function prototype
-    while (i < records_len)
+    for (i = 0; i < records_len; i++)
     {
-        rec = get_record(records, arity, i++);
+        rec = get_record(records, *arity, i);
+
         if (car->i64 == rec->id)
         {
             // for functions with variable number of arguments we don't check types
-            if (arity > 4)
+            if (*arity > MAX_ARITY)
                 return rec;
 
-            for (j = 1; j <= arity; j++)
-            {
-                if (rec->args[j - 1] != TYPE_ANY && arg_types[j - 1] != rec->args[j - 1])
-                    break;
-
-                match++;
-            }
-
-            if (match == arity)
+            if (args == (rec->args & args))
                 return rec;
-
-            match = 0;
         }
+    }
+
+    // Try to find in nary functions
+    *arity = MAX_ARITY + 1;
+    records_len = get_records_len(records, *arity);
+    for (i = 0; i < records_len; i++)
+    {
+        rec = get_record(records, *arity, i);
+
+        if (car->i64 == rec->id)
+            return rec;
     }
 
     return NULL;
 }
 
-i8_t cc_compile_call(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t *code)
+i8_t cc_compile_op(rf_object_t *car, u32_t args, u32_t arity, rf_object_t *code)
 {
     env_record_t *rec;
     rf_object_t fn;
+    u32_t found_arity = arity;
 
-    rec = find_record(&runtime_get()->env.functions, car, arg_types, arity);
+    rec = find_record(&runtime_get()->env.functions, car, args, &found_arity);
 
     if (!rec)
         return TYPE_ERROR;
 
-    switch (arity)
+    // It is an instruction
+    if (rec->op < OP_INVALID)
+    {
+        push_opcode(code, rec->op);
+        return rec->ret;
+    }
+
+    // It is a function call
+    switch (found_arity)
     {
     case 0:
         push_opcode(code, OP_CALL0);
@@ -120,24 +132,11 @@ i8_t cc_compile_call(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t 
     return rec->ret;
 }
 
-i8_t cc_compile_instruction(rf_object_t *car, i8_t *arg_types, i8_t arity, rf_object_t *code)
-{
-    env_record_t *rec;
-
-    rec = find_record(&runtime_get()->env.instructions, car, arg_types, arity);
-
-    if (!rec)
-        return TYPE_ERROR;
-
-    push_opcode(code, rec->op);
-    return rec->ret;
-}
-
 i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
 {
     rf_object_t *car, err, *addr;
-    i8_t type, arg_types[8];
-    u32_t i, arity;
+    i8_t type;
+    u32_t i, arity, args = 0;
 
     switch (rf_object->type)
     {
@@ -271,15 +270,12 @@ i8_t cc_compile_fn(rf_object_t *rf_object, rf_object_t *code)
             if (type == TYPE_ERROR)
                 return TYPE_ERROR;
 
-            arg_types[i - 1] = type;
+            // pack arguments only if function is not nary
+            if (arity <= MAX_ARITY)
+                args |= (u32_t)type << (MAX_ARITY - i) * 8;
         }
 
-        type = cc_compile_instruction(car, arg_types, arity, code);
-
-        if (type != TYPE_ERROR)
-            return type;
-
-        type = cc_compile_call(car, arg_types, arity, code);
+        type = cc_compile_op(car, args, arity, code);
 
         if (type != TYPE_ERROR)
             return type;

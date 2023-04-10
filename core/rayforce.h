@@ -38,12 +38,12 @@
 #define UNUSED(x) (void)(x)
 
 // Type constants
-#define TYPE_ANY -128
+#define TYPE_ANY -1
 #define TYPE_LIST 0
-#define TYPE_I8 1
-#define TYPE_I64 2
-#define TYPE_F64 3
-#define TYPE_STRING 4
+#define TYPE_I8 2
+#define TYPE_I64 3
+#define TYPE_F64 4
+#define TYPE_STRING 5
 #define TYPE_SYMBOL 6
 #define TYPE_TABLE 98
 #define TYPE_DICT 99

@@ -52,4 +52,12 @@
         exit(1);                                                 \
     }
 
+#define printbits_n(x, n)                                        \
+    {                                                            \
+        for (i32_t i = n; i; i--, putchar('0' | ((x >> i) & 1))) \
+            ;                                                    \
+        printf("\n");                                            \
+    }
+#define printbits_32(x) printbits_n(x, 32)
+
 #endif
