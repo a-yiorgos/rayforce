@@ -32,11 +32,11 @@
 
 typedef struct function_t
 {
-    i64_t args[MAX_ARITY]; // arguments names as symbols
-    str_t code;
-    debuginfo_t debuginfo;
+    rf_object_t args;      // dict of arguments names as keys and their types as values
+    rf_object_t code;      // string of bytecodes
+    debuginfo_t debuginfo; // debuginfo from cc phase
 } function_t;
 
-rf_object_t function(str_t code, debuginfo_t debuginfo);
+rf_object_t function(rf_object_t args, rf_object_t code, debuginfo_t debuginfo);
 
 #endif

@@ -22,12 +22,14 @@
  */
 
 #include "function.h"
+#include "string.h"
 
-rf_object_t function(str_t code, debuginfo_t debuginfo)
+rf_object_t function(rf_object_t args, rf_object_t code, debuginfo_t debuginfo)
 {
     header_t *adt = rf_malloc(sizeof(header_t) + sizeof(function_t));
     function_t *f = (function_t *)(adt + 1);
 
+    f->args = args;
     f->code = code;
     f->debuginfo = debuginfo;
 

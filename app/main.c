@@ -272,7 +272,7 @@ i32_t main(i32_t argc, str_t argv[])
             continue;
         }
 
-        compiled = cc_compile_function("top-level", &parsed, &parser.debuginfo);
+        compiled = cc_compile(&parsed, &parser.debuginfo);
         if (is_error(&compiled))
         {
             print_error(&compiled, "REPL", line, LINE_SIZE);

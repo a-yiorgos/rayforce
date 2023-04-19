@@ -27,7 +27,18 @@
 #include "rayforce.h"
 #include "debuginfo.h"
 
-rf_object_t cc_compile_function(str_t name, rf_object_t *body, debuginfo_t *debuginfo);
+/*
+ * Context for compiling function
+ */
+typedef struct cc_t
+{
+    rf_object_t *body;      // body of function being compiled (list of expressions)
+    rf_object_t function;   // function being compiled
+    debuginfo_t *debuginfo; // debuginfo from parse phase
+
+} cc_t;
+
+rf_object_t cc_compile(rf_object_t *body, debuginfo_t *debuginfo);
 str_t cc_code_fmt(rf_object_t *code);
 
 #endif

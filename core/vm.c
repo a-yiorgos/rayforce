@@ -62,7 +62,7 @@ vm_new()
 rf_object_t vm_exec(vm_t *vm, rf_object_t *fun)
 {
     function_t *f = as_function(fun);
-    str_t code = f->code;
+    str_t code = as_string(&f->code);
     debuginfo_t *debuginfo = &f->debuginfo;
     rf_object_t x1, x2, x3, x4, x5, x6, *addr;
     i64_t *v, t;
