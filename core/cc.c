@@ -35,7 +35,7 @@
 #include "function.h"
 
 i8_t cc_compile_expr(cc_t *cc, rf_object_t *object);
-rf_object_t cc_compile_function(str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo);
+rf_object_t cc_compile_function(i8_t top, str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo);
 
 #define push_opcode(c, k, v, x)                                   \
     {                                                             \
@@ -205,7 +205,7 @@ i8_t cc_compile_special_forms(cc_t *cc, rf_object_t *object, u32_t arity)
     if (car->i64 == symbol("fn").i64)
     {
         b = as_list(object) + 1;
-        fun = cc_compile_function("superfun", null(), b, car->id, arity, cc->debuginfo);
+        fun = cc_compile_function(0, "superfun", null(), b, car->id, arity, cc->debuginfo);
         push_opcode(cc, object->id, code, OP_PUSH);
         push_rf_object(code, fun);
         return TYPE_FUNCTION;
@@ -353,6 +353,15 @@ i8_t cc_compile_expr(cc_t *cc, rf_object_t *object)
         if (type != TYPE_ERROR)
             return type;
 
+        addr = env_get_variable(&runtime_get()->env, *car);
+        if (addr && addr->type == TYPE_FUNCTION)
+        {
+            push_opcode(cc, car->id, code, OP_CALLF);
+            push_rf_object(code, rf_object_clone(addr));
+
+            return as_function(addr)->rettype;
+        }
+
         rf_object_free(code);
         err = error(ERR_LENGTH, "function proto or arity mismatch");
         err.id = car->id;
@@ -369,18 +378,19 @@ i8_t cc_compile_expr(cc_t *cc, rf_object_t *object)
 /*
  * Compile function
  */
-rf_object_t cc_compile_function(str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo)
+rf_object_t cc_compile_function(i8_t top, str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo)
 {
     cc_t cc = {
         .debuginfo = debuginfo,
         .function = function(args, string(0), debuginfo_new(debuginfo->filename, name)),
     };
 
+    i8_t type, op;
     i32_t i;
     rf_object_t *code = &as_function(&cc.function)->code, err;
 
     for (i = 0; i < len; i++)
-        cc_compile_expr(&cc, body + i);
+        type = cc_compile_expr(&cc, body + i);
 
     if (code->type != TYPE_ERROR)
     {
@@ -390,7 +400,14 @@ rf_object_t cc_compile_function(str_t name, rf_object_t args, rf_object_t *body,
             push_rf_object(code, null());
         }
 
-        push_opcode(&cc, id, code, OP_HALT);
+        as_function(&cc.function)->rettype = type;
+
+        if (top)
+            op = OP_HALT;
+        else
+            op = OP_RET;
+
+        push_opcode(&cc, id, code, op);
 
         return cc.function;
     }
@@ -413,7 +430,7 @@ rf_object_t cc_compile(rf_object_t *body, debuginfo_t *debuginfo)
     rf_object_t *b = as_list(body);
     i32_t len = body->adt->len;
 
-    return cc_compile_function("top-level", null(), b, body->id, len, debuginfo);
+    return cc_compile_function(1, "top-level", null(), b, body->id, len, debuginfo);
 }
 
 /*

@@ -26,6 +26,7 @@
 
 #include <time.h>
 #include "rayforce.h"
+#include "function.h"
 #include "mmap.h"
 #include "debuginfo.h"
 
@@ -57,6 +58,7 @@ typedef enum vm_opcode_t
     OP_CALL3,     // Call function with three arguments
     OP_CALL4,     // Call function with four arguments
     OP_CALLN,     // Call function with n arguments
+    OP_CALLF,     // Call user function
     OP_SET,       // Set global variable
     OP_GET,       // Get global variable
     OP_CAST,      // Cast rf_object to another type

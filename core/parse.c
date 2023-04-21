@@ -36,7 +36,7 @@
 #include "debuginfo.h"
 #include "runtime.h"
 
-#define TYPE_TOKEN 126
+#define TYPE_TOKEN 101
 
 span_t span_start(parser_t *parser)
 {

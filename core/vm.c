@@ -36,9 +36,25 @@
 #include "cast.h"
 #include "function.h"
 
+#define TYPE_CTX 102
+
 #define stack_push(v, x) (v->stack[v->sp++] = x)
 #define stack_pop(v) (v->stack[--v->sp])
 #define stack_peek(v) (&v->stack[v->sp - 1])
+
+/*
+ * Switch context represent as rf_object_t
+ */
+rf_object_t ctx(u32_t ip, function_t *f)
+{
+    rf_object_t ctx = {
+        .type = TYPE_CTX,
+        .id = ip,
+        .i64 = (i64_t)f,
+    };
+
+    return ctx;
+}
 
 vm_t *vm_new()
 {
@@ -81,7 +97,7 @@ rf_object_t vm_exec(vm_t *vm, rf_object_t *fun)
         &&op_halt, &&op_ret, &&op_push, &&op_pop, &&op_addi, &&op_addf, &&op_subi, &&op_subf,
         &&op_muli, &&op_mulf, &&op_divi, &&op_divf, &&op_sumi, &&op_like, &&op_type,
         &&op_timer_set, &&op_timer_get, &&op_til, &&op_call0, &&op_call1, &&op_call2,
-        &&op_call3, &&op_call4, &&op_calln, &&op_set, &&op_get, &&op_cast};
+        &&op_call3, &&op_call4, &&op_calln, &&op_callf, &&op_set, &&op_get, &&op_cast};
 
 #define dispatch() goto *dispatch_table[(i32_t)code[vm->ip]]
 
@@ -102,7 +118,12 @@ op_halt:
         return null();
 op_ret:
     vm->ip++;
+    x2 = stack_pop(vm);
     x1 = stack_pop(vm);
+    f = (function_t *)x1.i64;
+    vm->ip = x1.id;
+    code = as_string(&f->code);
+    stack_push(vm, x2);
     dispatch();
 op_push:
     vm->ip++;
@@ -271,6 +292,16 @@ op_calln:
     x1 = fn(addr, l);
     unwrap(x1, b);
     vm->sp -= l;
+    stack_push(vm, x1);
+    dispatch();
+op_callf:
+    b = vm->ip++;
+    x2 = *(rf_object_t *)(code + vm->ip);
+    vm->ip += sizeof(rf_object_t);
+    x1 = ctx(vm->ip, f);
+    f = as_function(&x2);
+    code = as_string(&f->code);
+    vm->ip = 0;
     stack_push(vm, x1);
     dispatch();
 op_set:

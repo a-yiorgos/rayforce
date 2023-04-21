@@ -26,7 +26,6 @@
 
 #include "rayforce.h"
 #include "debuginfo.h"
-#include "env.h"
 
 #define as_function(object) ((function_t *)(as_string(object)))
 
@@ -35,6 +34,7 @@ typedef struct function_t
     rf_object_t args;      // dict of arguments names as keys and their types as values
     rf_object_t code;      // string of bytecodes
     debuginfo_t debuginfo; // debuginfo from cc phase
+    i8_t rettype;          // return type of function
 } function_t;
 
 rf_object_t function(rf_object_t args, rf_object_t code, debuginfo_t debuginfo);

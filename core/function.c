@@ -23,6 +23,7 @@
 
 #include "function.h"
 #include "string.h"
+#include "alloc.h"
 
 rf_object_t function(rf_object_t args, rf_object_t code, debuginfo_t debuginfo)
 {
