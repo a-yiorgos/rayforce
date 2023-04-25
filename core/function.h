@@ -38,6 +38,6 @@ typedef struct function_t
     i8_t rettype;          // return type of function
 } function_t;
 
-rf_object_t function(rf_object_t args, rf_object_t locals, rf_object_t code, debuginfo_t debuginfo);
+rf_object_t function(i8_t rettype, rf_object_t args, rf_object_t locals, rf_object_t code, debuginfo_t debuginfo);
 
 #endif

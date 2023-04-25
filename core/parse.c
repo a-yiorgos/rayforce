@@ -225,6 +225,17 @@ rf_object_t parse_string(parser_t *parser)
 
 rf_object_t parse_symbol(parser_t *parser, i8_t quote)
 {
+    if (strncmp(parser->current, "true", 4) == 0)
+    {
+        shift(parser, 4);
+        return bool(true);
+    }
+    else if (strncmp(parser->current, "false", 5) == 0)
+    {
+        shift(parser, 5);
+        return bool(false);
+    }
+
     str_t pos = parser->current;
     rf_object_t res, s;
     span_t span = span_start(parser);

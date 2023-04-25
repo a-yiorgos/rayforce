@@ -41,6 +41,9 @@ typedef enum vm_opcode_t
     OP_POP,       // Pop an rf_object from the stack
     OP_SWAPN,     // Pop n elements on the stack and push the first one back
     OP_EQ,        // Compare two objects from the stack
+    OP_LT,        // Compare two objects from the stack
+    OP_JNE,       // Jump if not equal
+    OP_JMP,       // Jump
     OP_ADDI,      // Add two i64 from the stack
     OP_ADDF,      // Add two f64 from the stack
     OP_SUBI,      // Subtract two i64 from the stack
@@ -79,7 +82,6 @@ typedef struct vm_t
     i32_t ip;           // Instruction pointer
     i32_t sp;           // Stack pointer
     i32_t bp;           // Base pointer (beginning on stack frame)
-    bool_t cmp;         // Comparison result
     i64_t timer;        // Timer for execution time
     rf_object_t *stack; // Stack of arguments
 } vm_t;

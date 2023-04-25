@@ -50,6 +50,11 @@ null_t init_functions(rf_object_t *records)
     REC(records, 1, "til" ,   TYPE_I64,     OP_TIL,    {-TYPE_I64                });
     // Binary
     REC(records, 2, "==",    -TYPE_BOOL,    OP_EQ,     { TYPE_ANY,    TYPE_ANY   });
+    // REC(records, 2, "!=",    -TYPE_BOOL,    OP_NEQ,    { TYPE_ANY,    TYPE_ANY   });
+    REC(records, 2, "<",     -TYPE_BOOL,    OP_LT,     { TYPE_ANY,    TYPE_ANY   });
+    // REC(records, 2, ">",     -TYPE_BOOL,    OP_GT,     { TYPE_ANY,    TYPE_ANY   });
+    // REC(records, 2, "<=",    -TYPE_BOOL,    OP_LE,     { TYPE_ANY,    TYPE_ANY   });
+    // REC(records, 2, ">=",    -TYPE_BOOL,    OP_GE,     { TYPE_ANY,    TYPE_ANY   });
     REC(records, 2, "+",     -TYPE_I64,     OP_ADDI,   {-TYPE_I64,   -TYPE_I64   });
     REC(records, 2, "+",     -TYPE_F64,     OP_ADDF,   {-TYPE_F64,   -TYPE_F64   });
     REC(records, 2, "-",     -TYPE_I64,     OP_SUBI,   {-TYPE_I64,   -TYPE_I64   });

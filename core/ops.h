@@ -40,5 +40,6 @@
 
 extern bool_t rf_is_nan(f64_t x);
 extern bool_t rf_eq(rf_object_t *x, rf_object_t *y);
+extern bool_t rf_lt(rf_object_t *x, rf_object_t *y);
 
 #endif

@@ -36,7 +36,7 @@
 #include "dict.h"
 
 i8_t cc_compile_expr(cc_t *cc, rf_object_t *object);
-rf_object_t cc_compile_function(i8_t top, str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo);
+rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo);
 
 #define push_opcode(c, k, v, x)                                   \
     {                                                             \
@@ -94,11 +94,12 @@ env_record_t *find_record(rf_object_t *records, rf_object_t *car, i32_t args, u3
  */
 i8_t cc_compile_special_forms(cc_t *cc, rf_object_t *object, u32_t arity)
 {
-    i8_t type;
-    i64_t id;
+    i8_t type, type1, rettype = TYPE_ANY;
+    i64_t id, lbl1, lbl2;
     rf_object_t *car = &as_list(object)[0], *addr, *b, fun, name, err;
     function_t *func = as_function(&cc->function);
     rf_object_t *code = &func->code;
+    env_t *env = &runtime_get()->env;
 
     // compile special forms
     if (car->i64 == symbol("time").i64)
@@ -225,7 +226,7 @@ i8_t cc_compile_special_forms(cc_t *cc, rf_object_t *object, u32_t arity)
             return TYPE_ERROR;
         }
 
-        type = env_get_type_by_typename(&runtime_get()->env, as_list(object)[1].i64);
+        type = env_get_type_by_typename(env, as_list(object)[1].i64);
 
         if (type == TYPE_ANY)
         {
@@ -256,21 +257,116 @@ i8_t cc_compile_special_forms(cc_t *cc, rf_object_t *object, u32_t arity)
             return TYPE_ERROR;
         }
 
-        if (as_list(object)[1].type != TYPE_DICT)
+        b = as_list(object) + 1;
+
+        // first argument is return type
+        if (b->type == -TYPE_SYMBOL)
+        {
+            rettype = env_get_type_by_typename(env, b->i64);
+
+            if (rettype == TYPE_ANY)
+            {
+                rf_object_free(code);
+                err = error(ERR_TYPE, str_fmt(0, "'fn': unknown type '%s", symbols_get(as_list(object)[1].i64)));
+                err.id = as_list(object)[1].id;
+                *code = err;
+                return TYPE_ERROR;
+            }
+
+            arity -= 1;
+            b += 1;
+        }
+
+        if (b->type != TYPE_DICT)
         {
             rf_object_free(code);
             err = error(ERR_LENGTH, "'fn' expects dict with function arguments");
-            err.id = as_list(object)[1].id;
+            err.id = b->id;
             *code = err;
             return TYPE_ERROR;
         }
 
         arity -= 1;
-        b = as_list(object) + 2;
-        fun = cc_compile_function(0, "anonymous", rf_object_clone(&as_list(object)[1]), b, car->id, arity, cc->debuginfo);
+        fun = cc_compile_function(false, "anonymous", rettype, rf_object_clone(b), b + 1, car->id, arity, cc->debuginfo);
         push_opcode(cc, object->id, code, OP_PUSH);
         push_rf_object(code, fun);
         return TYPE_FUNCTION;
+    }
+
+    if (car->i64 == symbol("if").i64)
+    {
+        if (arity < 2)
+        {
+            rf_object_free(code);
+            err = error(ERR_LENGTH, "'if' takes at least two arguments");
+            err.id = object->id;
+            *code = err;
+            return TYPE_ERROR;
+        }
+
+        type = cc_compile_expr(cc, &as_list(object)[1]);
+
+        if (type == TYPE_ERROR)
+            return type;
+
+        if (type != -TYPE_BOOL)
+        {
+            rf_object_free(code);
+            err = error(ERR_TYPE, "'if': condition must have a bool result");
+            err.id = as_list(object)[1].id;
+            *code = err;
+            return TYPE_ERROR;
+        }
+
+        push_opcode(cc, car->id, code, OP_JNE);
+        lbl1 = code->adt->len;
+        push_rf_object(code, i64(0));
+
+        type = cc_compile_expr(cc, &as_list(object)[2]);
+
+        if (type == TYPE_ERROR)
+            return type;
+
+        // if (arity == 2)
+        // {
+        //     *lbl = code->adt->len;
+        //     return type;
+        // }
+
+        push_opcode(cc, car->id, code, OP_JMP);
+        lbl2 = code->adt->len;
+        push_rf_object(code, i64(0));
+        ((rf_object_t *)(as_string(code) + lbl1))->i64 = code->adt->len;
+        type1 = cc_compile_expr(cc, &as_list(object)[3]);
+
+        if (type1 == TYPE_ERROR)
+            return type1;
+
+        // if (type1 == TYPE_ANY)
+        // {
+        //     rf_object_free(code);
+        //     err = error(ERR_TYPE, str_fmt(0, "'if': different types of branches: '%s', '%s'",
+        //                                   symbols_get(env_get_typename_by_type(env, type)),
+        //                                   symbols_get(env_get_typename_by_type(env, type1))));
+        //     err.id = object->id;
+        //     *code = err;
+        //     return TYPE_ERROR;
+        // }
+
+        if (type != type1)
+        {
+            rf_object_free(code);
+            err = error(ERR_TYPE, str_fmt(0, "'if': different types of branches: '%s', '%s'",
+                                          symbols_get(env_get_typename_by_type(env, type)),
+                                          symbols_get(env_get_typename_by_type(env, type1))));
+            err.id = object->id;
+            *code = err;
+            return TYPE_ERROR;
+        }
+
+        ((rf_object_t *)(as_string(code) + lbl2))->i64 = code->adt->len;
+
+        return type;
     }
 
     return TYPE_ANY;
@@ -443,7 +539,24 @@ i8_t cc_compile_expr(cc_t *cc, rf_object_t *object)
             return type;
 
         // Compile user function call
-        addr = env_get_variable(&runtime_get()->env, *car);
+        if (car->i64 == symbol("self").i64)
+        {
+            if (cc->top_level)
+            {
+                rf_object_free(code);
+                err = error(ERR_TYPE, "'self' has no meaning at top level");
+                err.id = car->id;
+                *code = err;
+                return TYPE_ERROR;
+            }
+
+            addr = &cc->function;
+        }
+        else
+        {
+            addr = env_get_variable(&runtime_get()->env, *car);
+        }
+
         if (addr && addr->type == TYPE_FUNCTION)
         {
             func = as_function(addr);
@@ -506,7 +619,7 @@ i8_t cc_compile_expr(cc_t *cc, rf_object_t *object)
             push_opcode(cc, car->id, code, OP_SWAPN);
             push_opcode(cc, car->id, code, (i8_t)arity + len);
 
-            return as_function(addr)->rettype;
+            return func->rettype;
         }
 
         // compile arguments
@@ -543,17 +656,20 @@ i8_t cc_compile_expr(cc_t *cc, rf_object_t *object)
 /*
  * Compile function
  */
-rf_object_t cc_compile_function(i8_t top, str_t name, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo)
+rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_t args,
+                                rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo)
 {
     cc_t cc = {
+        .top_level = top,
         .debuginfo = debuginfo,
-        .function = function(args, null(), string(0), debuginfo_new(debuginfo->filename, name)),
+        .function = function(rettype, args, null(), string(0), debuginfo_new(debuginfo->filename, name)),
     };
 
     i8_t type, op;
     i32_t i;
     function_t *func = as_function(&cc.function);
     rf_object_t *code = &func->code, *b, err;
+    env_t *env = &runtime_get()->env;
 
     if (len == 0)
     {
@@ -596,6 +712,18 @@ rf_object_t cc_compile_function(i8_t top, str_t name, rf_object_t args, rf_objec
     }
     // --
 
+    if (func->rettype != TYPE_ANY && func->rettype != type)
+    {
+        rf_object_free(&cc.function);
+        rf_object_free(code);
+        err = error(ERR_TYPE, str_fmt(0, "function return type mismatch: specified %s, inferred %s",
+                                      symbols_get(env_get_typename_by_type(env, func->rettype)),
+                                      symbols_get(env_get_typename_by_type(env, type))));
+        err.id = id;
+        *code = err;
+        return err;
+    }
+
     func->rettype = type;
 
     if (top)
@@ -619,7 +747,7 @@ rf_object_t cc_compile(rf_object_t *body, debuginfo_t *debuginfo)
     rf_object_t *b = as_list(body);
     i32_t len = body->adt->len;
 
-    return cc_compile_function(1, "top-level", null(), b, body->id, len, debuginfo);
+    return cc_compile_function(true, "top-level", TYPE_ANY, null(), b, body->id, len, debuginfo);
 }
 
 /*
