@@ -225,7 +225,7 @@ null_t repl(str_t name, parser_t *parser, vm_t *vm, str_t buf, i32_t len)
 
     if (is_error(&executed))
         print_error(&executed, name, buf, len);
-    else
+    else if (!is_null(&executed))
         printf("%s\n", rf_object_fmt(&executed));
 
     rf_object_free(&parsed);
