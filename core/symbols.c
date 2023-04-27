@@ -96,6 +96,7 @@ pool_node_t *pool_node_new()
 
     return node;
 }
+
 /*
  * This callback will be called on new buckets being added to a hash table.
  * In case of symbols this avoids having to copy the string every time.

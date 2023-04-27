@@ -41,15 +41,21 @@
 #define stack_push(v, x) (v->stack[v->sp++] = x)
 #define stack_pop(v) (v->stack[--v->sp])
 #define stack_peek(v) (&v->stack[v->sp - 1])
-#define stack_unwind(v)        \
-    {                          \
-        debug("--stack");      \
-        while (v->sp > 0)      \
-        {                      \
-            x1 = stack_pop(v); \
-            debug_object(&x1); \
-        }                      \
-        debug("--");           \
+#define stack_pop_free(v)             \
+    {                                 \
+        rf_object_t o = stack_pop(v); \
+        rf_object_free(&o);           \
+    }
+#define stack_unwind(v)          \
+    {                            \
+        debug("--stack");        \
+        while (v->sp > 0)        \
+        {                        \
+            x1 = stack_pop(v);   \
+            debug_object(&x1);   \
+            rf_object_free(&x1); \
+        }                        \
+        debug("--");             \
     }
 
 typedef struct ctx_t
@@ -130,12 +136,12 @@ op_ret:
     l = (i32_t)code[vm->ip++];
     x3 = stack_pop(vm); // return value
     for (i = 0; i < l; i++)
-        x2 = stack_pop(vm); // pop locals
+        stack_pop_free(vm); // pop locals
     x1 = stack_pop(vm);     // ctx
     // read args size
     l = (i32_t)code[vm->ip++];
     for (i = 0; i < l; i++)
-        x2 = stack_pop(vm); // pop args
+        stack_pop_free(vm); // pop args
     ctx = *(ctx_t *)&x1;
     vm->ip = ctx.ip;
     vm->bp = ctx.bp;
@@ -145,13 +151,13 @@ op_ret:
     dispatch();
 op_push:
     vm->ip++;
-    x1 = *(rf_object_t *)(code + vm->ip);
+    x1 = rf_object_clone((rf_object_t *)(code + vm->ip));
     stack_push(vm, x1);
     vm->ip += sizeof(rf_object_t);
     dispatch();
 op_pop:
     vm->ip++;
-    x1 = stack_pop(vm);
+    stack_pop_free(vm);
     dispatch();
 op_eq:
     vm->ip++;
@@ -159,6 +165,8 @@ op_eq:
     x2 = stack_pop(vm);
     x1 = bool(rf_eq(&x2, &x3));
     stack_push(vm, x1);
+    rf_object_free(&x2);
+    rf_object_free(&x3);
     dispatch();
 op_lt:
     vm->ip++;
@@ -166,6 +174,8 @@ op_lt:
     x2 = stack_pop(vm);
     x1 = bool(rf_lt(&x2, &x3));
     stack_push(vm, x1);
+    rf_object_free(&x2);
+    rf_object_free(&x3);
     dispatch();
 op_jne:
     vm->ip++;
@@ -235,6 +245,7 @@ op_sumi:
     vm->ip++;
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
+    x2 = rf_object_cow(&x2);
     l = x2.adt->len;
     v = as_vector_i64(&x2);
     for (i = 0; i < l; i++)
@@ -246,6 +257,8 @@ op_like:
     x2 = stack_pop(vm);
     x1 = stack_pop(vm);
     stack_push(vm, bool(string_match(as_string(&x1), as_string(&x2))));
+    rf_object_free(&x1);
+    rf_object_free(&x2);
     dispatch();
 op_type:
     vm->ip++;
@@ -254,6 +267,7 @@ op_type:
     x1 = i64(t);
     x1.type = -TYPE_SYMBOL;
     stack_push(vm, x1);
+    rf_object_free(&x2);
     dispatch();
 op_timer_set:
     vm->ip++;
@@ -302,6 +316,8 @@ op_call2:
     x1 = f2(&x2, &x3);
     unwrap(x1, b);
     stack_push(vm, x1);
+    rf_object_free(&x2);
+    rf_object_free(&x3);
     dispatch();
 op_call3:
     b = vm->ip++;
@@ -314,6 +330,9 @@ op_call3:
     x1 = f3(&x2, &x3, &x4);
     unwrap(x1, b);
     stack_push(vm, x1);
+    rf_object_free(&x2);
+    rf_object_free(&x3);
+    rf_object_free(&x4);
     dispatch();
 op_call4:
     b = vm->ip++;
@@ -327,6 +346,10 @@ op_call4:
     x1 = f4(&x2, &x3, &x4, &x5);
     unwrap(x1, b);
     stack_push(vm, x1);
+    rf_object_free(&x2);
+    rf_object_free(&x3);
+    rf_object_free(&x4);
+    rf_object_free(&x5);
     dispatch();
 op_calln:
     b = vm->ip++;
@@ -380,7 +403,7 @@ op_lset:
     t = ((rf_object_t *)(code + vm->ip))->i64;
     vm->ip += sizeof(rf_object_t);
     x1 = stack_pop(vm);
-    vm->stack[vm->bp + t] = x1;
+    vm->stack[vm->bp + t] = rf_object_clone(&x1);
     stack_push(vm, x1);
     dispatch();
 op_gset:
@@ -411,6 +434,7 @@ op_cast:
     x1 = rf_cast(i, &x2);
     unwrap(x1, b);
     stack_push(vm, x1);
+    rf_object_free(&x2);
     dispatch();
 }
 
