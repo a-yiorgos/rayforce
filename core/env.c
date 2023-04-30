@@ -117,7 +117,20 @@ env_t create_env()
 
 null_t free_env(env_t *env)
 {
+    rf_object_t *variables = &as_list(&env->variables)[1], *var;
+    i64_t len = variables->adt->len;
+    i64_t *vals = as_vector_i64(variables);
+    i32_t i;
+
     rf_object_free(&env->functions);
+
+    for (i = 0; i < len; i++)
+    {
+        var = (rf_object_t *)vals[i];
+        rf_object_free(var);
+        rf_free(var);
+    }
+
     rf_object_free(&env->variables);
 }
 

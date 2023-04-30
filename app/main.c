@@ -282,20 +282,20 @@ i32_t main(i32_t argc, str_t argv[])
 {
     runtime_init(0);
 
-    // rf_object_t args = parse_cmdline(argc, argv), filename;
-    str_t line = (str_t)rf_malloc(LINE_SIZE), ptr; //, filename = NULL;
+    rf_object_t args = parse_cmdline(argc, argv), filename;
+    str_t line = (str_t)rf_malloc(LINE_SIZE), ptr;
     parser_t parser = parser_new();
     vm_t *vm;
 
-    // print_logo();
+    print_logo();
 
     vm = vm_new();
 
-    // filename = dict_get(&args, symbol("file"));
-    // if (!is_null(&filename))
-    //     load_file(&parser, vm, as_string(&filename));
+    filename = dict_get(&args, symbol("file"));
+    if (!is_null(&filename))
+        load_file(&parser, vm, as_string(&filename));
 
-    // rf_object_free(&args);
+    rf_object_free(&args);
 
     while (!vm->halted)
     {
