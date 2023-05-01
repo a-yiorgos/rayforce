@@ -55,10 +55,20 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
         (c)->adt->len += sizeof(rf_object_t);               \
     }
 
-#define ccerr(c, i, t, e)                                             \
+#define cerr(c, i, t, e)                                              \
     {                                                                 \
         rf_object_free(&(c)->function);                               \
         (c)->function = error(t, e);                                  \
+        (c)->function.adt->span = debuginfo_get((c)->debuginfo, (i)); \
+        return TYPE_ERROR;                                            \
+    }
+
+#define ccerr(c, i, t, e)                                             \
+    {                                                                 \
+        str_t m = e;                                                  \
+        rf_object_free(&(c)->function);                               \
+        (c)->function = error(t, m);                                  \
+        rf_free(m);                                                   \
         (c)->function.adt->span = debuginfo_get((c)->debuginfo, (i)); \
         return TYPE_ERROR;                                            \
     }
@@ -116,7 +126,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
             return TYPE_ANY;
 
         if (arity != 1)
-            ccerr(cc, car->id, ERR_LENGTH, "'time' takes one argument");
+            cerr(cc, car->id, ERR_LENGTH, "'time' takes one argument");
 
         push_opcode(cc, car->id, code, OP_TIMER_SET);
         type = cc_compile_expr(false, cc, &as_list(object)[1]);
@@ -132,10 +142,10 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (car->i64 == symbol("set").i64)
     {
         if (arity != 2)
-            ccerr(cc, car->id, ERR_LENGTH, "'set' takes two arguments");
+            cerr(cc, car->id, ERR_LENGTH, "'set' takes two arguments");
 
         if (as_list(object)[1].type != -TYPE_SYMBOL)
-            ccerr(cc, car->id, ERR_TYPE, "'set' takes symbol as first argument");
+            cerr(cc, car->id, ERR_TYPE, "'set' takes symbol as first argument");
 
         type = cc_compile_expr(true, cc, &as_list(object)[2]);
 
@@ -146,7 +156,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
         addr = env_get_variable(&runtime_get()->env, as_list(object)[1]);
 
         if (addr != NULL && type != addr->type)
-            ccerr(cc, car->id, ERR_TYPE, "'set': variable type mismatch");
+            cerr(cc, car->id, ERR_TYPE, "'set': variable type mismatch");
 
         push_opcode(cc, car->id, code, OP_GSET);
         push_rf_object(code, as_list(object)[1]);
@@ -160,10 +170,10 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (car->i64 == symbol("let").i64)
     {
         if (arity != 2)
-            ccerr(cc, car->id, ERR_LENGTH, "'let' takes two arguments");
+            cerr(cc, car->id, ERR_LENGTH, "'let' takes two arguments");
 
         if (as_list(object)[1].type != -TYPE_SYMBOL)
-            ccerr(cc, car->id, ERR_LENGTH, "'let' takes symbol as first argument");
+            cerr(cc, car->id, ERR_LENGTH, "'let' takes symbol as first argument");
 
         type = cc_compile_expr(true, cc, &as_list(object)[2]);
 
@@ -192,10 +202,10 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (car->i64 == symbol("cast").i64)
     {
         if (arity != 2)
-            ccerr(cc, car->id, ERR_LENGTH, "'cast' takes two arguments");
+            cerr(cc, car->id, ERR_LENGTH, "'cast' takes two arguments");
 
         if (as_list(object)[1].type != -TYPE_SYMBOL)
-            ccerr(cc, car->id, ERR_LENGTH, "'cast' takes symbol as first argument");
+            cerr(cc, car->id, ERR_LENGTH, "'cast' takes symbol as first argument");
 
         type = env_get_type_by_typename(env, as_list(object)[1].i64);
 
@@ -218,7 +228,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (car->i64 == symbol("fn").i64)
     {
         if (arity == 0)
-            ccerr(cc, car->id, ERR_LENGTH, "'fn' expects dict with function arguments");
+            cerr(cc, car->id, ERR_LENGTH, "'fn' expects dict with function arguments");
 
         b = as_list(object) + 1;
 
@@ -236,7 +246,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
         }
 
         if (b->type != TYPE_DICT)
-            ccerr(cc, b->id, ERR_LENGTH, "'fn' expects dict with function arguments");
+            cerr(cc, b->id, ERR_LENGTH, "'fn' expects dict with function arguments");
 
         arity -= 1;
         fun = cc_compile_function(false, "anonymous", rettype, rf_object_clone(b), b + 1, car->id, arity, cc->debuginfo);
@@ -258,7 +268,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (car->i64 == symbol("if").i64)
     {
         if (arity < 2 || arity > 3)
-            ccerr(cc, car->id, ERR_LENGTH, "'if' expects 2 .. 3 arguments");
+            cerr(cc, car->id, ERR_LENGTH, "'if' expects 2 .. 3 arguments");
 
         type = cc_compile_expr(true, cc, &as_list(object)[1]);
 
@@ -266,7 +276,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
             return type;
 
         if (type != -TYPE_BOOL)
-            ccerr(cc, car->id, ERR_TYPE, "'if': condition must have a bool result");
+            cerr(cc, car->id, ERR_TYPE, "'if': condition must have a bool result");
 
         push_opcode(cc, car->id, code, OP_JNE);
         lbl1 = code->adt->len;
@@ -433,7 +443,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         addr = env_get_variable(&runtime_get()->env, *object);
 
         if (addr == NULL)
-            ccerr(cc, object->id, ERR_TYPE, "unknown symbol");
+            cerr(cc, object->id, ERR_TYPE, "unknown symbol");
 
         push_opcode(cc, object->id, code, OP_GLOAD);
         push_rf_object(code, i64((i64_t)addr));
@@ -445,13 +455,14 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         {
             object->flags = 0;
             push_opcode(cc, object->id, code, OP_PUSH);
+            vector_i64_push(&func->const_addrs, code->adt->len);
             push_rf_object(code, rf_object_clone(object));
             return TYPE_LIST;
         }
 
         car = &as_list(object)[0];
         if (car->type != -TYPE_SYMBOL)
-            ccerr(cc, car->id, ERR_LENGTH, "expected symbol as first argument");
+            cerr(cc, car->id, ERR_LENGTH, "expected symbol as first argument");
 
         arity = object->adt->len - 1;
 
@@ -467,7 +478,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         if (car->i64 == symbol("self").i64)
         {
             if (cc->top_level)
-                ccerr(cc, car->id, ERR_TYPE, "'self' has no meaning at top level");
+                cerr(cc, car->id, ERR_TYPE, "'self' has no meaning at top level");
 
             addr = &cc->function;
         }
@@ -478,7 +489,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         {
             func = as_function(addr);
             if (func->args.type != TYPE_DICT)
-                ccerr(cc, car->id, ERR_TYPE, "expected dict as function arguments");
+                cerr(cc, car->id, ERR_TYPE, "expected dict as function arguments");
 
             arg_keys = &as_list(&func->args)[0];
             arg_vals = &as_list(&func->args)[1];
@@ -512,7 +523,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
 
             push_opcode(cc, car->id, code, OP_CALLF);
             push_opcode(cc, car->id, code, len);
-            push_rf_object(code, rf_object_clone(addr));
+            push_rf_object(code, *addr);
 
             return func->rettype;
         }
@@ -538,7 +549,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         if (type != TYPE_ERROR)
             return type;
 
-        ccerr(cc, car->id, ERR_LENGTH, "function has not found");
+        cerr(cc, car->id, ERR_LENGTH, "function has not found");
 
     default:
         push_opcode(cc, object->id, code, OP_PUSH);
@@ -566,7 +577,7 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
     function_t *func = as_function(&cc.function);
     rf_object_t *code = &func->code, *b = body, err;
     env_t *env = &runtime_get()->env;
-
+    str_t msg;
     if (len == 0)
     {
         push_opcode(&cc, id, code, OP_PUSH);
@@ -593,19 +604,18 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
     type = cc_compile_expr(true, &cc, b);
 
     if (type == TYPE_ERROR)
-    {
-        code->adt->span = debuginfo_get(cc.debuginfo, code->id);
         return cc.function;
-    }
     // --
 
 epilogue:
     if (func->rettype != TYPE_ANY && func->rettype != type)
     {
         rf_object_free(&cc.function);
-        err = error(ERR_TYPE, str_fmt(0, "function returns type '%s', but declared '%s'",
-                                      symbols_get(env_get_typename_by_type(env, type)),
-                                      symbols_get(env_get_typename_by_type(env, func->rettype))));
+        msg = str_fmt(0, "function returns type '%s', but declared '%s'",
+                      symbols_get(env_get_typename_by_type(env, type)),
+                      symbols_get(env_get_typename_by_type(env, func->rettype)));
+        err = error(ERR_TYPE, msg);
+        rf_free(msg);
         cc.function = err;
         cc.function.adt->span = debuginfo_get(cc.debuginfo, b->id);
         return err;
@@ -636,8 +646,16 @@ epilogue:
  */
 rf_object_t cc_compile(rf_object_t *body, debuginfo_t *debuginfo)
 {
+    str_t msg;
+    rf_object_t err;
+
     if (body->type != TYPE_LIST)
-        return error(ERR_TYPE, str_fmt(0, "compile '%s': expected list", "top-level"));
+    {
+        msg = str_fmt(0, "compile '%s': expected list", "top-level");
+        err = error(ERR_TYPE, msg);
+        rf_free(msg);
+        return err;
+    }
 
     rf_object_t *b = as_list(body);
     i32_t len = body->adt->len;

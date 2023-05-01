@@ -122,8 +122,6 @@ null_t free_env(env_t *env)
     i64_t *vals = as_vector_i64(variables);
     i32_t i;
 
-    rf_object_free(&env->functions);
-
     for (i = 0; i < len; i++)
     {
         var = (rf_object_t *)vals[i];
@@ -132,6 +130,7 @@ null_t free_env(env_t *env)
     }
 
     rf_object_free(&env->variables);
+    rf_object_free(&env->functions);
 }
 
 rf_object_t *env_get_variable(env_t *env, rf_object_t name)

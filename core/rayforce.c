@@ -48,28 +48,28 @@
 /*
  * Decrement reference counter of the object
  */
-#define rc_dec(rc, object)                                                      \
-    {                                                                           \
-        u16_t slaves = runtime_get()->slaves;                                   \
-        if (slaves)                                                             \
-            rc = __atomic_sub_fetch(&((object)->adt->rc), 1, __ATOMIC_RELAXED); \
-        else                                                                    \
-        {                                                                       \
-            (object)->adt->rc -= 1;                                             \
-            rc = (object)->adt->rc;                                             \
-        }                                                                       \
+#define rc_dec(r, object)                                                      \
+    {                                                                          \
+        u16_t slaves = runtime_get()->slaves;                                  \
+        if (slaves)                                                            \
+            r = __atomic_sub_fetch(&((object)->adt->rc), 1, __ATOMIC_RELAXED); \
+        else                                                                   \
+        {                                                                      \
+            (object)->adt->rc -= 1;                                            \
+            r = (object)->adt->rc;                                             \
+        }                                                                      \
     }
 
 /*
  * Get reference counter of the object
  */
-#define rc_get(rc, object)                                                \
-    {                                                                     \
-        u16_t slaves = runtime_get()->slaves;                             \
-        if (slaves)                                                       \
-            rc = __atomic_load_n(&((object)->adt->rc), __ATOMIC_RELAXED); \
-        else                                                              \
-            rc = (object)->adt->rc;                                       \
+#define rc_get(r, object)                                                \
+    {                                                                    \
+        u16_t slaves = runtime_get()->slaves;                            \
+        if (slaves)                                                      \
+            r = __atomic_load_n(&((object)->adt->rc), __ATOMIC_RELAXED); \
+        else                                                             \
+            r = (object)->adt->rc;                                       \
     }
 
 rf_object_t error(i8_t code, str_t message)
@@ -77,8 +77,6 @@ rf_object_t error(i8_t code, str_t message)
     rf_object_t err = string_from_str(message, strlen(message));
     err.type = TYPE_ERROR;
     err.adt->code = code;
-    // TODO: figure out who is responsible for freeing the message
-    rf_free(message);
     return err;
 }
 
@@ -258,7 +256,7 @@ type_error:
  */
 null_t rf_object_free(rf_object_t *object)
 {
-    i64_t i = 0, rc = 0, l = 0, *addrs;
+    i64_t i, rc, l, *addrs;
     str_t code;
 
     if (object->type < 0)
@@ -269,9 +267,6 @@ null_t rf_object_free(rf_object_t *object)
 
     rc_dec(rc, object);
 
-    if (rc > 0)
-        return;
-
     static null_t *types_table[] = {
         &&type_any, &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_string,
         &&type_list, &&type_dict, &&type_table, &&type_function, &&type_error};
@@ -281,51 +276,62 @@ null_t rf_object_free(rf_object_t *object)
 type_any:
     return;
 type_bool:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_i64:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_f64:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_symbol:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_string:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_list:
     for (i = 0; i < object->adt->len; i++)
         rf_object_free(&as_list(object)[i]);
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_dict:
     rf_object_free(&as_list(object)[0]);
     rf_object_free(&as_list(object)[1]);
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_table:
     rf_object_free(&as_list(object)[0]);
     rf_object_free(&as_list(object)[1]);
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 type_function:
-    code = as_string(&as_function(object)->code);
-    l = as_function(object)->const_addrs.adt->len;
-    addrs = as_vector_i64(&as_function(object)->const_addrs);
-    for (i = 0; i < l; i++)
-        rf_object_free((rf_object_t *)(code + addrs[i]));
-    rf_object_free(&as_function(object)->const_addrs);
-    rf_object_free(&as_function(object)->args);
-    rf_object_free(&as_function(object)->locals);
-    rf_object_free(&as_function(object)->code);
-    debuginfo_free(&as_function(object)->debuginfo);
-
-    rf_free(object->adt);
+    if (rc == 0)
+    {
+        code = as_string(&as_function(object)->code);
+        l = as_function(object)->const_addrs.adt->len;
+        addrs = as_vector_i64(&as_function(object)->const_addrs);
+        for (i = 0; i < l; i++)
+            rf_object_free((rf_object_t *)(code + addrs[i]));
+        rf_object_free(&as_function(object)->const_addrs);
+        rf_object_free(&as_function(object)->args);
+        rf_object_free(&as_function(object)->locals);
+        rf_object_free(&as_function(object)->code);
+        debuginfo_free(&as_function(object)->debuginfo);
+        rf_free(object->adt);
+    }
     return;
 type_error:
-    rf_free(object->adt);
+    if (rc == 0)
+        rf_free(object->adt);
     return;
 }
 
@@ -401,7 +407,7 @@ i64_t rf_object_rc(rf_object_t *object)
     if (object->type < 0)
         return 1;
 
-    if (object->adt == NULL)
+    if (is_null(object))
         return 1;
 
     rc_get(rc, object);

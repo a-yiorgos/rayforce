@@ -33,8 +33,8 @@
  */
 extern rf_object_t string(i64_t len)
 {
-    rf_object_t string = vector(TYPE_STRING, 1, len);
-
+    rf_object_t string = vector(TYPE_STRING, 1, len + 1);
+    as_string(&string)[len] = '\0';
     string.adt->len = len;
     return string;
 }
@@ -44,9 +44,9 @@ extern rf_object_t string(i64_t len)
  */
 rf_object_t string_from_str(str_t str, i32_t len)
 {
-    rf_object_t s = string(len + 1);
+    rf_object_t s = string(len);
     if (len > 0)
-        strncpy(as_string(&s), str, len + 1);
+        strncpy(as_string(&s), str, len);
 
     return s;
 }

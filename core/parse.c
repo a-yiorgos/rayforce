@@ -355,6 +355,7 @@ rf_object_t parse_list(parser_t *parser, i8_t quote)
 {
     rf_object_t lst = list(0), token, err;
     span_t span = span_start(parser);
+    str_t msg;
 
     shift(parser, 1); // skip '('
     token = advance(parser);
@@ -379,7 +380,9 @@ rf_object_t parse_list(parser_t *parser, i8_t quote)
         if (is_at_term(&token))
         {
             rf_object_free(&lst);
-            err = error(ERR_PARSE, str_fmt(0, "There is no opening found for: '%c'", token.i64));
+            msg = str_fmt(0, "There is no opening found for: '%c'", token.i64);
+            err = error(ERR_PARSE, msg);
+            rf_free(msg);
             err.id = token.id;
             return err;
         }
@@ -482,6 +485,7 @@ rf_object_t advance(parser_t *parser)
 {
     rf_object_t tok, err;
     i8_t quote = 0;
+    str_t msg;
 
     // Skip all whitespaces
     while (is_whitespace(*parser->current))
@@ -541,7 +545,9 @@ rf_object_t advance(parser_t *parser)
         return tok;
     }
 
-    err = error(ERR_PARSE, str_fmt(0, "Unexpected token: '%c'", *parser->current));
+    msg = str_fmt(0, "Unexpected token: '%c'", *parser->current);
+    err = error(ERR_PARSE, msg);
+    rf_free(msg);
     err.id = span_commit(parser, span_start(parser));
     return err;
 }
@@ -550,6 +556,7 @@ rf_object_t parse_program(parser_t *parser)
 {
     // debuginfo_init(runtime_get()->debuginfo);
     rf_object_t token, list = list(0), err;
+    str_t msg;
 
     while (!at_eof(*parser->current))
     {
@@ -564,7 +571,9 @@ rf_object_t parse_program(parser_t *parser)
         if (is_at_term(&token))
         {
             rf_object_free(&list);
-            err = error(ERR_PARSE, str_fmt(0, "There is no opening found for: '%c'", token.i64));
+            msg = str_fmt(0, "Unexpected token: '%c'", token.i64);
+            err = error(ERR_PARSE, msg);
+            rf_free(msg);
             err.id = token.id;
             return err;
         }

@@ -172,7 +172,7 @@ null_t print_error(rf_object_t *error, str_t filename, str_t source, u32_t len)
 rf_object_t parse_cmdline(i32_t argc, str_t argv[])
 {
     i32_t opt, len;
-    rf_object_t keys = list(0), vals = list(0);
+    rf_object_t keys = vector_symbol(0), vals = list(0), str;
 
     for (opt = 1; opt < argc && argv[opt][0] == '-'; opt++)
     {
@@ -184,9 +184,9 @@ rf_object_t parse_cmdline(i32_t argc, str_t argv[])
             if (argv[opt] == NULL)
                 usage();
 
-            list_push(&keys, symbol("file"));
-            len = strlen(argv[opt]) + 1;
-            rf_object_t str = string(len);
+            vector_i64_push(&keys, symbol("file").i64);
+            len = strlen(argv[opt]);
+            str = string(len);
             strncpy(as_string(&str), argv[opt], len);
             list_push(&vals, str);
             break;
@@ -196,7 +196,6 @@ rf_object_t parse_cmdline(i32_t argc, str_t argv[])
     }
 
     argv += opt;
-    keys = list_flatten(keys);
 
     return dict(keys, vals);
 }
@@ -298,7 +297,7 @@ i32_t main(i32_t argc, str_t argv[])
     parser_t parser = parser_new();
     vm_t *vm;
 
-    print_logo();
+    // print_logo();
 
     vm = vm_new();
 
@@ -306,7 +305,7 @@ i32_t main(i32_t argc, str_t argv[])
     if (!is_null(&filename))
         load_file(&parser, vm, as_string(&filename));
 
-    rf_object_free(&args);
+    rf_object_free(&filename);
 
     while (running)
     {
@@ -318,6 +317,7 @@ i32_t main(i32_t argc, str_t argv[])
         repl("top-level", &parser, vm, line, LINE_SIZE);
     }
 
+    rf_object_free(&args);
     parser_free(&parser);
     rf_free(line);
     vm_free(vm);
