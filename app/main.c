@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
 #include "../core/rayforce.h"
 #include "../core/format.h"
 #include "../core/unary.h"
@@ -68,6 +69,8 @@
   ▒█▀▀█ █▀▀█ █░░█ ▒█▀▀▀ █▀▀█ █▀▀█ █▀▀ █▀▀ | Version: %s\n\
   ▒█▄▄▀ █▄▄█ █▄▄█ ▒█▀▀▀ █░░█ █▄▄▀ █░░ █▀▀ | Documentation: https://singaraiona.github.io/rayforce\n\
   ▒█░▒█ ▀░░▀ ▄▄▄█ ▒█░░░ ▀▀▀▀ ▀░▀▀ ▀▀▀ ▀▀▀ | Official: https://github.com/singaraiona/rayforce\n\n"
+
+static volatile bool_t running = true;
 
 null_t usage()
 {
@@ -278,8 +281,16 @@ null_t load_file(parser_t *parser, vm_t *vm, str_t filename)
     close(fd);                // close the file
 }
 
+null_t int_handler(i32_t sig)
+{
+    UNUSED(sig);
+    running = false;
+}
+
 i32_t main(i32_t argc, str_t argv[])
 {
+    signal(SIGINT, int_handler);
+
     runtime_init(0);
 
     rf_object_t args = parse_cmdline(argc, argv), filename;
@@ -297,7 +308,7 @@ i32_t main(i32_t argc, str_t argv[])
 
     rf_object_free(&args);
 
-    while (!vm->halted)
+    while (running)
     {
         printf("%s%s%s", GREEN, PROMPT, RESET);
         ptr = fgets(line, LINE_SIZE, stdin);

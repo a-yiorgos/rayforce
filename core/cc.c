@@ -250,6 +250,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
 
         // printf("%s\n", vm_code_fmt(&fun));
         push_opcode(cc, object->id, code, OP_PUSH);
+        vector_i64_push(&func->const_addrs, code->adt->len);
         push_rf_object(code, fun);
         return TYPE_FUNCTION;
     }
@@ -541,6 +542,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
 
     default:
         push_opcode(cc, object->id, code, OP_PUSH);
+        vector_i64_push(&func->const_addrs, code->adt->len);
         push_rf_object(code, rf_object_clone(object));
         return object->type;
     }
