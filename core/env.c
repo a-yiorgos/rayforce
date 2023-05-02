@@ -46,15 +46,15 @@ null_t init_functions(rf_object_t *records)
     // Nilary
     REC(records, 0, "halt",   TYPE_LIST,    OP_HALT,   { 0                       });
     // Unary  
-    REC(records, 1, "type",  -TYPE_SYMBOL,  OP_TYPE,   { TYPE_ANY                });
+    REC(records, 1, "type",  -TYPE_SYMBOL,  OP_TYPE,   { TYPE_NULL                });
     REC(records, 1, "til" ,   TYPE_I64,     OP_TIL,    {-TYPE_I64                });
     // Binary
-    REC(records, 2, "==",    -TYPE_BOOL,    OP_EQ,     { TYPE_ANY,    TYPE_ANY   });
-    // REC(records, 2, "!=",    -TYPE_BOOL,    OP_NEQ,    { TYPE_ANY,    TYPE_ANY   });
-    REC(records, 2, "<",     -TYPE_BOOL,    OP_LT,     { TYPE_ANY,    TYPE_ANY   });
-    // REC(records, 2, ">",     -TYPE_BOOL,    OP_GT,     { TYPE_ANY,    TYPE_ANY   });
-    // REC(records, 2, "<=",    -TYPE_BOOL,    OP_LE,     { TYPE_ANY,    TYPE_ANY   });
-    // REC(records, 2, ">=",    -TYPE_BOOL,    OP_GE,     { TYPE_ANY,    TYPE_ANY   });
+    REC(records, 2, "==",    -TYPE_BOOL,    OP_EQ,     { TYPE_NULL,    TYPE_NULL   });
+    // REC(records, 2, "!=",    -TYPE_BOOL,    OP_NEQ,    { TYPE_NULL,    TYPE_NULL   });
+    REC(records, 2, "<",     -TYPE_BOOL,    OP_LT,     { TYPE_NULL,    TYPE_NULL   });
+    // REC(records, 2, ">",     -TYPE_BOOL,    OP_GT,     { TYPE_NULL,    TYPE_NULL   });
+    // REC(records, 2, "<=",    -TYPE_BOOL,    OP_LE,     { TYPE_NULL,    TYPE_NULL   });
+    // REC(records, 2, ">=",    -TYPE_BOOL,    OP_GE,     { TYPE_NULL,    TYPE_NULL   });
     REC(records, 2, "+",     -TYPE_I64,     OP_ADDI,   {-TYPE_I64,   -TYPE_I64   });
     REC(records, 2, "+",     -TYPE_F64,     OP_ADDF,   {-TYPE_F64,   -TYPE_F64   });
     REC(records, 2, "-",     -TYPE_I64,     OP_SUBI,   {-TYPE_I64,   -TYPE_I64   });
@@ -65,7 +65,7 @@ null_t init_functions(rf_object_t *records)
     REC(records, 2, "/",     -TYPE_F64,     OP_DIVF,   {-TYPE_F64,   -TYPE_F64   });
     REC(records, 2, "sum",    TYPE_I64,     OP_SUMI,   { TYPE_I64,   -TYPE_I64   });
     REC(records, 2, "like",  -TYPE_BOOL,    OP_LIKE,   { TYPE_STRING, TYPE_STRING});
-    REC(records, 2, "dict",   TYPE_DICT,    rf_dict,   { TYPE_ANY,    TYPE_ANY   });
+    REC(records, 2, "dict",   TYPE_DICT,    rf_dict,   { TYPE_NULL,    TYPE_NULL   });
     // Ternary
     // Quaternary
     // Nary
@@ -81,7 +81,7 @@ null_t init_typenames(i64_t *typenames)
     typenames[-TYPE_I64     + TYPE_OFFSET] = symbol("i64").i64;
     typenames[-TYPE_F64     + TYPE_OFFSET] = symbol("f64").i64;
     typenames[-TYPE_SYMBOL  + TYPE_OFFSET] = symbol("symbol").i64;
-    typenames[TYPE_ANY      + TYPE_OFFSET] = symbol("Any").i64;
+    typenames[TYPE_NULL     + TYPE_OFFSET] = symbol("Null").i64;
     typenames[TYPE_BOOL     + TYPE_OFFSET] = symbol("Bool").i64;
     typenames[TYPE_I64      + TYPE_OFFSET] = symbol("I64").i64;
     typenames[TYPE_F64      + TYPE_OFFSET] = symbol("F64").i64;
@@ -165,5 +165,5 @@ extern i8_t env_get_type_by_typename(env_t *env, i64_t name)
         if (env->typenames[i] == name)
             return i - TYPE_OFFSET;
 
-    return TYPE_ANY;
+    return TYPE_NULL;
 }

@@ -238,11 +238,21 @@ rf_object_t parse_symbol(parser_t *parser, i8_t quote)
         res.id = span_commit(parser, span);
         return res;
     }
-    else if (strncmp(parser->current, "false", 5) == 0)
+
+    if (strncmp(parser->current, "false", 5) == 0)
     {
         shift(parser, 5);
         span_extend(parser, &span);
         res = bool(false);
+        res.id = span_commit(parser, span);
+        return res;
+    }
+
+    if (strncmp(parser->current, "null", 4) == 0)
+    {
+        shift(parser, 4);
+        span_extend(parser, &span);
+        res = null();
         res.id = span_commit(parser, span);
         return res;
     }

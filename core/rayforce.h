@@ -39,7 +39,7 @@ extern "C"
 #define UNUSED(x) (void)(x)
 
 // Type constants
-#define TYPE_ANY 0
+#define TYPE_NULL 0
 #define TYPE_BOOL 1
 #define TYPE_I64 2
 #define TYPE_F64 3
@@ -148,13 +148,13 @@ extern rf_object_t symbol(str_t ptr);                                    // symb
 extern rf_object_t vector(i8_t type, i8_t size_of_val, i64_t len);       // vector of type
 extern rf_object_t string(i64_t len);                                    // string 
 
+#define null()             ((rf_object_t){.type = TYPE_NULL})            // null
 #define vector_bool(len)   (vector(TYPE_BOOL, sizeof(bool_t), len))      // bool vector
 #define vector_i64(len)    (vector(TYPE_I64, sizeof(i64_t), len))        // i64 vector
 #define vector_f64(len)    (vector(TYPE_F64, sizeof(f64_t), len))        // f64 vector
 #define vector_symbol(len) (vector(TYPE_SYMBOL, sizeof(i64_t), len))     // symbol vector
 #define list(len)          (vector(TYPE_LIST, sizeof(rf_object_t), len)) // list
 
-extern rf_object_t null();                                               // null (as null list)
 extern rf_object_t table(rf_object_t keys, rf_object_t vals);            // table
 extern rf_object_t dict(rf_object_t keys, rf_object_t vals);             // dict
 
@@ -178,7 +178,7 @@ extern null_t rf_object_free(rf_object_t *rf_object);
 #define as_list(object)          ((rf_object_t *)(as_string(object)))
 
 // Checkers
-#define is_null(object)   ((object)->type == TYPE_LIST && (object)->adt == NULL)
+#define is_null(object)   ((object)->type == TYPE_NULL)
 #define is_error(object)  ((object)->type == TYPE_ERROR)
 #define is_scalar(object) ((object)->type < 0)
 

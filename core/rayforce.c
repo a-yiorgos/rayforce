@@ -127,16 +127,6 @@ rf_object_t symbol(str_t s)
     return sym;
 }
 
-rf_object_t null()
-{
-    rf_object_t list = {
-        .type = TYPE_LIST,
-        .adt = NULL,
-    };
-
-    return list;
-}
-
 rf_object_t table(rf_object_t keys, rf_object_t vals)
 {
     if (keys.type != TYPE_SYMBOL || vals.type != 0)
@@ -213,7 +203,7 @@ rf_object_t rf_object_clone(rf_object_t *object)
 {
     i64_t i;
 
-    if (object->type < TYPE_ANY)
+    if (object->type < TYPE_NULL)
         return *object;
 
     if (object->adt == NULL)
