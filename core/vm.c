@@ -392,6 +392,15 @@ op_callf:
     vm->ip += sizeof(rf_object_t);
     ctx = (ctx_t){.addr = f, .ip = vm->ip, .bp = vm->bp};
     memcpy(&x1, &ctx, sizeof(ctx_t));
+    if ((vm->sp + ctx.addr->stack_size) * sizeof(rf_object_t) > VM_STACK_SIZE)
+    {
+        while (vm->sp)
+            stack_pop_free(vm);
+
+        x1 = error(ERR_STACK_OVERFLOW, "stack overflow");
+        x1.adt->span = debuginfo_get(debuginfo, b);
+        return x1;
+    }
     f = as_function(&x2);
     code = as_string(&f->code);
     vm->ip = 0;

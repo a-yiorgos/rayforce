@@ -35,9 +35,10 @@ rf_object_t function(i8_t rettype, rf_object_t args, rf_object_t locals, rf_obje
     f->args = args;
     f->locals = locals;
     f->code = code;
-    f->debuginfo = debuginfo;
-    f->rettype = rettype;
     f->const_addrs = vector_i64(0);
+    f->debuginfo = debuginfo;
+    f->stack_size = 0;
+    f->rettype = rettype;
 
     rf_object_t fun = {
         .type = TYPE_FUNCTION,

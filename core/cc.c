@@ -262,6 +262,7 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
         push_opcode(cc, object->id, code, OP_PUSH);
         vector_i64_push(&func->const_addrs, code->adt->len);
         push_rf_object(code, fun);
+        func->stack_size++;
         return TYPE_FUNCTION;
     }
 
@@ -381,11 +382,13 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
     case -TYPE_I64:
         push_opcode(cc, object->id, code, OP_PUSH);
         push_rf_object(code, *object);
+        func->stack_size++;
         return -TYPE_I64;
 
     case -TYPE_F64:
         push_opcode(cc, object->id, code, OP_PUSH);
         push_rf_object(code, *object);
+        func->stack_size++;
         return -TYPE_F64;
 
     case -TYPE_SYMBOL:
@@ -398,6 +401,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
             object->flags = 0;
             push_opcode(cc, object->id, code, OP_PUSH);
             push_rf_object(code, *object);
+            func->stack_size++;
             return -TYPE_SYMBOL;
         }
 
@@ -415,6 +419,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
                 type = env_get_type_by_typename(&runtime_get()->env, sym);
                 push_opcode(cc, object->id, code, OP_LLOAD);
                 push_rf_object(code, i64(1 + id));
+                func->stack_size++;
 
                 return type;
             }
@@ -434,6 +439,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
                 type = env_get_type_by_typename(&runtime_get()->env, sym);
                 push_opcode(cc, object->id, code, OP_LLOAD);
                 push_rf_object(code, i64(-(arg_keys->adt->len - id)));
+                func->stack_size++;
 
                 return type;
             }
@@ -447,6 +453,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
 
         push_opcode(cc, object->id, code, OP_GLOAD);
         push_rf_object(code, i64((i64_t)addr));
+        func->stack_size++;
 
         return addr->type;
 
@@ -458,6 +465,8 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
             push_opcode(cc, object->id, code, OP_PUSH);
             vector_i64_push(&func->const_addrs, code->adt->len);
             push_rf_object(code, lst);
+            func->stack_size++;
+
             return TYPE_LIST;
         }
 
@@ -525,6 +534,8 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
             push_opcode(cc, car->id, code, OP_CALLF);
             push_opcode(cc, car->id, code, len);
             push_rf_object(code, *addr);
+            // additional one for ctx
+            func->stack_size += 2;
 
             return func->rettype;
         }
@@ -556,6 +567,8 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         push_opcode(cc, object->id, code, OP_PUSH);
         vector_i64_push(&func->const_addrs, code->adt->len);
         push_rf_object(code, rf_object_clone(object));
+        func->stack_size++;
+
         return object->type;
     }
 }
