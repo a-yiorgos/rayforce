@@ -72,6 +72,53 @@
 
 static volatile bool_t running = true;
 
+typedef struct file_t
+{
+    i32_t fd;
+    str_t buf;
+    i32_t len;
+} file_t;
+
+file_t file_open(str_t filename)
+{
+    file_t f = {
+        .fd = 0,
+        .buf = NULL,
+        .len = 0,
+    };
+
+    struct stat st;
+
+    f.fd = open(filename, O_RDONLY); // open the file for reading
+
+    if (f.fd == -1)
+    { // error handling if file does not exist
+        printf("Error opening the file.\n");
+        return f;
+    }
+
+    fstat(f.fd, &st); // get the size of the file
+
+    f.buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, f.fd, 0); // memory-map the file
+
+    if (f.buf == MAP_FAILED)
+    {
+        // error handling if memory-mapping fails
+        printf("Error mapping the file.\n");
+        return f;
+    }
+
+    f.len = st.st_size;
+
+    return f;
+}
+
+null_t file_close(file_t f)
+{
+    munmap(f.buf, f.len); // unmap the buffer
+    close(f.fd);          // close the file
+}
+
 null_t usage()
 {
     printf("%s%s%s", BOLD, YELLOW, "Usage: rayforce [-f] [file...]\n");
@@ -255,37 +302,6 @@ null_t repl(str_t name, parser_t *parser, vm_t *vm, str_t buf, i32_t len)
     return;
 }
 
-null_t load_file(parser_t *parser, vm_t *vm, str_t filename)
-{
-    i32_t fd;
-    str_t file;
-    struct stat st;
-
-    fd = open(filename, O_RDONLY); // open the file for reading
-
-    if (fd == -1)
-    { // error handling if file does not exist
-        printf("Error opening the file.\n");
-        return;
-    }
-
-    fstat(fd, &st); // get the size of the file
-
-    file = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0); // memory-map the file
-
-    if (file == MAP_FAILED)
-    {
-        // error handling if memory-mapping fails
-        printf("Error mapping the file.\n");
-        return;
-    }
-
-    repl(filename, parser, vm, file, st.st_size);
-
-    munmap(file, st.st_size); // unmap the buffer
-    close(fd);                // close the file
-}
-
 null_t int_handler(i32_t sig)
 {
     UNUSED(sig);
@@ -302,14 +318,24 @@ i32_t main(i32_t argc, str_t argv[])
     str_t line = (str_t)rf_malloc(LINE_SIZE), ptr;
     parser_t parser = parser_new();
     vm_t *vm;
+    file_t file;
 
     print_logo();
 
     vm = vm_new();
 
+    // load file
     filename = dict_get(&args, symbol("file"));
     if (!is_null(&filename))
-        load_file(&parser, vm, as_string(&filename));
+    {
+        file = file_open(as_string(&filename));
+        if (file.buf != NULL)
+        {
+            repl(as_string(&filename), &parser, vm, file.buf, file.len);
+            file_close(file);
+        }
+    }
+    // --
 
     rf_object_free(&filename);
 
