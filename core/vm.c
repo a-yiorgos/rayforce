@@ -159,14 +159,12 @@ op_halt:
         return null();
 op_ret:
     vm->ip++;
-    // read locals size
-    l = (i32_t)code[vm->ip++];
     x3 = stack_pop(vm); // return value
+    l = (i32_t)as_list(&f->locals)[0].adt->len;
     for (i = 0; i < l; i++)
         stack_pop_free(vm); // pop locals
     x1 = stack_pop(vm);     // ctx
-    // read args size
-    l = (i32_t)code[vm->ip++];
+    l = (i32_t)as_list(&f->args)[0].adt->len;
     for (i = 0; i < l; i++)
         stack_pop_free(vm); // pop args
     ctx = *(ctx_t *)&x1;
@@ -415,7 +413,6 @@ op_callf:
      * +-------------------+
      */
     b = vm->ip++;
-    l = (i32_t)code[vm->ip++];
     x2 = *(rf_object_t *)(code + vm->ip);
     vm->ip += sizeof(rf_object_t);
     if ((vm->sp + f->stack_size) * sizeof(rf_object_t) > VM_STACK_SIZE)
@@ -429,7 +426,7 @@ op_callf:
     // --
     f = as_function(&x2);
     code = as_string(&f->code);
-    vm->sp += l;
+    vm->sp += (i32_t)as_list(&f->locals)[0].adt->len;
     dispatch();
 op_lset:
     b = vm->ip++;

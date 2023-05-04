@@ -183,8 +183,7 @@ i8_t cc_compile_set(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
         if (type == TYPE_ERROR)
             return type;
 
-        if (func->locals.type != TYPE_DICT)
-            func->locals = dict(vector_symbol(0), vector_symbol(0));
+        func->locals = dict(vector_symbol(0), vector_symbol(0));
         name = i64(env_get_typename_by_type(&runtime_get()->env, type));
         name.type = -TYPE_SYMBOL;
 
@@ -564,7 +563,7 @@ i8_t cc_compile_call(cc_t *cc, rf_object_t *car, i32_t args, u32_t arity)
 i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
 {
     rf_object_t *car, *addr, *arg_keys, *arg_vals, lst;
-    i8_t type = TYPE_NULL, l = 0;
+    i8_t type = TYPE_NULL;
     u32_t i, arity;
     i32_t args = 0;
     i64_t id, sym;
@@ -601,43 +600,37 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         }
 
         // first find in locals
-        if (func->locals.type == TYPE_DICT)
+        arg_keys = &as_list(&func->locals)[0];
+        arg_vals = &as_list(&func->locals)[1];
+
+        id = vector_i64_find(arg_keys, object->i64);
+
+        if (id < arg_vals->adt->len)
         {
-            arg_keys = &as_list(&func->locals)[0];
-            arg_vals = &as_list(&func->locals)[1];
+            sym = as_vector_i64(arg_vals)[id];
+            type = env_get_type_by_typename(&runtime_get()->env, sym);
+            push_opcode(cc, object->id, code, OP_LLOAD);
+            push_rf_object(code, i64(1 + id));
+            func->stack_size++;
 
-            id = vector_i64_find(arg_keys, object->i64);
-
-            if (id < arg_vals->adt->len)
-            {
-                sym = as_vector_i64(arg_vals)[id];
-                type = env_get_type_by_typename(&runtime_get()->env, sym);
-                push_opcode(cc, object->id, code, OP_LLOAD);
-                push_rf_object(code, i64(1 + id));
-                func->stack_size++;
-
-                return type;
-            }
+            return type;
         }
 
         // then try to search in the function args
-        if (func->args.type == TYPE_DICT)
+        arg_keys = &as_list(&func->args)[0];
+        arg_vals = &as_list(&func->args)[1];
+
+        id = vector_i64_find(arg_keys, object->i64);
+
+        if (id < arg_vals->adt->len)
         {
-            arg_keys = &as_list(&func->args)[0];
-            arg_vals = &as_list(&func->args)[1];
+            sym = as_vector_i64(arg_vals)[id];
+            type = env_get_type_by_typename(&runtime_get()->env, sym);
+            push_opcode(cc, object->id, code, OP_LLOAD);
+            push_rf_object(code, i64(-(arg_keys->adt->len - id)));
+            func->stack_size++;
 
-            id = vector_i64_find(arg_keys, object->i64);
-
-            if (id < arg_vals->adt->len)
-            {
-                sym = as_vector_i64(arg_vals)[id];
-                type = env_get_type_by_typename(&runtime_get()->env, sym);
-                push_opcode(cc, object->id, code, OP_LLOAD);
-                push_rf_object(code, i64(-(arg_keys->adt->len - id)));
-                func->stack_size++;
-
-                return type;
-            }
+            return type;
         }
 
         // then in a global env
@@ -719,17 +712,7 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
                                   symbols_get(env_get_typename_by_type(env, type))));
             }
 
-            // need to reserve space for locals
-            if (func->locals.type == TYPE_DICT)
-                l = (i8_t)as_list(&func->locals)[0].adt->len;
-
             push_opcode(cc, car->id, code, OP_CALLF);
-
-            // salf call, so remember location to update it later with proper locals size
-            if (addr == &cc->function)
-                vector_i64_push(&cc->self_calls, code->adt->len);
-
-            push_opcode(cc, car->id, code, l);
             push_rf_object(code, *addr);
 
             // additional one for ctx
@@ -780,12 +763,11 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
     cc_t cc = {
         .top_level = top,
         .debuginfo = debuginfo,
-        .self_calls = vector_i64(0),
-        .function = function(rettype, args, null(), string(0),
+        .function = function(rettype, args, dict(vector_symbol(0), vector_i64(0)), string(0),
                              debuginfo_new(debuginfo->filename, name)),
     };
 
-    i8_t l = 0, type;
+    i8_t type;
     i32_t i;
     function_t *func = as_function(&cc.function);
     rf_object_t *code = &func->code, *b = body, err;
@@ -809,10 +791,7 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
         type = cc_compile_expr(false, &cc, b);
 
         if (type == TYPE_ERROR)
-        {
-            rf_object_free(&cc.self_calls);
             return cc.function;
-        }
     }
 
     // Compile last argument
@@ -820,10 +799,7 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
     type = cc_compile_expr(true, &cc, b);
 
     if (type == TYPE_ERROR)
-    {
-        rf_object_free(&cc.self_calls);
         return cc.function;
-    }
     // --
 
 epilogue:
@@ -837,36 +813,12 @@ epilogue:
         rf_free(msg);
         cc.function = err;
         cc.function.adt->span = debuginfo_get(cc.debuginfo, b->id);
-        rf_object_free(&cc.self_calls);
         return err;
     }
 
     func->rettype = type;
 
-    // update locals
-    if (func->locals.type == TYPE_DICT)
-    {
-        l = (i8_t)as_list(&func->locals)[0].adt->len;
-        for (i = 0; i < cc.self_calls.adt->len; i++)
-            *(as_string(code) + as_vector_i64(&cc.self_calls)[i]) = l;
-    }
-
-    if (!top)
-    {
-        push_opcode(&cc, id, code, OP_RET);
-
-        // locals len
-        l = (func->locals.type == TYPE_DICT) ? (i8_t)as_list(&func->locals)[0].adt->len : 0;
-        push_opcode(&cc, id, code, l);
-
-        // args len
-        l = (func->args.type == TYPE_DICT) ? (i8_t)as_list(&func->args)[0].adt->len : 0;
-        push_opcode(&cc, id, code, l);
-    }
-    else
-        push_opcode(&cc, id, code, OP_HALT);
-
-    rf_object_free(&cc.self_calls);
+    push_opcode(&cc, id, code, top ? OP_HALT : OP_RET);
 
     return cc.function;
 }
