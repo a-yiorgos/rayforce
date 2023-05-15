@@ -167,44 +167,48 @@ null_t vector_reserve(rf_object_t *vector, u32_t len)
 
 i64_t vector_i64_find(rf_object_t *vector, i64_t key)
 {
-    i64_t *ptr = as_vector_i64(vector);
+    i64_t *ptr = as_vector_i64(vector), l;
     i32_t i;
 
-    for (i = 0; i < vector->adt->len; i++)
+    l = vector->adt->len;
+    for (i = 0; i < l; i++)
     {
         if (ptr[i] == key)
             return i;
     }
 
-    return vector->adt->len;
+    return l;
 }
 
 i64_t vector_f64_find(rf_object_t *vector, f64_t key)
 {
     f64_t *ptr = as_vector_f64(vector);
     i32_t i;
+    i64_t l;
 
-    for (i = 0; i < vector->adt->len; i++)
+    l = vector->adt->len;
+    for (i = 0; i < l; i++)
     {
         if (ptr[i] == key)
             return i;
     }
 
-    return vector->adt->len;
+    return l;
 }
 
 i64_t list_find(rf_object_t *list, rf_object_t key)
 {
     rf_object_t *ptr = as_list(list);
     i32_t i;
+    i64_t l = list->adt->len;
 
-    for (i = 0; i < list->adt->len; i++)
+    for (i = 0; i < l; i++)
     {
         if (rf_object_eq(&ptr[i], &key))
             return i;
     }
 
-    return list->adt->len;
+    return l;
 }
 
 i64_t vector_find(rf_object_t *vector, rf_object_t key)

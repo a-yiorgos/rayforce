@@ -156,7 +156,7 @@ rf_object_t table(rf_object_t keys, rf_object_t vals)
 
 i8_t rf_object_eq(rf_object_t *a, rf_object_t *b)
 {
-    i64_t i;
+    i64_t i, l;
 
     if (a->type != b->type)
         return 0;
@@ -171,7 +171,9 @@ i8_t rf_object_eq(rf_object_t *a, rf_object_t *b)
             return 1;
         if (a->adt->len != b->adt->len)
             return 0;
-        for (i = 0; i < a->adt->len; i++)
+
+        l = a->adt->len;
+        for (i = 0; i < l; i++)
         {
             if (as_vector_i64(a)[i] != as_vector_i64(b)[i])
                 return 0;
@@ -184,7 +186,9 @@ i8_t rf_object_eq(rf_object_t *a, rf_object_t *b)
             return 1;
         if (a->adt->len != b->adt->len)
             return 0;
-        for (i = 0; i < a->adt->len; i++)
+
+        l = a->adt->len;
+        for (i = 0; i < l; i++)
         {
             if (as_vector_f64(a)[i] != as_vector_f64(b)[i])
                 return 0;
@@ -201,7 +205,7 @@ i8_t rf_object_eq(rf_object_t *a, rf_object_t *b)
  */
 rf_object_t rf_object_clone(rf_object_t *object)
 {
-    i64_t i;
+    i64_t i, l;
 
     if (object->type < TYPE_NULL)
         return *object;
@@ -227,7 +231,8 @@ type_symbol:
 type_string:
     return *object;
 type_list:
-    for (i = 0; i < object->adt->len; i++)
+    l = object->adt->len;
+    for (i = 0; i < l; i++)
         rc_inc(&as_list(object)[i]);
     return *object;
 type_dict:
@@ -286,7 +291,8 @@ type_string:
         vector_free(object);
     return;
 type_list:
-    for (i = 0; i < object->adt->len; i++)
+    l = object->adt->len;
+    for (i = 0; i < l; i++)
         rf_object_free(&as_list(object)[i]);
     if (rc == 0)
         vector_free(object);
@@ -330,7 +336,7 @@ type_error:
  */
 rf_object_t rf_object_cow(rf_object_t *object)
 {
-    i64_t i;
+    i64_t i, l;
     rf_object_t new;
 
     if (object->type < 0)
@@ -371,8 +377,9 @@ type_string:
     memcpy(as_string(&new), as_string(object), object->adt->len);
     return new;
 type_list:
-    new = list(object->adt->len);
-    for (i = 0; i < object->adt->len; i++)
+    l = object->adt->len;
+    new = list(l);
+    for (i = 0; i < l; i++)
         as_list(&new)[i] = rf_object_cow(&as_list(object)[i]);
     return new;
 type_dict:

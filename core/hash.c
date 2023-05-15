@@ -55,10 +55,10 @@ hash_table_t *ht_new(i32_t size, i64_t (*hasher)(null_t *a), i32_t (*compare)(nu
 
 null_t ht_free(hash_table_t *table)
 {
-    i32_t i;
+    i32_t i, c = table->cap;
     bucket_t *bucket, *next;
 
-    for (i = 0; i < table->cap; i++)
+    for (i = 0; i < c; i++)
     {
         bucket = table->buckets[i];
 

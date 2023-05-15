@@ -65,6 +65,8 @@ null_t init_functions(rf_object_t *records)
     REC(records, 2, "==",       -TYPE_BOOL,       rf_eq_f64_f64,           {-TYPE_F64,    -TYPE_F64  });
     REC(records, 2, "==",        TYPE_BOOL,       rf_eq_I64_i64,           { TYPE_I64,    -TYPE_I64  });
     REC(records, 2, "==",        TYPE_BOOL,       rf_eq_I64_I64,           { TYPE_I64,     TYPE_I64  });
+    REC(records, 2, "and",       TYPE_BOOL,       rf_and_Bool_Bool,        { TYPE_BOOL,    TYPE_BOOL });
+    REC(records, 2, "or",        TYPE_BOOL,       rf_or_Bool_Bool,         { TYPE_BOOL,    TYPE_BOOL });
     // REC(records, 2, "!=",       -TYPE_BOOL,       OP_NEQ,               { TYPE_ANY,    TYPE_ANY   });
     REC(records, 2, "<",        -TYPE_BOOL,       OP_LT,                   { TYPE_ANY,    TYPE_ANY   });
     // REC(records, 2, ">",        -TYPE_BOOL,       OP_GT,                { TYPE_ANY,    TYPE_ANY   });

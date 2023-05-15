@@ -83,11 +83,11 @@
 #define flatten(l, v, t)                        \
     {                                           \
         rf_object_t *member;                    \
-        i64_t i;                                \
+        i64_t i, n = l.adt->len;                \
         i8_t type = as_list(&l)[0].type;        \
         v = vector_##t(0);                      \
                                                 \
-        for (i = 0; i < l.adt->len; i++)        \
+        for (i = 0; i < n; i++)                 \
         {                                       \
             member = &as_list(&l)[i];           \
                                                 \

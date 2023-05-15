@@ -77,11 +77,12 @@ rf_object_t rf_eq_f64_f64(rf_object_t *x, rf_object_t *y)
 rf_object_t rf_eq_I64_i64(rf_object_t *x, rf_object_t *y)
 {
     i32_t i;
+    i64_t l = x->adt->len;
     i64_t *iv = as_vector_i64(x);
     rf_object_t res = vector_bool(x->adt->len);
     bool_t *ov = as_vector_bool(&res);
 
-    for (i = 0; i < x->adt->len; i++)
+    for (i = 0; i < l; i++)
         ov[i] = iv[i] == y->i64;
 
     return res;
@@ -90,12 +91,67 @@ rf_object_t rf_eq_I64_i64(rf_object_t *x, rf_object_t *y)
 rf_object_t rf_eq_I64_I64(rf_object_t *x, rf_object_t *y)
 {
     i32_t i;
+    i64_t l = x->adt->len;
     i64_t *iv1 = as_vector_i64(x), *iv2 = as_vector_i64(y);
     rf_object_t res = vector_bool(x->adt->len);
     bool_t *ov = as_vector_bool(&res);
 
-    for (i = 0; i < x->adt->len; i++)
+    for (i = 0; i < l; i++)
         ov[i] = iv1[i] == iv2[i];
+
+    return res;
+}
+
+rf_object_t rf_eq_F64_f64(rf_object_t *x, rf_object_t *y)
+{
+    i32_t i;
+    i64_t l = x->adt->len;
+    f64_t *iv = as_vector_f64(x);
+    rf_object_t res = vector_bool(x->adt->len);
+    bool_t *ov = as_vector_bool(&res);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv[i] == y->f64;
+
+    return res;
+}
+
+rf_object_t rf_eq_F64_F64(rf_object_t *x, rf_object_t *y)
+{
+    i32_t i;
+    i64_t l = x->adt->len;
+    f64_t *iv1 = as_vector_f64(x), *iv2 = as_vector_f64(y);
+    rf_object_t res = vector_bool(x->adt->len);
+    bool_t *ov = as_vector_bool(&res);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv1[i] == iv2[i];
+
+    return res;
+}
+
+rf_object_t rf_and_Bool_Bool(rf_object_t *x, rf_object_t *y)
+{
+    i32_t i;
+    i64_t l = x->adt->len;
+    rf_object_t res = vector_bool(x->adt->len);
+    bool_t *iv1 = as_vector_bool(x), *iv2 = as_vector_bool(y), *ov = as_vector_bool(&res);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv1[i] & iv2[i];
+
+    return res;
+}
+
+rf_object_t rf_or_Bool_Bool(rf_object_t *x, rf_object_t *y)
+{
+    i32_t i;
+    i64_t l = x->adt->len;
+    rf_object_t res = vector_bool(x->adt->len);
+    bool_t *iv1 = as_vector_bool(x), *iv2 = as_vector_bool(y), *ov = as_vector_bool(&res);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv1[i] | iv2[i];
 
     return res;
 }
