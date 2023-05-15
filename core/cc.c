@@ -73,24 +73,6 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
         return TYPE_ERROR;                                            \
     }
 
-null_t bin(u32_t i)
-{
-    u32_t mask = 1 << 31;
-
-    while (mask)
-    {
-        printf("%s ", (i & mask) ? "++" : "--");
-        mask = mask >> 1;
-    }
-
-    printf("\n");
-
-    for (i32_t i = 0; i < 32; i++)
-        printf("%0.2d ", 31 - i);
-
-    printf("\n");
-}
-
 env_record_t *find_record(rf_object_t *records, rf_object_t *car, i8_t *args, u32_t *arity)
 {
     u8_t match = 0;
