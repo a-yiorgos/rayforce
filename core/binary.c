@@ -63,3 +63,26 @@ rf_object_t rf_like_String_String(rf_object_t *x, rf_object_t *y)
 {
     return (bool(string_match(as_string(x), as_string(y))));
 }
+
+rf_object_t rf_eq_i64_i64(rf_object_t *x, rf_object_t *y)
+{
+    return (bool(x->i64 == y->i64));
+}
+
+rf_object_t rf_eq_f64_f64(rf_object_t *x, rf_object_t *y)
+{
+    return (bool(x->f64 == y->f64));
+}
+
+rf_object_t rf_eq_I64_i64(rf_object_t *x, rf_object_t *y)
+{
+    i32_t i;
+    i64_t *iv = as_vector_i64(x);
+    rf_object_t res = vector_bool(x->adt->len);
+    bool_t *ov = as_vector_bool(&res);
+
+    for (i = 0; i < x->adt->len; i++)
+        ov[i] = iv[i] == y->i64;
+
+    return res;
+}
