@@ -75,7 +75,8 @@ rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_
 
 env_record_t *find_record(rf_object_t *records, rf_object_t *car, i8_t *args, u32_t *arity)
 {
-    u8_t match = 0;
+    bool_t match_rec = false;
+    u8_t match_args = 0;
     u32_t i, j, records_len;
     env_record_t *rec;
 
@@ -89,21 +90,23 @@ env_record_t *find_record(rf_object_t *records, rf_object_t *car, i8_t *args, u3
 
         if (car->i64 == rec->id)
         {
+            match_rec = true;
             for (j = 0; j < *arity; j++)
             {
                 if (rec->args[j] == TYPE_ANY)
-                    match++;
+                    match_args++;
                 else if (rec->args[j] == args[j])
-                    match++;
+                    match_args++;
                 else
                     break;
             }
         }
 
-        if (match == *arity)
+        if (match_rec && match_args == *arity)
             return rec;
 
-        match = 0;
+        match_rec = false;
+        match_args = 0;
     }
 
     // Try to find in nary functions
@@ -571,13 +574,36 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
 
 i8_t cc_compile_call(cc_t *cc, rf_object_t *car, i8_t *args, u32_t arity)
 {
+    i32_t i, l, o = 0, n = 0;
     rf_object_t fn;
-    u32_t found_arity = arity;
-    rf_object_t *code = &as_function(&cc->function)->code;
-    env_record_t *rec = find_record(&runtime_get()->env.functions, car, args, &found_arity);
+    u32_t found_arity = arity, j;
+    rf_object_t *code = &as_function(&cc->function)->code, *records = &runtime_get()->env.functions;
+    env_record_t *rec = find_record(records, car, args, &found_arity);
+    str_t err;
 
     if (!rec)
-        return TYPE_ERROR;
+    {
+        l = get_records_len(records, arity);
+        err = str_fmt(0, "function name/arity mismatch");
+        n = o = strlen(err);
+        str_fmt_into(&err, &n, &o, 0, ", here are the possible variants:\n");
+
+        for (i = 0; i < l; i++)
+        {
+            rec = get_record(records, arity, i);
+
+            if (rec->id == car->i64)
+            {
+                str_fmt_into(&err, &n, &o, 0, "{'%s'", symbols_get(rec->id));
+                for (j = 0; j < arity; j++)
+                    str_fmt_into(&err, &n, &o, 0, ", '%s'", symbols_get(env_get_typename_by_type(&runtime_get()->env, rec->args[j])));
+
+                str_fmt_into(&err, &n, &o, 0, " -> %'s'}\n", symbols_get(env_get_typename_by_type(&runtime_get()->env, rec->ret)));
+            }
+        }
+
+        ccerr(cc, car->id, ERR_LENGTH, err);
+    }
 
     // It is an instruction
     if (rec->op < OP_INVALID)
@@ -789,13 +815,13 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
 
         type = cc_compile_call(cc, car, args, arity);
 
+        if (type == TYPE_ERROR)
+            return type;
+
         if (!has_consumer)
             push_opcode(cc, car->id, code, OP_POP);
 
-        if (type != TYPE_ERROR)
-            return type;
-
-        cerr(cc, car->id, ERR_LENGTH, "function has not found");
+        return type;
 
     default:
         push_opcode(cc, object->id, code, OP_PUSH);
