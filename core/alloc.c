@@ -40,24 +40,6 @@ static alloc_t _ALLOC = NULL;
 #define orderof(s)       (64 - __builtin_clzl(s - 1))
 // clang-format on
 
-// null_t bin(u32_t i)
-// {
-//     u32_t mask = 1 << 31;
-
-//     while (mask)
-//     {
-//         printf("%s ", (i & mask) ? "++" : "--");
-//         mask = mask >> 1;
-//     }
-
-//     printf("\n");
-
-//     for (i32_t i = 0; i < 32; i++)
-//         printf("%0.2d ", 31 - i);
-
-//     printf("\n");
-// }
-
 null_t print_blocks()
 {
     i32_t i = 0;
@@ -119,7 +101,7 @@ null_t rf_alloc_cleanup()
         node_t *node = _ALLOC->freelist[i];
         while (node)
         {
-            assert(node == node->base);
+            debug_assert(node == node->base);
             node_t *next = node->next;
             munmap(node->base, node->size);
             node = next;
