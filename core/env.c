@@ -209,14 +209,18 @@ rf_object_t *env_get_variable(env_t *env, rf_object_t *name)
 
 null_t env_set_variable(env_t *env, rf_object_t *name, rf_object_t value)
 {
-    rf_object_t *new_addr = (rf_object_t *)rf_malloc(sizeof(rf_object_t));
-    *new_addr = value;
-
     rf_object_t *addr = env_get_variable(env, name);
-    if (addr)
-        rf_object_free(addr);
 
-    dict_set(&env->variables, name, i64((i64_t)new_addr));
+    if (addr)
+    {
+        rf_object_free(addr);
+        *addr = value;
+        return;
+    }
+
+    addr = (rf_object_t *)rf_malloc(sizeof(rf_object_t));
+    *addr = value;
+    dict_set(&env->variables, name, i64((i64_t)addr));
 }
 
 extern i64_t env_get_typename_by_type(env_t *env, i8_t type)
