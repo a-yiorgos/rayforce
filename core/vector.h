@@ -29,10 +29,10 @@
 #include "ops.h"
 #include "util.h"
 
-#define VEC_ATTR_WITHOUT_NULLS 1ull << 63
-#define VEC_ATTR_ASC (1ull << 62)
-#define VEC_ATTR_DESC (1ull << 61)
-#define VEC_ATTR_DISTINCT (1ull << 60)
+#define VEC_ATTR_WITHOUT_NULLS 1ll << 63
+#define VEC_ATTR_ASC (1ll << 62)
+#define VEC_ATTR_DESC (1ll << 61)
+#define VEC_ATTR_DISTINCT (1ll << 60)
 #define VEC_ATTR_MASK 0xFF << 55
 
 /*

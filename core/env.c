@@ -62,6 +62,7 @@ null_t init_functions(rf_object_t *records)
     REC(records, 1, "not",      -TYPE_BOOL,       rf_not_bool,             {-TYPE_BOOL                 });
     REC(records, 1, "not",       TYPE_BOOL,       rf_not_Bool,             { TYPE_BOOL                 });
     REC(records, 1, "asc",       TYPE_I64,        rf_asc_I64,              { TYPE_I64                  });
+    REC(records, 1, "desc",      TYPE_I64,        rf_desc_I64,             { TYPE_I64                  });
  
     // Binary 
     REC(records, 2, "==",       -TYPE_BOOL,       rf_eq_i64_i64,           {-TYPE_I64,    -TYPE_I64    });

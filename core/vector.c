@@ -39,6 +39,7 @@ rf_object_t vector(i8_t type, i8_t size_of_val, i64_t len)
 
     adt->len = len;
     adt->rc = 1;
+    adt->attrs = 0;
 
     rf_object_t v = {
         .type = type,

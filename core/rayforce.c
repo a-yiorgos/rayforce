@@ -378,35 +378,43 @@ type_any:
     return *object;
 type_bool:
     new = vector_bool(object->adt->len);
+    new.adt->attrs = object->adt->attrs;
     memcpy(as_vector_bool(&new), as_vector_bool(object), object->adt->len);
     return new;
 type_i64:
     new = vector_i64(object->adt->len);
+    new.adt->attrs = object->adt->attrs;
     memcpy(as_vector_i64(&new), as_vector_i64(object), object->adt->len * sizeof(i64_t));
     return new;
 type_f64:
     new = vector_i64(object->adt->len);
+    new.adt->attrs = object->adt->attrs;
     memcpy(as_vector_f64(&new), as_vector_f64(object), object->adt->len * sizeof(f64_t));
     return new;
 type_symbol:
     new = vector_symbol(object->adt->len);
+    new.adt->attrs = object->adt->attrs;
     memcpy(as_vector_symbol(&new), as_vector_symbol(object), object->adt->len * sizeof(i64_t));
     return new;
 type_char:
     new = string(object->adt->len);
+    new.adt->attrs = object->adt->attrs;
     memcpy(as_string(&new), as_string(object), object->adt->len);
     return new;
 type_list:
     l = object->adt->len;
     new = list(l);
+    new.adt->attrs = object->adt->attrs;
     for (i = 0; i < l; i++)
         as_list(&new)[i] = rf_object_cow(&as_list(object)[i]);
     return new;
 type_dict:
     new = dict(rf_object_cow(&as_list(object)[0]), rf_object_cow(&as_list(object)[1]));
+    new.adt->attrs = object->adt->attrs;
     return new;
 type_table:
     new = table(rf_object_cow(&as_list(object)[0]), rf_object_cow(&as_list(object)[1]));
+    new.adt->attrs = object->adt->attrs;
     return new;
 type_function:
     return *object;

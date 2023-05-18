@@ -22,6 +22,7 @@
  */
 
 #include "sort.h"
+#include "vector.h"
 
 null_t swap(i64_t *a, i64_t *b)
 {
@@ -89,8 +90,6 @@ null_t heap_sort(i64_t arr[], i64_t n)
     }
 }
 
-#define MIN_MERGE 32
-
 null_t insertion_sort(i64_t arr[], i64_t left, i64_t right)
 {
     for (i64_t i = left + 1; i <= right; i++)
@@ -106,71 +105,86 @@ null_t insertion_sort(i64_t arr[], i64_t left, i64_t right)
     }
 }
 
-null_t merge(i64_t arr[], i64_t l, i64_t m, i64_t r)
+i64_t count_out_of_order(i64_t arr[], i64_t n)
 {
-    i64_t len1 = m - l + 1, len2 = r - m;
-    i64_t left[len1], right[len2];
-    for (i64_t i = 0; i < len1; i++)
-        left[i] = arr[l + i];
-    for (i64_t i = 0; i < len2; i++)
-        right[i] = arr[m + 1 + i];
+    i64_t i, out_of_order_count = 0;
 
-    i64_t i = 0;
-    i64_t j = 0;
-    i64_t k = l;
+    for (i = 0; i < n - 1; i++)
+        if (arr[i] > arr[i + 1])
+            out_of_order_count++;
 
-    while (i < len1 && j < len2)
-    {
-        if (left[i] >= right[j])
-        {
-            arr[k] = left[i];
-            i++;
-        }
-        else
-        {
-            arr[k] = right[j];
-            j++;
-        }
-        k++;
-    }
-
-    while (i < len1)
-    {
-        arr[k] = left[i];
-        k++;
-        i++;
-    }
-
-    while (j < len2)
-    {
-        arr[k] = right[j];
-        k++;
-        j++;
-    }
+    return out_of_order_count;
 }
 
-null_t tim_sort(i64_t arr[], i64_t n)
+null_t rf_sort_asc(rf_object_t *vec)
 {
-    for (i64_t i = 0; i < n; i += MIN_MERGE)
-        insertion_sort(arr, i, (i + MIN_MERGE - 1) < (n - 1) ? (i + MIN_MERGE - 1) : (n - 1));
+    i64_t i, len = vec->adt->len, out_of_order;
+    i64_t *v = as_vector_i64(vec);
 
-    for (i64_t size = MIN_MERGE; size < n; size = 2 * size)
+    if (vec->adt->attrs & VEC_ATTR_ASC)
+        return;
+
+    if (vec->adt->attrs & VEC_ATTR_DESC)
     {
-        for (i64_t left = 0; left < n; left += 2 * size)
-        {
-            i64_t mid = left + size - 1;
-            i64_t right = (left + 2 * size - 1) < (n - 1) ? (left + 2 * size - 1) : (n - 1);
-
-            if (mid < right)
-                merge(arr, left, mid, right);
-        }
+        for (i = 0; i < len / 2; i++)
+            swap(&v[i], &v[len - i - 1]);
+        return;
     }
+
+    if (len < 100)
+    {
+        insertion_sort(v, 0, len - 1);
+        return;
+    }
+
+    out_of_order = count_out_of_order(v, len);
+
+    // ascending order
+    if (out_of_order == 0)
+    {
+        vec->adt->attrs |= VEC_ATTR_ASC;
+        return;
+    }
+
+    // descending order
+    if (out_of_order == len - 1)
+    {
+        vec->adt->attrs |= VEC_ATTR_DESC;
+        for (i = 0; i < len / 2; i++)
+            swap(&v[i], &v[len - i - 1]);
+        return;
+    }
+
+    // partially ordered
+    if (out_of_order > len / 2)
+    {
+        quick_sort(v, 0, len - 1);
+        return;
+    }
+
+    heap_sort(v, len);
 }
 
-null_t rf_sort(rf_object_t *vec)
+null_t rf_sort_desc(rf_object_t *vec)
 {
     i64_t len = vec->adt->len;
     i64_t *v = as_vector_i64(vec);
+
+    if (vec->adt->attrs & VEC_ATTR_DESC)
+        return;
+
+    if (vec->adt->attrs & VEC_ATTR_ASC)
+    {
+        for (i64_t i = 0; i < len / 2; i++)
+            swap(&v[i], &v[len - i - 1]);
+        return;
+    }
+
+    if (len < 100)
+    {
+        insertion_sort(v, 0, len - 1);
+        return;
+    }
 
     quick_sort(v, 0, len - 1);
     // quick_sort(v, 0, len - 1);

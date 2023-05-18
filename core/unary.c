@@ -43,7 +43,7 @@ rf_object_t rf_til_i64(rf_object_t *x)
     for (i = 0; i < l; i++)
         v[i] = i;
 
-    vec.adt->attrs = VEC_ATTR_ASC | VEC_ATTR_DISTINCT | VEC_ATTR_WITHOUT_NULLS;
+    vec.adt->attrs = VEC_ATTR_ASC | VEC_ATTR_WITHOUT_NULLS | VEC_ATTR_DISTINCT;
     return vec;
 }
 
@@ -271,7 +271,15 @@ rf_object_t rf_not_Bool(rf_object_t *x)
 rf_object_t rf_asc_I64(rf_object_t *x)
 {
     rf_object_t vec = rf_object_cow(x);
-    rf_sort(&vec);
+    rf_sort_asc(&vec);
+
+    return vec;
+}
+
+rf_object_t rf_desc_I64(rf_object_t *x)
+{
+    rf_object_t vec = rf_object_cow(x);
+    rf_sort_desc(&vec);
 
     return vec;
 }

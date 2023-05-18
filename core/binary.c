@@ -967,6 +967,6 @@ rf_object_t rf_rand_i64_i64(rf_object_t *x, rf_object_t *y)
         ov[i] = seed % range;
     }
 
-    vec.adt->attrs |= VEC_ATTR_WITHOUT_NULLS;
+    vec.adt->attrs = VEC_ATTR_WITHOUT_NULLS;
     return vec;
 }
