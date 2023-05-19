@@ -529,9 +529,10 @@ rf_object_t parse_dict(parser_t *parser)
         token = advance(parser);
     }
 
-    keys = list_flatten(keys);
-    vals = list_flatten(vals);
-    d = dict(keys, vals);
+    d = dict(list_flatten(&keys), list_flatten(&vals));
+
+    rf_object_free(&keys);
+    rf_object_free(&vals);
 
     span_extend(parser, &span);
     d.id = span_commit(parser, span);

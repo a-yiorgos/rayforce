@@ -89,27 +89,25 @@
 #define flatten(l, v, t)                        \
     {                                           \
         rf_object_t *member;                    \
-        i64_t i, n = l.adt->len;                \
-        i8_t type = as_list(&l)[0].type;        \
+        i64_t i, n = (l)->adt->len;             \
+        i8_t type = as_list(l)[0].type;         \
         v = vector_##t(0);                      \
                                                 \
         for (i = 0; i < n; i++)                 \
         {                                       \
-            member = &as_list(&l)[i];           \
+            member = &as_list(l)[i];            \
                                                 \
             if (member->type != type)           \
             {                                   \
                 rf_object_free(&vec);           \
-                return list;                    \
+                return rf_object_clone(list);   \
             }                                   \
                                                 \
             vector_##t##_push(&vec, member->t); \
         }                                       \
     }
 
-#define ATTR_mmap_mallocATED 1
-
-extern rf_object_t list_flatten(rf_object_t object);
+extern rf_object_t list_flatten(rf_object_t *object);
 extern i64_t vector_find(rf_object_t *vector, rf_object_t *key);
 extern rf_object_t vector_get(rf_object_t *vector, rf_object_t *key);
 extern i64_t vector_push(rf_object_t *vector, rf_object_t object);

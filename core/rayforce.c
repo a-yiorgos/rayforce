@@ -409,7 +409,8 @@ type_list:
         as_list(&new)[i] = rf_object_cow(&as_list(object)[i]);
     return new;
 type_dict:
-    new = dict(rf_object_cow(&as_list(object)[0]), rf_object_cow(&as_list(object)[1]));
+    as_list(object)[0] = rf_object_cow(&as_list(object)[0]);
+    as_list(object)[1] = rf_object_cow(&as_list(object)[1]);
     new.adt->attrs = object->adt->attrs;
     return new;
 type_table:

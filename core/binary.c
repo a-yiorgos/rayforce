@@ -33,7 +33,7 @@
 
 rf_object_t rf_dict(rf_object_t *x, rf_object_t *y)
 {
-    return dict(list_flatten(rf_object_clone(x)), list_flatten(rf_object_clone(y)));
+    return dict(rf_object_clone(x), rf_object_clone(y));
 }
 
 rf_object_t rf_add_i64_i64(rf_object_t *x, rf_object_t *y)
@@ -1005,8 +1005,16 @@ rf_object_t rf_concat_bool_Bool(rf_object_t *x, rf_object_t *y)
 
 rf_object_t rf_concat_I64_i64(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = vector_i64(x->adt->len + 1);
-    as_vector_i64(&vec)[x->adt->len] = y->i64;
+    i64_t i, l = x->adt->len, *iv, *ov;
+    rf_object_t vec = vector_i64(l + 1);
+
+    iv = as_vector_i64(x);
+    ov = as_vector_i64(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv[i];
+
+    ov[l] = y->i64;
 
     return vec;
 }
@@ -1028,17 +1036,33 @@ rf_object_t rf_concat_I64_I64(rf_object_t *x, rf_object_t *y)
 
 rf_object_t rf_concat_i64_I64(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = vector_i64(2);
-    as_vector_i64(&vec)[0] = x->i64;
-    as_vector_i64(&vec)[1] = y->i64;
+    i64_t i, l = y->adt->len, *iv, *ov;
+    rf_object_t vec = vector_i64(l + 1);
+
+    iv = as_vector_i64(y);
+    ov = as_vector_i64(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i + 1] = iv[i];
+
+    ov[0] = x->i64;
 
     return vec;
 }
 
 rf_object_t rf_concat_F64_f64(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = vector_f64(x->adt->len + 1);
-    as_vector_f64(&vec)[x->adt->len] = y->f64;
+    i64_t i, l = x->adt->len;
+    f64_t *iv, *ov;
+    rf_object_t vec = vector_f64(l + 1);
+
+    iv = as_vector_f64(x);
+    ov = as_vector_f64(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv[i];
+
+    ov[l] = y->f64;
 
     return vec;
 }
@@ -1060,17 +1084,34 @@ rf_object_t rf_concat_F64_F64(rf_object_t *x, rf_object_t *y)
 
 rf_object_t rf_concat_f64_F64(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = vector_f64(2);
-    as_vector_f64(&vec)[0] = x->f64;
-    as_vector_f64(&vec)[1] = y->f64;
+    i64_t i, l = y->adt->len;
+    f64_t *iv, *ov;
+    rf_object_t vec = vector_f64(l + 1);
+
+    iv = as_vector_f64(y);
+    ov = as_vector_f64(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i + 1] = iv[i];
+
+    ov[0] = x->f64;
 
     return vec;
 }
 
 rf_object_t rf_concat_Char_char(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = string(x->adt->len + 1);
-    as_string(&vec)[x->adt->len] = y->schar;
+    i64_t i, l = x->adt->len;
+    str_t iv, ov;
+    rf_object_t vec = string(l + 1);
+
+    iv = as_string(x);
+    ov = as_string(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i] = iv[i];
+
+    ov[l] = y->schar;
 
     return vec;
 }
@@ -1092,9 +1133,17 @@ rf_object_t rf_concat_Char_Char(rf_object_t *x, rf_object_t *y)
 
 rf_object_t rf_concat_char_Char(rf_object_t *x, rf_object_t *y)
 {
-    rf_object_t vec = string(2);
-    as_string(&vec)[0] = x->schar;
-    as_string(&vec)[1] = y->schar;
+    i64_t i, l = y->adt->len;
+    str_t iv, ov;
+    rf_object_t vec = string(l + 1);
+
+    iv = as_string(y);
+    ov = as_string(&vec);
+
+    for (i = 0; i < l; i++)
+        ov[i + 1] = iv[i];
+
+    ov[0] = x->schar;
 
     return vec;
 }

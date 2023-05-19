@@ -43,5 +43,6 @@ rf_object_t rf_iasc_I64(rf_object_t *x);
 rf_object_t rf_idesc_I64(rf_object_t *x);
 rf_object_t rf_asc_I64(rf_object_t *x);
 rf_object_t rf_desc_I64(rf_object_t *x);
+rf_object_t rf_flatten_List(rf_object_t *x);
 
 #endif

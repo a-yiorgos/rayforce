@@ -274,23 +274,20 @@ type_list:
 /*
  * Try to flatten list in a vector if all elements are of the same type
  */
-rf_object_t list_flatten(rf_object_t list)
+rf_object_t list_flatten(rf_object_t *list)
 {
-    if (list.type != TYPE_LIST)
-        return list;
-
-    i64_t len = list.adt->len;
+    i64_t len = list->adt->len;
     i8_t type;
     rf_object_t vec;
 
     if (len == 0)
-        return list;
+        return rf_object_clone(list);
 
-    type = as_list(&list)[0].type;
+    type = as_list(list)[0].type;
 
-    // Only scalar types can be flattened
+    // Only scalar types inside a list can be flattened
     if (type > -1)
-        return list;
+        return rf_object_clone(list);
 
     switch (type)
     {
@@ -306,10 +303,8 @@ rf_object_t list_flatten(rf_object_t list)
             vec.type = TYPE_SYMBOL;
         break;
     default:
-        return list;
+        return rf_object_clone(list);
     }
-
-    rf_object_free(&list);
 
     return vec;
 }
