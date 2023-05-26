@@ -33,7 +33,7 @@ rf_object_t rf_rand_i64_i64_i64(rf_object_t *x, rf_object_t *y, rf_object_t *z)
     v = as_vector_i64(&vec);
 
     for (i = 0; i < count; i++)
-        v[i] = rand_i64() % mod;
+        v[i] = rand_u64() % mod + y->i64;
 
     return vec;
 }

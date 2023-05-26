@@ -25,7 +25,7 @@
 #include "string.h"
 #include "ops.h"
 
-static i64_t __RND_SEED__ = 0;
+static u64_t __RND_SEED__ = 0;
 
 /*
  * Incase of using -Ofast compiler flag, we can not just use x != x due to
@@ -94,11 +94,11 @@ i64_t ceil_f64(f64_t x)
     return x >= 0.0 ? (i64_t)(x + 1.0) : (i64_t)x;
 }
 
-i64_t rand_i64()
+u64_t rand_u64()
 {
-#define A 6364136223846793005LL
-#define C 1442695040888963407LL
-#define M (1LL << 63)
+#define A 6364136223846793005ULL
+#define C 1442695040888963407ULL
+#define M (1ULL << 63)
     __RND_SEED__ += time(0);
     __RND_SEED__ = (A * __RND_SEED__ + C) % M;
     return __RND_SEED__;

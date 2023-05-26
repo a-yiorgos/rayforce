@@ -30,5 +30,5 @@ null_t guid_generate(guid_t *g)
     i64_t i;
 
     for (i = 0; i < 16; i++)
-        g->data[i] = rand_i64() % 256;
+        g->data[i] = rand_u64() % 256;
 }
