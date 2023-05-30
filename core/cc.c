@@ -588,18 +588,56 @@ i8_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
     return TYPE_NONE;
 }
 
-// i8_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
-// {
-//     UNUSED(has_consumer);
+i8_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
+{
+    UNUSED(has_consumer);
 
-//     i8_t type, *args;
-//     rf_object_t *car, *addr, *arg_keys, *arg_vals;
-//     function_t *func = as_function(&cc->function);
-//     rf_object_t *code = &func->code;
-//     env_t *env = &runtime_get()->env;
+    i8_t type;
+    rf_object_t *car, *params, key, val;
+    function_t *func = as_function(&cc->function);
+    rf_object_t *code = &func->code;
+    env_t *env = &runtime_get()->env;
 
-//     return TYPE_NONE;
-// }
+    car = &as_list(object)[0];
+    if (car->i64 == symbol("select").i64)
+    {
+        if (arity == 0)
+            cerr(cc, car->id, ERR_LENGTH, "'select' takes at least two arguments");
+
+        params = &as_list(object)[1];
+
+        if (params->type != TYPE_DICT)
+            cerr(cc, car->id, ERR_LENGTH, "'select' takes dict of params");
+
+        key = symbol("from");
+        val = dict_get(params, &key);
+        type = cc_compile_expr(true, cc, &val);
+        rf_object_free(&val);
+        if (type == TYPE_ERROR)
+            return type;
+
+        if (type != TYPE_TABLE)
+            cerr(cc, car->id, ERR_TYPE, "'select': 'from' must be a Table");
+
+        // compile filters
+        key = symbol("where");
+        val = dict_get(params, &key);
+        if (!is_null(&val))
+        {
+            type = cc_compile_expr(true, cc, &val);
+            rf_object_free(&val);
+
+            if (type == TYPE_ERROR)
+                return type;
+
+            if (type != -TYPE_BOOL)
+                cerr(cc, car->id, ERR_TYPE, "'select': condition must have a Bool result");
+        }
+        // --
+    }
+
+    return TYPE_NONE;
+}
 /*
  * Special forms are those that are not in a table of functions because of their special nature.
  * return TYPE_ERROR if there is an error
@@ -655,10 +693,10 @@ i8_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (type != TYPE_NONE)
         return type;
 
-    // type = cc_compile_select(has_consumer, cc, object, arity);
+    type = cc_compile_select(has_consumer, cc, object, arity);
 
-    // if (type != TYPE_NONE)
-    //     return type;
+    if (type != TYPE_NONE)
+        return type;
 
     return type;
 }

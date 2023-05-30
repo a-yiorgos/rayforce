@@ -1,0 +1,1 @@
+(set t (table [a b] (list (til 10000) (til 10000))))

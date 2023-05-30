@@ -177,7 +177,7 @@ rf_object_t timestamp(i64_t val)
 
 rf_object_t table(rf_object_t keys, rf_object_t vals)
 {
-    if (keys.type != TYPE_SYMBOL || vals.type != 0)
+    if (keys.type != TYPE_SYMBOL || vals.type != TYPE_LIST)
         return error(ERR_TYPE, "Keys must be a symbol vector and rf_objects must be list");
 
     if (keys.adt->len != vals.adt->len)

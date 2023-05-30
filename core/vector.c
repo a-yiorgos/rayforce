@@ -61,15 +61,45 @@ i64_t vector_i64_push(rf_object_t *vector, i64_t value)
     return vector->adt->len;
 }
 
-i64_t vector_i64_pop(rf_object_t *vector)
-{
-    return pop(vector, i64_t);
-}
-
 i64_t vector_f64_push(rf_object_t *vector, f64_t value)
 {
     push(vector, f64_t, value);
     return vector->adt->len;
+}
+
+i64_t vector_symbol_push(rf_object_t *vector, i64_t value)
+{
+    push(vector, i64_t, value);
+    return vector->adt->len;
+}
+
+i64_t vector_timestamp_push(rf_object_t *vector, i64_t value)
+{
+    push(vector, i64_t, value);
+    return vector->adt->len;
+}
+
+i64_t vector_char_push(rf_object_t *vector, i8_t value)
+{
+    push(vector, i8_t, value);
+    return vector->adt->len;
+}
+
+i64_t vector_guid_push(rf_object_t *vector, guid_t value)
+{
+    push(vector, guid_t, value);
+    return vector->adt->len;
+}
+
+i64_t list_push(rf_object_t *list, rf_object_t value)
+{
+    push(list, rf_object_t, value);
+    return list->adt->len;
+}
+
+i64_t vector_i64_pop(rf_object_t *vector)
+{
+    return pop(vector, i64_t);
 }
 
 f64_t vector_f64_pop(rf_object_t *vector)
@@ -77,10 +107,25 @@ f64_t vector_f64_pop(rf_object_t *vector)
     return pop(vector, f64_t);
 }
 
-i64_t list_push(rf_object_t *list, rf_object_t object)
+i64_t vector_symbol_pop(rf_object_t *vector)
 {
-    push(list, rf_object_t, object);
-    return list->adt->len;
+    return pop(vector, i64_t);
+}
+
+i64_t vector_timestamp_pop(rf_object_t *vector)
+{
+    return pop(vector, i64_t);
+}
+
+guid_t *vector_guid_pop(rf_object_t *vector)
+{
+    guid_t *g = as_vector_guid(vector);
+    return &g[--vector->adt->len];
+}
+
+char_t vector_char_pop(rf_object_t *vector)
+{
+    return pop(vector, char_t);
 }
 
 rf_object_t list_pop(rf_object_t *list)
@@ -91,29 +136,36 @@ rf_object_t list_pop(rf_object_t *list)
 
 i64_t vector_push(rf_object_t *vector, rf_object_t object)
 {
-    i8_t type = vector->type;
+    i8_t type = vector->type - TYPE_BOOL;
 
-    if (type != 0 && type != -object.type)
-        panic("vector_push: type mismatch");
+    static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
+                                    &&type_timestamp, &&type_guid, &&type_char, &&type_list};
 
-    switch (type)
-    {
-    case TYPE_I64:
-        vector_i64_push(vector, object.i64);
-        break;
-    case TYPE_F64:
-        vector_f64_push(vector, object.f64);
-        break;
-    case TYPE_SYMBOL:
-        vector_i64_push(vector, object.i64);
-        break;
-    case TYPE_LIST:
-        list_push(vector, object);
-        break;
-    default:
-        exit(1);
-    }
+    goto *types_table[(i32_t)type];
 
+type_bool:
+    vector_bool_push(vector, object.bool);
+    return vector->adt->len;
+type_i64:
+    vector_i64_push(vector, object.i64);
+    return vector->adt->len;
+type_f64:
+    vector_f64_push(vector, object.f64);
+    return vector->adt->len;
+type_symbol:
+    vector_i64_push(vector, object.i64);
+    return vector->adt->len;
+type_timestamp:
+    vector_i64_push(vector, object.i64);
+    return vector->adt->len;
+type_guid:
+    vector_guid_push(vector, *object.guid);
+    return vector->adt->len;
+type_char:
+    vector_char_push(vector, object.schar);
+    return vector->adt->len;
+type_list:
+    list_push(vector, object);
     return vector->adt->len;
 }
 
@@ -122,48 +174,70 @@ rf_object_t vector_pop(rf_object_t *vector)
     if (vector->adt->len == 0)
         return null();
 
-    i8_t type = vector->type;
-    rf_object_t obj;
+    i8_t type = vector->type - TYPE_BOOL;
 
-    switch (type)
-    {
-    case TYPE_I64:
-        return i64(vector_i64_pop(vector));
-    case TYPE_F64:
-        return f64(vector_f64_pop(vector));
-    case TYPE_SYMBOL:
-        obj = i64(vector_i64_pop(vector));
-        obj.type = -TYPE_SYMBOL;
-        return obj;
-    case TYPE_LIST:
-        return list_pop(vector);
-    default:
-        exit(1);
-    }
+    static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
+                                    &&type_timestamp, &&type_guid, &&type_char, &&type_list};
+
+    goto *types_table[(i32_t)type];
+
+type_bool:
+    return bool(vector_i64_pop(vector));
+type_i64:
+    return i64(vector_i64_pop(vector));
+type_f64:
+    return f64(vector_f64_pop(vector));
+type_symbol:
+    return symboli64(vector_i64_pop(vector));
+type_timestamp:
+    return i64(vector_i64_pop(vector));
+type_guid:
+    return guid(vector_guid_pop(vector)->data);
+type_char:
+    return schar(vector_char_pop(vector));
+type_list:
+    return list_pop(vector);
 }
 
 null_t vector_reserve(rf_object_t *vector, u32_t len)
 {
-    switch (vector->type)
-    {
-    case TYPE_I64:
-        reserve(vector, i64_t, len);
-        break;
-    case TYPE_F64:
-        reserve(vector, f64_t, len);
-        break;
-    case TYPE_SYMBOL:
-        reserve(vector, i64_t, len);
-        break;
-    case TYPE_LIST:
-        reserve(vector, rf_object_t, len);
-        break;
-    case TYPE_CHAR:
-        reserve(vector, i8_t, len);
-        break;
-    default:
-        exit(1);
-    }
+    i8_t type = vector->type - TYPE_BOOL;
+
+    static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
+                                    &&type_timestamp, &&type_guid, &&type_char, &&type_list};
+
+    goto *types_table[(i32_t)type];
+
+type_bool:
+    reserve(vector, bool_t, len);
+    return;
+type_i64:
+    reserve(vector, i64_t, len);
+    return;
+type_f64:
+    reserve(vector, f64_t, len);
+    return;
+type_symbol:
+    reserve(vector, i64_t, len);
+    return;
+type_timestamp:
+    reserve(vector, i64_t, len);
+    return;
+type_guid:
+    reserve(vector, guid_t, len);
+    return;
+type_char:
+    reserve(vector, i8_t, len);
+    return;
+type_list:
+    reserve(vector, rf_object_t, len);
+    return;
+}
+
+null_t vector_shrink(rf_object_t *vector, u32_t len)
+{
+    // TODO!!!
+    vector->adt->len = len;
 }
 
 i64_t vector_find(rf_object_t *vector, rf_object_t *key)

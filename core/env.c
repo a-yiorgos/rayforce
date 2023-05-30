@@ -123,6 +123,7 @@ null_t init_functions(rf_object_t *records)
     REC(records, 2, "/",         TYPE_F64,        rf_div_F64_F64,          { TYPE_F64,        TYPE_F64         });
     REC(records, 2, "like",     -TYPE_BOOL,       rf_like_Char_Char,       { TYPE_CHAR,       TYPE_CHAR        });
     REC(records, 2, "dict",      TYPE_DICT,       rf_dict,                 { TYPE_ANY,        TYPE_ANY         });
+    REC(records, 2, "table",     TYPE_TABLE,      rf_table,                { TYPE_ANY,        TYPE_ANY         });
      
     REC(records, 2, "nth",      -TYPE_BOOL,       rf_nth_Bool_i64,         { TYPE_BOOL,      -TYPE_I64         });
     REC(records, 2, "nth",       TYPE_BOOL,       rf_nth_Bool_I64,         { TYPE_BOOL,       TYPE_I64         });
@@ -159,6 +160,7 @@ null_t init_functions(rf_object_t *records)
     REC(records, 2, "concat",    TYPE_CHAR,       rf_concat_Char_Char,     { TYPE_CHAR,       TYPE_CHAR        });
     REC(records, 2, "concat",    TYPE_CHAR,       rf_concat_char_Char,     {-TYPE_CHAR,       TYPE_CHAR        });
     REC(records, 2, "concat",    TYPE_LIST,       rf_concat_List_List,     { TYPE_LIST,       TYPE_LIST        });
+    REC(records, 2, "filter",    TYPE_I64,        rf_filter_I64_Bool,      { TYPE_I64,        TYPE_BOOL        });
      
     // Ternary       
     REC(records, 3, "rand",      TYPE_I64,        rf_rand_i64_i64_i64,     {-TYPE_I64,    -TYPE_I64, -TYPE_I64 });

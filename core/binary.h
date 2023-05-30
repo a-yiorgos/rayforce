@@ -27,6 +27,7 @@
 #include "rayforce.h"
 
 rf_object_t rf_dict(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_table(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_add_i64_i64(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_add_f64_f64(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_add_I64_i64(rf_object_t *x, rf_object_t *y);
@@ -131,5 +132,10 @@ rf_object_t rf_concat_Char_char(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_concat_Char_Char(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_concat_char_Char(rf_object_t *x, rf_object_t *y);
 rf_object_t rf_concat_List_List(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_filter_I64_Bool(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_filter_Timestamp_Bool(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_filter_Guid_Bool(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_filter_F64_Bool(rf_object_t *x, rf_object_t *y);
+rf_object_t rf_filter_Char_Bool(rf_object_t *x, rf_object_t *y);
 
 #endif

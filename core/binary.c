@@ -36,6 +36,11 @@ rf_object_t rf_dict(rf_object_t *x, rf_object_t *y)
     return dict(rf_object_clone(x), rf_object_clone(y));
 }
 
+rf_object_t rf_table(rf_object_t *x, rf_object_t *y)
+{
+    return table(rf_object_clone(x), rf_object_clone(y));
+}
+
 rf_object_t rf_add_i64_i64(rf_object_t *x, rf_object_t *y)
 {
     return (i64(ADDI64(x->i64, y->i64)));
@@ -1246,3 +1251,28 @@ rf_object_t rf_concat_List_List(rf_object_t *x, rf_object_t *y)
 
     return vec;
 }
+
+rf_object_t rf_filter_I64_Bool(rf_object_t *x, rf_object_t *y)
+{
+    if (x->adt->len != y->adt->len)
+        return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
+
+    i32_t i, j = 0;
+    i64_t l = x->adt->len;
+    i64_t *iv1 = as_vector_i64(x);
+    bool_t *iv2 = as_vector_bool(y);
+    rf_object_t res = vector_i64(l);
+    i64_t *ov = as_vector_i64(&res);
+
+    for (i = 0; i < l; i++)
+        if (iv2[i])
+            ov[j++] = iv1[i];
+
+    vector_shrink(&res, j);
+
+    return res;
+}
+// rf_object_t rf_filter_Timestamp_Bool(rf_object_t *x, rf_object_t *y);
+// rf_object_t rf_filter_Guid_Bool(rf_object_t *x, rf_object_t *y);
+// rf_object_t rf_filter_F64_Bool(rf_object_t *x, rf_object_t *y);
+// rf_object_t rf_filter_Char_Bool(rf_object_t *x, rf_object_t *y);
