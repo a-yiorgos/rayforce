@@ -51,7 +51,8 @@ null_t init_functions(rf_object_t *records)
     REC(records, 1, "type",     -TYPE_SYMBOL,     OP_TYPE,                 { TYPE_ANY                          });
     REC(records, 1, "til" ,      TYPE_I64,        rf_til_i64,              {-TYPE_I64                          });
     REC(records, 1, "trace" ,    TYPE_I64,        OP_TRACE,                { TYPE_ANY                          });
-    REC(records, 1, "distinct",  TYPE_I64,        rf_distinct_i64,         { TYPE_I64                          });
+    REC(records, 1, "distinct",  TYPE_I64,        rf_distinct_I64,         { TYPE_I64                          });
+    REC(records, 1, "group",     TYPE_DICT,       rf_group_I64,            { TYPE_I64                          });
     REC(records, 1, "sum",      -TYPE_I64,        rf_sum_I64,              { TYPE_I64                          });
     REC(records, 1, "sum",      -TYPE_F64,        rf_sum_F64,              { TYPE_F64                          });
     REC(records, 1, "avg",      -TYPE_F64,        rf_avg_I64,              { TYPE_I64                          });

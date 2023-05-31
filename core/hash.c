@@ -230,8 +230,7 @@ bool_t ht_update(hash_table_t *table, null_t *key, null_t *val)
                 return true;
             }
         }
-
-        if (table->buckets[index].state == STATE_EMPTY)
+        else
         {
             table->buckets[index].key = key;
             table->buckets[index].val = val;
@@ -291,5 +290,24 @@ null_t *ht_get(hash_table_t *table, null_t *key)
         distance++;
     }
 
-    return (null_t *)-127;
+    return (null_t *)NULL_I64;
+}
+
+bucket_t *ht_next_bucket(hash_table_t *table, u64_t *index)
+{
+    bucket_t *bucket;
+
+    while (*index < table->size)
+    {
+        if (table->buckets[*index].state == STATE_OCCUPIED)
+        {
+            bucket = &table->buckets[*index];
+            (*index)++;
+            return bucket;
+        }
+
+        (*index)++;
+    }
+
+    return NULL;
 }

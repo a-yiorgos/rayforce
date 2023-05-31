@@ -48,7 +48,7 @@ rf_object_t rf_til_i64(rf_object_t *x)
     return vec;
 }
 
-rf_object_t rf_distinct_i64(rf_object_t *x)
+rf_object_t rf_distinct_I64(rf_object_t *x)
 {
     i32_t i, j = 0, mask_size;
     i64_t min, max, l = x->adt->len, *xi = as_vector_i64(x), *vi;
@@ -93,6 +93,36 @@ rf_object_t rf_distinct_i64(rf_object_t *x)
     vec.adt->len = j;
 
     return vec;
+}
+
+rf_object_t rf_group_I64(rf_object_t *x)
+{
+    // u64_t i, n, xl = x->adt->len;
+    // rf_object_t vec = vector_i64(xl), found;
+    // i64_t *iv1 = as_vector_i64(x), *iv2 = as_vector_i64(y),
+    //       *ov = as_vector_i64(&vec), *fv, v;
+    // hash_table_t *ht;
+
+    // // otherwise, use a hash table
+    // ht = ht_new(xl, i64_hash, i64_cmp);
+
+    // for (i = 0; i < xl; i++)
+    //     ht_insert(ht, (null_t *)(normalize(iv1[i])), (null_t *)i);
+
+    // for (i = 0; i < yl; i++)
+    // {
+    //     v = (i64_t)ht_get(ht, (null_t *)(normalize(iv2[i])));
+    //     if (v < 0)
+    //         ov[i] = NULL_I64;
+    //     else
+    //         ov[i] = v;
+    // }
+
+    // ht_free(ht);
+
+    // return vec;
+
+    return i64(0);
 }
 
 rf_object_t rf_sum_I64(rf_object_t *x)

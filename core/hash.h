@@ -54,5 +54,6 @@ null_t *ht_insert(hash_table_t *table, null_t *key, null_t *val);
 null_t *ht_insert_with(hash_table_t *table, null_t *key, null_t *val, null_t *(*func)(null_t *key, null_t *val, bucket_t *bucket));
 bool_t ht_update(hash_table_t *table, null_t *key, null_t *val);
 null_t *ht_get(hash_table_t *table, null_t *key);
+bucket_t *ht_next_bucket(hash_table_t *table, u64_t *index);
 
 #endif

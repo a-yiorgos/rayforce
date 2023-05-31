@@ -1110,13 +1110,7 @@ rf_object_t rf_find_I64_I64(rf_object_t *x, rf_object_t *y)
         ht_insert(ht, (null_t *)(normalize(iv1[i])), (null_t *)i);
 
     for (i = 0; i < yl; i++)
-    {
-        v = (i64_t)ht_get(ht, (null_t *)(normalize(iv2[i])));
-        if (v < 0)
-            ov[i] = NULL_I64;
-        else
-            ov[i] = v;
-    }
+        ov[i] = (i64_t)ht_get(ht, (null_t *)(normalize(iv2[i])));
 
     ht_free(ht);
 
