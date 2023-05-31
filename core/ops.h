@@ -24,6 +24,7 @@
 #ifndef OPS_H
 #define OPS_H
 
+#include <math.h>
 #include "rayforce.h"
 
 // internal types definitions:
@@ -46,8 +47,12 @@
 #define SUBF64(x, y) (x - y)
 #define MULI64(x, y) ((((x) * (y)) & ~((i64_t)IS_NULL_I64(x) | (i64_t)IS_NULL_I64(y))) | ((i64_t)IS_NULL_I64(x) | (i64_t)IS_NULL_I64(y)) << 63)
 #define MULF64(x, y) (x * y)
-#define DIVI64(x, y) ((x == NULL_I64 || y == NULL_I64) ? NULL_F64 : ((f64_t)(x) / (f64_t)(y)))
-#define DIVF64(x, y) (x / y)
+#define DIVI64(x, y) ((x == NULL_I64 || y == NULL_I64) ? NULL_F64 : ((x) / (y)))
+#define FDIVI64(x, y) ((x == NULL_I64 || y == NULL_I64) ? NULL_F64 : ((f64_t)(x) / (f64_t)(y)))
+#define DIVF64(x, y) ((i64_t)(x / y))
+#define FDIVF64(x, y) (x / y)
+#define MODI64(x, y) ((x == NULL_I64 || y == NULL_I64) ? NULL_I64 : ((x) % (y)))
+#define MODF64(x, y) (fmod(x, y))
 #define MAXI64(x, y) (x > y ? x : y)
 #define MAXF64(x, y) (x > y ? x : y)
 #define MINI64(x, y) (IS_NULL_I64(y) || (!IS_NULL_I64(x) && (x < y)) ? x : y)

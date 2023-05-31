@@ -72,9 +72,11 @@ null_t init_functions(rf_object_t *records)
       
     // Binary         
     REC(records, 2, "==",       -TYPE_BOOL,       rf_eq_i64_i64,           {-TYPE_I64,       -TYPE_I64         });
-    REC(records, 2, "==",       -TYPE_BOOL,       rf_eq_f64_f64,           {-TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "==",        TYPE_BOOL,       rf_eq_I64_i64,           { TYPE_I64,       -TYPE_I64         });
     REC(records, 2, "==",        TYPE_BOOL,       rf_eq_I64_I64,           { TYPE_I64,        TYPE_I64         });
+    REC(records, 2, "==",       -TYPE_BOOL,       rf_eq_f64_f64,           {-TYPE_F64,       -TYPE_F64         });
+    REC(records, 2, "==",        TYPE_BOOL,       rf_eq_F64_f64,           { TYPE_F64,       -TYPE_F64         })
+    REC(records, 2, "==",        TYPE_BOOL,       rf_eq_F64_F64,           { TYPE_F64,        TYPE_F64         });
     REC(records, 2, "<",        -TYPE_BOOL,       rf_lt_i64_i64,           {-TYPE_I64,       -TYPE_I64         });
     REC(records, 2, "<",        -TYPE_BOOL,       rf_lt_f64_f64,           {-TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "<",         TYPE_BOOL,       rf_lt_I64_i64,           { TYPE_I64,       -TYPE_I64         });
@@ -116,11 +118,23 @@ null_t init_functions(rf_object_t *records)
     REC(records, 2, "*",         TYPE_F64,        rf_mul_F64_f64,          { TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "*",         TYPE_F64,        rf_mul_F64_F64,          { TYPE_F64,        TYPE_F64         });
     REC(records, 2, "/",        -TYPE_I64,        rf_div_i64_i64,          {-TYPE_I64,       -TYPE_I64         });
-    REC(records, 2, "/",        -TYPE_F64,        rf_div_f64_f64,          {-TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "/",         TYPE_I64,        rf_div_I64_i64,          { TYPE_I64,       -TYPE_I64         });
     REC(records, 2, "/",         TYPE_I64,        rf_div_I64_I64,          { TYPE_I64,        TYPE_I64         });
+    REC(records, 2, "/",        -TYPE_F64,        rf_div_f64_f64,          {-TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "/",         TYPE_F64,        rf_div_F64_f64,          { TYPE_F64,       -TYPE_F64         });
     REC(records, 2, "/",         TYPE_F64,        rf_div_F64_F64,          { TYPE_F64,        TYPE_F64         });
+    REC(records, 2, "%",        -TYPE_I64,        rf_mod_i64_i64,          {-TYPE_I64,       -TYPE_I64         });
+    REC(records, 2, "%",         TYPE_I64,        rf_mod_I64_i64,          { TYPE_I64,       -TYPE_I64         });
+    REC(records, 2, "%",         TYPE_I64,        rf_mod_I64_I64,          { TYPE_I64,        TYPE_I64         });
+    REC(records, 2, "%",        -TYPE_F64,        rf_mod_f64_f64,          {-TYPE_F64,       -TYPE_F64         });
+    REC(records, 2, "%",         TYPE_F64,        rf_mod_F64_f64,          { TYPE_F64,       -TYPE_F64         });
+    REC(records, 2, "%",         TYPE_F64,        rf_mod_F64_F64,          { TYPE_F64,        TYPE_F64         });
+    REC(records, 2, "div",      -TYPE_F64,        rf_fdiv_i64_i64,         {-TYPE_I64,       -TYPE_I64         });
+    REC(records, 2, "div",       TYPE_F64,        rf_fdiv_I64_i64,         { TYPE_I64,       -TYPE_I64         });
+    REC(records, 2, "div",       TYPE_F64,        rf_fdiv_I64_I64,         { TYPE_I64,        TYPE_I64         });
+    REC(records, 2, "div",      -TYPE_F64,        rf_fdiv_f64_f64,         {-TYPE_F64,       -TYPE_F64         });
+    REC(records, 2, "div",       TYPE_F64,        rf_fdiv_F64_f64,         { TYPE_F64,       -TYPE_F64         });
+    REC(records, 2, "div",       TYPE_F64,        rf_fdiv_F64_F64,         { TYPE_F64,        TYPE_F64         });
     REC(records, 2, "like",     -TYPE_BOOL,       rf_like_Char_Char,       { TYPE_CHAR,       TYPE_CHAR        });
     REC(records, 2, "dict",      TYPE_DICT,       rf_dict,                 { TYPE_ANY,        TYPE_ANY         });
     REC(records, 2, "table",     TYPE_TABLE,      rf_table,                { TYPE_ANY,        TYPE_ANY         });
