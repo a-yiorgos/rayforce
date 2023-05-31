@@ -26,12 +26,39 @@
 #include "util.h"
 #include "format.h"
 
+i64_t size_of_val(i8_t type)
+{
+    type = type - TYPE_BOOL;
+
+    static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
+                                    &&type_timestamp, &&type_guid, &&type_char, &&type_list};
+
+    goto *types_table[(i32_t)type];
+
+type_bool:
+    return sizeof(bool_t);
+type_i64:
+    return sizeof(i64_t);
+type_f64:
+    return sizeof(f64_t);
+type_symbol:
+    return sizeof(i64_t);
+type_timestamp:
+    return sizeof(i64_t);
+type_guid:
+    return sizeof(guid_t);
+type_char:
+    return sizeof(char_t);
+type_list:
+    return sizeof(rf_object_t);
+}
+
 /*
  * Creates new vector of type type
  */
-rf_object_t vector(i8_t type, i8_t size_of_val, i64_t len)
+rf_object_t vector(i8_t type, i64_t len)
 {
-    i64_t size = size_of_val * len + sizeof(header_t);
+    i64_t size = size_of_val(type) * len + sizeof(header_t);
     header_t *adt = rf_malloc(size);
 
     if (adt == NULL)

@@ -203,7 +203,7 @@ env_t create_env()
     rf_object_t variables = dict(vector_symbol(0), vector_i64(0));
 
     for (i32_t i = 0; i < REC_SIZE; i++)
-        as_list(&functions)[i] = vector(TYPE_CHAR, sizeof(env_record_t), 0);
+        as_list(&functions)[i] = vector(TYPE_CHAR, 0);
 
     init_functions(&functions);
 
