@@ -34,6 +34,7 @@
 #include "binary.h"
 #include "function.h"
 #include "dict.h"
+#include "ops.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define stack_malloc(size) _alloca(size)
@@ -44,28 +45,29 @@
 i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object);
 rf_object_t cc_compile_function(bool_t top, str_t name, i8_t rettype, rf_object_t args, rf_object_t *body, u32_t id, i32_t len, debuginfo_t *debuginfo);
 
-#define push_opcode(c, k, v, x)                                   \
-    {                                                             \
-        debuginfo_t *d = (c)->debuginfo;                          \
-        debuginfo_t *p = &as_function(&(c)->function)->debuginfo; \
-        span_t u = debuginfo_get(d, k);                           \
-        debuginfo_insert(p, (u32_t)(v)->adt->len, u);             \
-        vector_reserve(v, 1);                                     \
-        as_string(v)[(v)->adt->len++] = (i8_t)x;                  \
-    }
-
 #define push_u8(c, x)                            \
     {                                            \
         vector_reserve((c), 1);                  \
         as_string(c)[(c)->adt->len++] = (u8_t)x; \
     }
 
-#define push_u64(c, x)                                          \
-    {                                                           \
-        u64_t u = (u64_t)x;                                     \
-        vector_reserve((c), 8);                                 \
-        memcpy((u64_t *)(as_string(c) + (c)->adt->len), &u, 8); \
-        (c)->adt->len += 8;                                     \
+#define push_opcode(c, k, v, x)                                   \
+    {                                                             \
+        debuginfo_t *d = (c)->debuginfo;                          \
+        debuginfo_t *p = &as_function(&(c)->function)->debuginfo; \
+        span_t u = debuginfo_get(d, k);                           \
+        debuginfo_insert(p, (u32_t)(v)->adt->len, u);             \
+        push_u8(v, x);                                            \
+    }
+
+#define push_u64(c, x)                                                  \
+    {                                                                   \
+        str_t _p = align8(as_string(c) + (c)->adt->len);                \
+        u64_t _o = _p - (as_string(c) + (c)->adt->len) + sizeof(u64_t); \
+        vector_reserve((c), _o);                                        \
+        _p = align8(as_string(c) + (c)->adt->len);                      \
+        *(u64_t *)_p = (u64_t)x;                                        \
+        (c)->adt->len += _o;                                            \
     }
 
 #define push_const(c, k)                              \
@@ -355,8 +357,8 @@ i8_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t a
             cerr(cc, car->id, ERR_TYPE, "'if': condition must have a bool result");
 
         push_opcode(cc, car->id, code, OP_JNE);
-        lbl1 = code->adt->len;
         push_u64(code, 0);
+        lbl1 = code->adt->len - sizeof(u64_t);
 
         // true branch
         type = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
@@ -368,9 +370,9 @@ i8_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t a
         if (arity == 3)
         {
             push_opcode(cc, car->id, code, OP_JMP);
-            lbl2 = code->adt->len;
             push_u64(code, 0);
-            memcpy(as_string(code) + lbl1, &code->adt->len, sizeof(u64_t));
+            lbl2 = code->adt->len - sizeof(u64_t);
+            *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
             // false branch
             type1 = cc_compile_expr(has_consumer, cc, &as_list(object)[3]);
@@ -384,10 +386,10 @@ i8_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t a
                               symbols_get(env_get_typename_by_type(env, type)),
                               symbols_get(env_get_typename_by_type(env, type1))));
 
-            memcpy(as_string(code) + lbl2, &code->adt->len, sizeof(u64_t));
+            *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
         }
         else
-            memcpy(as_string(code) + lbl1, &code->adt->len, sizeof(u64_t));
+            *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
         return type;
     }
@@ -410,8 +412,8 @@ i8_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
             cerr(cc, car->id, ERR_LENGTH, "'try': expects 2 arguments");
 
         push_opcode(cc, car->id, code, OP_TRY);
-        lbl1 = code->adt->len;
         push_u64(code, 0);
+        lbl1 = code->adt->len - sizeof(u64_t);
 
         // compile expression under trap
         type = cc_compile_expr(true, cc, &as_list(object)[1]);
@@ -420,10 +422,10 @@ i8_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
             return type;
 
         push_opcode(cc, car->id, code, OP_JMP);
-        lbl2 = code->adt->len;
         push_u64(code, 0);
+        lbl2 = code->adt->len - sizeof(u64_t);
 
-        memcpy(as_string(code) + lbl1, &code->adt->len, sizeof(u64_t));
+        *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
         // compile expression under catch
         type1 = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
@@ -437,7 +439,7 @@ i8_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
                           symbols_get(env_get_typename_by_type(env, type)),
                           symbols_get(env_get_typename_by_type(env, type1))));
 
-        memcpy(as_string(code) + lbl2, &code->adt->len, sizeof(u64_t));
+        *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
 
         return type;
     }
@@ -540,8 +542,8 @@ i8_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
         push_u8(code, arity);
         // additional check for zero length argument
         push_opcode(cc, car->id, code, OP_JNE);
-        lbl1 = code->adt->len;
         push_u64(code, 0);
+        lbl1 = code->adt->len - sizeof(u64_t);
 
         // compile function
         type = cc_compile_expr(true, cc, &as_list(object)[1]);
@@ -588,7 +590,8 @@ i8_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t ar
         // pop arguments
         for (i = 0; i < arity; i++)
             push_opcode(cc, car->id, code, OP_POP);
-        memcpy(as_string(code) + lbl1, &code->adt->len, sizeof(u64_t));
+
+        *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
         // additional one for ctx
         func->stack_size += 2;

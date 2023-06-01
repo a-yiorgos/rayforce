@@ -52,12 +52,6 @@
             debug("%d: %s", v->sp - i, rf_object_fmt(&v->stack[--i])); \
     }
 
-#define load_u64(x, v)                              \
-    {                                               \
-        memcpy((x), code + (v)->ip, sizeof(u64_t)); \
-        (v)->ip += sizeof(u64_t);                   \
-    }
-
 typedef struct ctx_t
 {
     function_t *addr;
@@ -65,7 +59,7 @@ typedef struct ctx_t
     i32_t bp;
 } ctx_t;
 
-// CASSERT(sizeof(struct ctx_t) == sizeof(struct rf_object_t), vm_c)
+CASSERT(sizeof(struct ctx_t) == sizeof(struct rf_object_t), vm_c)
 
 vm_t *vm_new()
 {
@@ -160,6 +154,14 @@ rf_object_t vm_exec(vm_t *vm, rf_object_t *fun)
         }                                                                                                          \
     }
 
+#define load_u64(x, v)                                    \
+    {                                                     \
+        str_t _p = align8(code + (v)->ip);                \
+        u64_t _o = _p - (code + (v)->ip) + sizeof(u64_t); \
+        (v)->ip += _o;                                    \
+        x = *(u64_t *)_p;                                 \
+    }
+
 op_dispatch:
     dispatch();
 op_halt:
@@ -188,7 +190,7 @@ op_ret:
     dispatch();
 op_push:
     vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x1 = vector_get(&f->constants, l);
     stack_push(vm, x1);
     dispatch();
@@ -199,13 +201,13 @@ op_pop:
 op_jne:
     vm->ip++;
     x2 = stack_pop(vm);
-    load_u64(&l, vm);
+    load_u64(l, vm);
     if (!x2.bool)
         vm->ip = l;
     dispatch();
 op_jmp:
     vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     vm->ip = l;
     dispatch();
 op_type:
@@ -227,7 +229,7 @@ op_timer_get:
     dispatch();
 op_call0:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     f0 = (nilary_t)l;
     x1 = f0();
     unwrap(x1, b);
@@ -235,7 +237,7 @@ op_call0:
     dispatch();
 op_call1:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x2 = stack_pop(vm);
     f1 = (unary_t)l;
     x1 = f1(&x2);
@@ -245,7 +247,7 @@ op_call1:
     dispatch();
 op_call2:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
     f2 = (binary_t)l;
@@ -257,7 +259,7 @@ op_call2:
     dispatch();
 op_call3:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x4 = stack_pop(vm);
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
@@ -271,7 +273,7 @@ op_call3:
     dispatch();
 op_call4:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x5 = stack_pop(vm);
     x4 = stack_pop(vm);
     x3 = stack_pop(vm);
@@ -288,7 +290,7 @@ op_call4:
 op_calln:
     b = vm->ip++;
     j = code[vm->ip++];
-    load_u64(&l, vm);
+    load_u64(l, vm);
     fn = (nary_t)l;
     addr = (rf_object_t *)(&vm->stack[vm->sp - j]);
     x1 = fn(addr, j);
@@ -327,10 +329,9 @@ op_callf:
     addr = stack_peek(vm); // function
     // save ctx
     ctx = (ctx_t){.addr = f, .ip = vm->ip, .bp = vm->bp};
-    memcpy(&x1, &ctx, sizeof(ctx_t));
     vm->ip = 0;
     vm->bp = vm->sp;
-    stack_push(vm, x1);
+    ((ctx_t *)vm->stack)[vm->sp++] = ctx;
     // --
     f = as_function(addr);
     code = as_string(&f->code);
@@ -338,24 +339,24 @@ op_callf:
     dispatch();
 op_lset:
     b = vm->ip++;
-    load_u64(&t, vm);
+    load_u64(t, vm);
     vm->stack[vm->bp + t] = rf_object_clone(stack_peek(vm));
     dispatch();
 op_gset:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     x1 = symboli64(l);
     env_set_variable(&runtime_get()->env, &x1, rf_object_clone(stack_peek(vm)));
     dispatch();
 op_lload:
     b = vm->ip++;
-    load_u64(&t, vm);
+    load_u64(t, vm);
     x1 = vm->stack[vm->bp + t];
     stack_push(vm, rf_object_clone(&x1));
     dispatch();
 op_gload:
     b = vm->ip++;
-    load_u64(&l, vm);
+    load_u64(l, vm);
     stack_push(vm, rf_object_clone((rf_object_t *)l));
     dispatch();
 op_cast:
@@ -369,12 +370,11 @@ op_cast:
     dispatch();
 op_try:
     b = vm->ip++;
-    load_u64(&t, vm);
+    load_u64(t, vm);
     // save ctx
     ctx = (ctx_t){.addr = NULL, .ip = (i32_t)t, .bp = vm->bp};
-    memcpy(&x1, &ctx, sizeof(ctx_t));
     vm->bp = vm->sp;
-    stack_push(vm, x1);
+    ((ctx_t *)vm->stack)[vm->sp++] = ctx;
     //--
     dispatch();
 op_catch:

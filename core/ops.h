@@ -38,6 +38,8 @@
 #define TYPE_THROW (TYPE_ERROR + 4)
 // none type
 #define TYPE_NONE (TYPE_ERROR + 5)
+
+#define align8(x) ((str_t)(((u64_t)x + 7) & ~7))
 // --
 #define IS_NULL_I64(x) (((x) >> 63) & 1)
 #define ADDI64(x, y) ((((x) + (y)) & ~((i64_t)IS_NULL_I64(x) | (i64_t)IS_NULL_I64(y))) | ((i64_t)IS_NULL_I64(x) | (i64_t)IS_NULL_I64(y)) << 63)
