@@ -251,7 +251,7 @@ i8_t rf_object_eq(rf_object_t *a, rf_object_t *b)
 /*
  * Increment the reference count of an rf_object_t
  */
-rf_object_t rf_object_clone(rf_object_t *object)
+rf_object_t __attribute__((hot)) rf_object_clone(rf_object_t *object)
 {
     i64_t i, l;
 
@@ -311,7 +311,7 @@ type_error:
 /*
  * Free an rf_object_t
  */
-null_t rf_object_free(rf_object_t *object)
+null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
 {
     i64_t i, rc, l;
 
