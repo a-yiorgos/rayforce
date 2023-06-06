@@ -31,7 +31,7 @@
 #include "alloc.h"
 #include "util.h"
 
-ht_t *ht_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b))
+ht_t *ht_new(i64_t size, u32_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b))
 {
     size = next_power_of_two_u64(size);
     i64_t i, *kv;
@@ -171,6 +171,7 @@ i64_t ht_insert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
     }
 
     rehash_with(table, seed, func);
+
     return ht_insert(table, key, val);
 }
 
@@ -193,7 +194,6 @@ bool_t ht_update(ht_t *table, i64_t key, i64_t val)
         {
             if (table->compare(keys[i], key) == 0)
             {
-                keys[i] = key;
                 vals[i] = val;
                 return true;
             }
@@ -204,10 +204,12 @@ bool_t ht_update(ht_t *table, i64_t key, i64_t val)
         keys[i] = key;
         vals[i] = val;
         table->count++;
+
         return false;
     }
 
     rehash(table);
+
     return ht_insert(table, key, val);
 }
 

@@ -1104,7 +1104,7 @@ rf_object_t rf_find_I64_I64(rf_object_t *x, rf_object_t *y)
     range = xl;
 
     // otherwise, use a hash table
-    ht = ht_new(range, &i64_hash, &i64_cmp);
+    ht = ht_new(range, &kmh_hash, &i64_cmp);
 
     for (i = 0; i < xl; i++)
         ht_insert(ht, (normalize(iv1[i])), i);

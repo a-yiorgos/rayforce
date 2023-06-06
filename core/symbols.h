@@ -56,7 +56,6 @@ str_t symbols_get(i64_t key);
 
 symbols_t *symbols_new();
 null_t symbols_free(symbols_t *symbols);
-u64_t i64_hash(i64_t val);
 i32_t i64_cmp(i64_t a, i64_t b);
 
 #endif

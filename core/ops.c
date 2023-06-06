@@ -103,3 +103,9 @@ u64_t rand_u64()
     __RND_SEED__ = (A * __RND_SEED__ + C) % M;
     return __RND_SEED__;
 }
+
+u32_t kmh_hash(i64_t key)
+{
+#define LARGE_PRIME 6364136223846793005ULL
+    return (u32_t)((key * LARGE_PRIME) >> 32);
+}

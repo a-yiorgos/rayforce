@@ -24,11 +24,7 @@
 #include "debuginfo.h"
 #include "string.h"
 #include "alloc.h"
-
-u64_t u32_hash(i64_t val)
-{
-    return (u64_t)val;
-}
+#include "ops.h"
 
 i32_t u32_cmp(i64_t a, i64_t b)
 {
@@ -40,7 +36,7 @@ debuginfo_t debuginfo_new(str_t filename, str_t function)
     debuginfo_t debuginfo = {
         .filename = filename,
         .function = function,
-        .spans = ht_new(32, &u32_hash, &u32_cmp),
+        .spans = ht_new(32, &kmh_hash, &u32_cmp),
     };
 
     return debuginfo;

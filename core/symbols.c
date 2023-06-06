@@ -45,7 +45,7 @@ typedef struct str_slice_t
  * by Dan Bernstein
  * http://www.cse.yorku.ca/~oz/hash.html
  */
-u64_t string_hash(i64_t val)
+u32_t string_hash(i64_t val)
 {
     str_slice_t *string = (str_slice_t *)val;
     u32_t hash = 5381, len = string->len, i;
@@ -57,14 +57,9 @@ u64_t string_hash(i64_t val)
     return hash;
 }
 
-u64_t i64_hash(i64_t val)
-{
-    return (u64_t)val;
-}
-
 i32_t i64_cmp(i64_t a, i64_t b)
 {
-    return !(a == b);
+    return a ^ b;
 }
 
 /*
@@ -142,7 +137,7 @@ symbols_t *symbols_new()
     symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr
 
     symbols->str_to_id = ht_new(SYMBOLS_POOL_SIZE, &string_hash, &string_str_cmp);
-    symbols->id_to_str = ht_new(SYMBOLS_POOL_SIZE, &i64_hash, &i64_cmp);
+    symbols->id_to_str = ht_new(SYMBOLS_POOL_SIZE, &kmh_hash, &i64_cmp);
 
     return symbols;
 }

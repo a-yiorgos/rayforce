@@ -48,24 +48,25 @@ rf_object_t rf_til_i64(rf_object_t *x)
     return vec;
 }
 
-// https://lemire.me/blog/2018/08/15/fast-strongly-universal-64-bit-hashing-everywhere/
-u64_t trim_hash(i64_t val)
+u32_t i64_hash(i64_t key)
 {
-    i64_t a, b, c; // randomly assigned 64-bit values
-    i32_t low = (i32_t)val;
-    i32_t high = (i32_t)(val >> 32);
-    return (i32_t)((a * low + b * high + c) >> 32);
+    key = (~key) + (key << 18); // key = (key << 18) - key - 1;
+    key = key ^ (key >> 31);
+    key = key * 21; // key = (key + (key << 2)) + (key << 4);
+    key = key ^ (key >> 11);
+    key = key + (key << 6);
+    key = key ^ (key >> 22);
+    return (u32_t)key;
 }
 
 rf_object_t rf_distinct_I64(rf_object_t *x)
 {
+#define MAX_LINEAR_VALUE 1024 * 1024 * 64
 #define normalize(k) ((u64_t)(k - min))
 
-    i64_t i, j = 0, xl = x->adt->len;
-    i64_t n = 0, range, min, max, *iv1 = as_vector_i64(x), *ov;
+    i64_t i, j = 0, p = 0, w = 0, xl = x->adt->len;
+    i64_t n = 0, range, min, max, *m, *iv1 = as_vector_i64(x), *ov;
     rf_object_t mask, vec;
-    bool_t *m;
-    ht_t *ht;
 
     if (xl == 0)
         return vector_i64(0);
@@ -74,6 +75,9 @@ rf_object_t rf_distinct_I64(rf_object_t *x)
         return rf_object_clone(x);
 
     max = min = iv1[0];
+
+    vec = vector_i64(xl);
+    ov = as_vector_i64(&vec);
 
     for (i = 0; i < xl; i++)
     {
@@ -85,28 +89,29 @@ rf_object_t rf_distinct_I64(rf_object_t *x)
 
     range = max - min + 1;
 
-    // if range fits in 64 mb, use vector positions instead of hash table
-    if (range < 1024 * 1024 * 64)
+    if (range < MAX_LINEAR_VALUE)
     {
-        mask = vector_bool(range);
-        m = as_vector_bool(&mask);
+        mask = vector_i64(range / 64);
+        m = as_vector_i64(&mask);
 
-        memset(m, 0, range);
-
-        vec = vector_i64(xl);
-        ov = as_vector_i64(&vec);
+        for (i = 0; i < range / 64; i++)
+            m[i] = 0;
 
         for (i = 0; i < xl; i++)
         {
             n = normalize(iv1[i]);
-            if (!m[n])
+            p = n / 64;
+            w = 1ull << (n & 63);
+
+            if (!(m[p] & w))
             {
-                ov[j++] = n;
-                m[n] = true;
+                m[p] |= w;
+                ov[j++] = n + min;
             }
         }
 
         rf_object_free(&mask);
+
         vector_shrink(&vec, j);
 
         vec.adt->attrs |= VEC_ATTR_DISTINCT;
@@ -114,23 +119,20 @@ rf_object_t rf_distinct_I64(rf_object_t *x)
         return vec;
     }
 
-    if (range > 1ull << 32)
-        ht = ht_new(xl, &trim_hash, &i64_cmp);
-    else
-        ht = ht_new(xl, &i64_hash, &i64_cmp);
+    // else create open addressing hash set based on bitvec
+    ht_t *ht = ht_new(xl, &kmh_hash, &i64_cmp);
 
     for (i = 0; i < xl; i++)
-        ht_insert(ht, iv1[i], i);
+    {
+        // n = normalize(iv1[i]);
+        n = iv1[i];
+        if (!ht_update(ht, n, 0))
+            ov[j++] = iv1[i];
+    }
 
-    vec = vector_i64(ht->count);
-    ov = as_vector_i64(&vec);
-    i = j = n = 0;
-
-    while ((n = ht_next_key(ht, &i)) != NULL_I64)
-        ov[j++] = n;
-
-    ht_free(ht);
     vec.adt->attrs |= VEC_ATTR_DISTINCT;
+
+    vector_shrink(&vec, j);
 
     return vec;
 }
@@ -147,7 +149,7 @@ rf_object_t rf_group_I64(rf_object_t *x)
     vals = list(xl);
     vv = as_list(&vals);
 
-    ht = ht_new(xl, &i64_hash, &i64_cmp);
+    ht = ht_new(xl, &kmh_hash, &i64_cmp);
 
     for (i = 0; i < xl; i++)
     {
