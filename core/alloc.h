@@ -29,7 +29,7 @@
 
 // clang-format off
 #define MIN_ORDER      4
-#define MAX_ORDER      26 // 64MB
+#define MAX_ORDER      29 // 64MB
 #define MAX_POOL_ORDER 48
 #define MIN_ALLOC      ((i64_t)1 << MIN_ORDER)
 #define MAX_ALLOC      ((i64_t)1 << MAX_ORDER)

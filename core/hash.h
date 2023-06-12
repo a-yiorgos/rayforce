@@ -36,8 +36,8 @@ typedef struct ht_t
     i32_t (*compare)(i64_t a, i64_t b);
     i64_t size;
     i64_t count;
-    rf_object_t keys;
-    rf_object_t vals;
+    i64_t *keys;
+    i64_t *vals;
 } ht_t;
 
 // clang-format off

@@ -210,31 +210,18 @@ bool_t pos_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
 
 rf_object_t rf_group_I64(rf_object_t *x)
 {
-    i64_t i, j = 0, xl = x->adt->len, *iv1 = as_vector_i64(x), *kv, min, max;
+    i64_t i, j = 0, xl = x->adt->len, *iv1 = as_vector_i64(x), *kv;
     rf_object_t keys, vals, *vv;
     ht_t *ht;
 
     if (xl == 0)
         return dict(vector_i64(0), list(0));
 
-    max = min = iv1[0];
-
-    for (i = 0; i < xl; i++)
-    {
-        if (iv1[i] < min)
-            min = iv1[i];
-        else if (iv1[i] > max)
-            max = iv1[i];
-    }
-
-    if ((max - min) > 1024 * 1024)
-        ht = ht_new(xl, &kmh_hash, &i64_cmp);
-    else
-        ht = ht_new(max - min + 1, &i64_hash, &i64_cmp);
+    ht = ht_new(xl, &kmh_hash, &i64_cmp);
 
     // calculate counts for each key
     for (i = 0; i < xl; i++)
-        ht_upsert_with(ht, iv1[i] - min, 1, NULL, &cnt_update);
+        ht_upsert_with(ht, iv1[i], 1, NULL, &cnt_update);
 
     keys = vector_i64(ht->count);
     vals = list(ht->count);
@@ -245,7 +232,7 @@ rf_object_t rf_group_I64(rf_object_t *x)
     // finally, fill vectors with positions
     for (i = 0; i < xl; i++)
     {
-        if (!ht_upsert_with(ht, iv1[i] - min, i, vv + j, &pos_update))
+        if (!ht_upsert_with(ht, iv1[i], i, vv + j, &pos_update))
             kv[j++] = iv1[i];
     }
 

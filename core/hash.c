@@ -37,14 +37,13 @@ ht_t *ht_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64
     i64_t i, *kv;
     ht_t *table = (ht_t *)rf_malloc(sizeof(struct ht_t));
 
-    table->keys = vector_i64(size);
-    table->vals = vector_i64(size);
+    kv = (i64_t *)rf_malloc(size * 2 * sizeof(i64_t));
+    table->keys = kv;
+    table->vals = kv + size;
     table->size = size;
     table->count = 0;
     table->hasher = hasher;
     table->compare = compare;
-
-    kv = as_vector_i64(&table->keys);
 
     for (i = 0; i < size; i++)
         kv[i] = NULL_I64;
@@ -54,53 +53,50 @@ ht_t *ht_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64
 
 null_t ht_free(ht_t *table)
 {
-    rf_object_free(&table->keys);
-    rf_object_free(&table->vals);
+    rf_free(table->keys);
     rf_free(table);
 }
 
 null_t ht_rehash(ht_t *table)
 {
     i64_t i, old_size = table->size;
-    rf_object_t old_keys = table->keys;
-    rf_object_t old_vals = table->vals;
-    i64_t *ok = as_vector_i64(&old_keys), *ov = as_vector_i64(&old_vals), *nk, *nv, key, val, factor, index;
+    i64_t *old_keys = table->keys, *old_vals = table->vals,
+          *new_keys, *new_vals, key, val, factor, index;
 
     // Double the table size.
     table->size *= 2;
-    table->keys = vector_i64(table->size);
-    table->vals = vector_i64(table->size);
+    table->keys = (i64_t *)rf_malloc(table->size * 2 * sizeof(i64_t));
+    table->vals = table->keys + table->size;
     factor = table->size - 1;
 
-    nk = as_vector_i64(&table->keys);
-    nv = as_vector_i64(&table->vals);
+    new_keys = table->keys;
+    new_vals = table->keys + table->size;
 
     for (i = 0; i < table->size; i++)
-        nk[i] = NULL_I64;
+        new_keys[i] = NULL_I64;
 
     for (i = 0; i < old_size; i++)
     {
-        if (ok[i] != NULL_I64)
+        if (old_keys[i] != NULL_I64)
         {
-            key = ok[i];
-            val = ov[i];
+            key = old_keys[i];
+            val = old_vals[i];
             index = table->hasher(key) & factor;
 
             // Linear probing.
-            while (nk[index] != NULL_I64)
+            while (new_keys[index] != NULL_I64)
             {
                 if (index == table->size)
                     panic("ht is full!!");
                 index = index + 1;
             }
 
-            nk[index] = key;
-            nv[index] = val;
+            new_keys[index] = key;
+            new_vals[index] = val;
         }
     }
 
-    rf_object_free(&old_keys);
-    rf_object_free(&old_vals);
+    rf_free(old_keys);
 }
 
 /*
@@ -115,8 +111,8 @@ i64_t ht_insert(ht_t *table, i64_t key, i64_t val)
         i64_t factor = table->size - 1,
               index = table->hasher(key) & factor;
 
-        i64_t *keys = as_vector_i64(&table->keys);
-        i64_t *vals = as_vector_i64(&table->vals);
+        i64_t *keys = table->keys;
+        i64_t *vals = table->vals;
 
         for (i = index; i < size; i++)
         {
@@ -155,8 +151,8 @@ i64_t ht_insert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
         u64_t factor = table->size - 1,
               index = table->hasher(key) & factor;
 
-        i64_t *keys = as_vector_i64(&table->keys);
-        i64_t *vals = as_vector_i64(&table->vals);
+        i64_t *keys = table->keys;
+        i64_t *vals = table->vals;
 
         for (i = index; i < size; i++)
         {
@@ -193,8 +189,8 @@ bool_t ht_upsert(ht_t *table, i64_t key, i64_t val)
         u64_t factor = table->size - 1,
               index = table->hasher(key) & factor;
 
-        i64_t *keys = as_vector_i64(&table->keys);
-        i64_t *vals = as_vector_i64(&table->vals);
+        i64_t *keys = table->keys;
+        i64_t *vals = table->vals;
 
         for (i = index; i < size; i++)
         {
@@ -236,8 +232,8 @@ bool_t ht_upsert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
         u64_t factor = table->size - 1,
               index = table->hasher(key) & factor;
 
-        i64_t *keys = as_vector_i64(&table->keys);
-        i64_t *vals = as_vector_i64(&table->vals);
+        i64_t *keys = table->keys;
+        i64_t *vals = table->vals;
 
         for (i = index; i < size; i++)
         {
@@ -273,8 +269,8 @@ i64_t ht_get(ht_t *table, i64_t key)
     i32_t i, size = table->size;
     u64_t factor = table->size - 1,
           index = table->hasher(key) & factor;
-    i64_t *keys = as_vector_i64(&table->keys);
-    i64_t *vals = as_vector_i64(&table->vals);
+    i64_t *keys = table->keys;
+    i64_t *vals = table->vals;
 
     for (i = index; i < size; i++)
     {
@@ -292,8 +288,8 @@ i64_t ht_get(ht_t *table, i64_t key)
 
 bool_t ht_next_entry(ht_t *table, i64_t **k, i64_t **v, i64_t *index)
 {
-    i64_t i, *keys = as_vector_i64(&table->keys),
-             *vals = as_vector_i64(&table->vals);
+    i64_t i, *keys = table->keys,
+             *vals = table->vals;
 
     while (*index < table->size)
     {
