@@ -68,7 +68,6 @@ null_t ht_rehash(ht_t *table)
 
     // Double the table size.
     table->size *= 2;
-    debug("rehashing to %lld\n", table->size);
     table->keys = vector_i64(table->size);
     table->vals = vector_i64(table->size);
     factor = table->size - 1;
@@ -229,7 +228,7 @@ bool_t ht_upsert(ht_t *table, i64_t key, i64_t val)
  * Does the same as ht_upsert, but uses a function to set the val of the bucket.
  */
 bool_t ht_upsert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
-                      i64_t (*func)(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval))
+                      bool_t (*func)(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval))
 {
     while (true)
     {
@@ -245,10 +244,7 @@ bool_t ht_upsert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
             if (keys[i] != NULL_I64)
             {
                 if (table->compare(keys[i], key) == 0)
-                {
-                    func(key, val, seed, &keys[i], &vals[i]);
-                    return true;
-                }
+                    return func(key, val, seed, &keys[i], &vals[i]);
             }
             else
             {
@@ -261,43 +257,6 @@ bool_t ht_upsert_with(ht_t *table, i64_t key, i64_t val, null_t *seed,
                     ht_rehash(table);
 
                 return false;
-            }
-        }
-
-        ht_rehash(table);
-    }
-}
-
-bool_t ht_upsert_with2(ht_t *table, i64_t key, i64_t val, null_t *seed,
-                       i64_t (*ifunc)(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval),
-                       i64_t (*ufunc)(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval))
-{
-    while (true)
-    {
-        i32_t i, size = table->size;
-        u64_t factor = table->size - 1,
-              index = table->hasher(key) & factor;
-
-        i64_t *keys = as_vector_i64(&table->keys);
-        i64_t *vals = as_vector_i64(&table->vals);
-
-        // Check if ht_rehash is necessary.
-        if ((f64_t)table->count / table->size > 0.7)
-            ht_rehash(table);
-
-        for (i = index; i < size; i++)
-        {
-            if (keys[i] == NULL_I64)
-            {
-                ifunc(key, val, seed, &keys[i], &vals[i]);
-                table->count++;
-                return false;
-            }
-
-            if (table->compare(keys[i], key) == 0)
-            {
-                ufunc(key, val, seed, &keys[i], &vals[i]);
-                return true;
             }
         }
 

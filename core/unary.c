@@ -167,47 +167,74 @@ rf_object_t rf_distinct_I64(rf_object_t *x)
     return vec;
 }
 
-i64_t cnt_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
+u64_t i64_hash(i64_t a)
+{
+    return (u64_t)a;
+}
+
+bool_t cnt_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
 {
     UNUSED(key);
     UNUSED(*tkey);
     UNUSED(seed);
+    UNUSED(val);
 
     *tval += 1;
-    return val;
+    return true;
 }
 
-i64_t pos_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
+bool_t pos_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
 {
     UNUSED(key);
     UNUSED(*tkey);
 
-    // u32_t sz = (u32_t)*tval;
-    // rf_object_t *vv = (rf_object_t *)seed;
-    rf_object_t v = vector_i64(1);
-    // i64_t *vi = as_vector_i64(&v);
-    // vi[0] = val;
-    // v.adt->len = 1;
-    // *vv = v;
+    // contains count of elements (replace with vector)
+    if ((*tval & (1ll << 62)) == 0)
+    {
+        rf_object_t *vv = (rf_object_t *)seed;
+        rf_object_t v = vector_i64(*tval);
+        as_vector_i64(&v)[0] = val;
+        v.adt->len = 1;
+        *vv = v;
+        *tval = (i64_t)seed | 1ll << 62;
 
-    // rf_object_t *vv = (rf_object_t *)tval;
-    // i64_t *vi = as_vector_i64(vv);
-    // vi[vv->adt->len++] = val;
+        return false;
+    }
 
-    return val;
+    // contains vector
+    rf_object_t *vv = (rf_object_t *)(*tval & ~(1ll << 62));
+    i64_t *v = as_vector_i64(vv);
+    v[vv->adt->len++] = val;
+    return true;
 }
 
 rf_object_t rf_group_I64(rf_object_t *x)
 {
-    i64_t i, j = 0, l, xl = x->adt->len, *iv1 = as_vector_i64(x), *kv;
-    rf_object_t keys, vals, *vv, v;
+    i64_t i, j = 0, xl = x->adt->len, *iv1 = as_vector_i64(x), *kv, min, max;
+    rf_object_t keys, vals, *vv;
     ht_t *ht;
 
-    ht = ht_new(xl, &kmh_hash, &i64_cmp);
+    if (xl == 0)
+        return dict(vector_i64(0), list(0));
+
+    max = min = iv1[0];
+
+    for (i = 0; i < xl; i++)
+    {
+        if (iv1[i] < min)
+            min = iv1[i];
+        else if (iv1[i] > max)
+            max = iv1[i];
+    }
+
+    if ((max - min) > 1024 * 1024)
+        ht = ht_new(xl, &kmh_hash, &i64_cmp);
+    else
+        ht = ht_new(max - min + 1, &i64_hash, &i64_cmp);
 
     // calculate counts for each key
     for (i = 0; i < xl; i++)
-        ht_upsert_with(ht, iv1[i], 1, NULL, &cnt_update);
+        ht_upsert_with(ht, iv1[i] - min, 1, NULL, &cnt_update);
 
     keys = vector_i64(ht->count);
     vals = list(ht->count);
@@ -215,16 +242,11 @@ rf_object_t rf_group_I64(rf_object_t *x)
     kv = as_vector_i64(&keys);
     vv = as_list(&vals);
 
-    for (i = 0; i < ht->count; i++)
-    {
-        // vv[i] = vector_i64(0);
-    }
-
     // finally, fill vectors with positions
     for (i = 0; i < xl; i++)
     {
-        if (!ht_upsert_with(ht, iv1[i], i, vv + j, &pos_update))
-            j++;
+        if (!ht_upsert_with(ht, iv1[i] - min, i, vv + j, &pos_update))
+            kv[j++] = iv1[i];
     }
 
     ht_free(ht);
