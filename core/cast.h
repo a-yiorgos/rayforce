@@ -84,6 +84,10 @@ static inline __attribute__((always_inline)) rf_object_t rf_cast(i8_t type, rf_o
         x = rf_object_clone(y);
         x.type = type;
         break;
+    case m(TYPE_DICT, TYPE_TABLE):
+        x = rf_object_clone(y);
+        x.type = type;
+        break;
     case m(TYPE_I64, TYPE_LIST):
         x = vector_i64(y->adt->len);
         for (i = 0; i < y->adt->len; i++)

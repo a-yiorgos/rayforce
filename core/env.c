@@ -218,7 +218,7 @@ env_t create_env()
 {
     rf_object_t functions = list(REC_SIZE);
     rf_object_t variables = dict(vector_symbol(0), vector_i64(0));
-    rf_object_t tables = dict(vector_symbol(0), vector_i64(0));
+    rf_object_t tabletypes = dict(vector_i64(0), list(0));
 
     for (i32_t i = 0; i < REC_SIZE; i++)
         as_list(&functions)[i] = vector(TYPE_CHAR, 0);
@@ -228,7 +228,7 @@ env_t create_env()
     env_t env = {
         .functions = functions,
         .variables = variables,
-        .tables = tables,
+        .tabletypes = tabletypes,
     };
 
     init_typenames(env.typenames);
@@ -252,7 +252,7 @@ null_t free_env(env_t *env)
 
     rf_object_free(&env->variables);
     rf_object_free(&env->functions);
-    rf_object_free(&env->tables);
+    rf_object_free(&env->tabletypes);
 }
 
 rf_object_t *env_get_variable(env_t *env, rf_object_t *name)
@@ -281,12 +281,12 @@ null_t env_set_variable(env_t *env, rf_object_t *name, rf_object_t value)
     dict_set(&env->variables, name, i64((i64_t)addr));
 }
 
-extern i64_t env_get_typename_by_type(env_t *env, i8_t type)
+i64_t env_get_typename_by_type(env_t *env, i8_t type)
 {
     return env->typenames[type + TYPE_OFFSET];
 }
 
-extern i8_t env_get_type_by_typename(env_t *env, i64_t name)
+i8_t env_get_type_by_typename(env_t *env, i64_t name)
 {
     for (i32_t i = 0; i < MAX_TYPE; i++)
         if (env->typenames[i] == name)
@@ -295,16 +295,17 @@ extern i8_t env_get_type_by_typename(env_t *env, i64_t name)
     return TYPE_NONE;
 }
 
-null_t env_set_table(env_t *env, rf_object_t *name, rf_object_t value)
+i64_t env_add_tabletype(env_t *env, rf_object_t type)
 {
-    rf_object_t addr = dict_get(&env->tables, name);
+    i64_t id = env->tabletypes.adt->len;
+    rf_object_t id64 = i64(id);
 
-    if (addr.i64 != NULL_I64)
-    {
-        rf_object_free((rf_object_t *)addr.i64);
-        dict_set(&env->tables, name, value);
-        return;
-    }
+    dict_set(&env->tabletypes, &id64, type);
+    return id;
+}
 
-    dict_set(&env->tables, name, value);
+rf_object_t env_get_tabletype(env_t *env, i64_t id)
+{
+    rf_object_t id64 = i64(id);
+    return dict_get(&env->tabletypes, &id64);
 }
