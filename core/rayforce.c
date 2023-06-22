@@ -78,6 +78,8 @@
             r = (object)->adt->rc;                                       \
     }
 
+#define typeshift(t) (t - TYPE_BOOL)
+
 rf_object_t error(i8_t code, str_t message)
 {
     rf_object_t err = string_from_str(message, strlen(message));
@@ -271,9 +273,7 @@ rf_object_t __attribute__((hot)) rf_object_clone(rf_object_t *object)
 
     rc_inc(object);
 
-    type = type - TYPE_BOOL;
-
-    debug("CLONE TYPE: %d TP: %d", type, object->type);
+    type = typeshift(type);
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp, &&type_guid,
@@ -298,7 +298,7 @@ type_char:
 type_list:
     l = object->adt->len;
     for (i = 0; i < l; i++)
-        rc_inc(&as_list(object)[i]);
+        rf_object_clone(&as_list(object)[i]);
     return *object;
 type_dict:
     rf_object_clone(&as_list(object)[0]);
@@ -319,7 +319,7 @@ type_error:
  */
 null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
 {
-    i64_t i, rc, l;
+    i64_t i, rc = 0, l;
     type_t type = type(object->type);
 
     if (type == -TYPE_GUID)
@@ -334,9 +334,7 @@ null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
 
     rc_dec(rc, object);
 
-    type = type - TYPE_BOOL;
-
-    debug("FREE TYPE: %d TP: %d", type, object->type);
+    type = typeshift(type);
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp, &&type_guid,
@@ -380,7 +378,6 @@ type_list:
         vector_free(object);
     return;
 type_dict:
-    debug("------------------- FREE DICT: %d", as_list(object)[0].type);
     rf_object_free(&as_list(object)[0]);
     rf_object_free(&as_list(object)[1]);
     if (rc == 0)
@@ -427,7 +424,7 @@ rf_object_t rf_object_cow(rf_object_t *object)
     if (rf_object_rc(object) == 1)
         return rf_object_clone(object);
 
-    type = type - TYPE_BOOL;
+    type = typeshift(type);
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp,
