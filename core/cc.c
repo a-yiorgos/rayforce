@@ -822,14 +822,14 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
             return TYPE_NONE;
 
         // symbol is quoted
-        if (object->flags == 1)
-        {
-            object->flags = 0;
-            push_opcode(cc, object->id, code, OP_PUSH);
-            push_const(cc, *object);
-            func->stack_size++;
-            return -TYPE_SYMBOL;
-        }
+        // if (object->flags == 1)
+        // {
+        //     object->flags = 0;
+        //     push_opcode(cc, object->id, code, OP_PUSH);
+        //     push_const(cc, *object);
+        //     func->stack_size++;
+        //     return -TYPE_SYMBOL;
+        // }
 
         // first find in locals
         arg_keys = &as_list(&func->locals)[0];
@@ -876,16 +876,16 @@ i8_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
         return addr->type;
 
     case TYPE_LIST:
-        if (object->adt->len == 0 || object->flags == 1)
-        {
-            lst = rf_object_clone(object);
-            lst.flags = 0;
-            push_opcode(cc, object->id, code, OP_PUSH);
-            push_const(cc, lst);
-            func->stack_size++;
+        // if (object->adt->len == 0 || object->flags == 1)
+        // {
+        //     lst = rf_object_clone(object);
+        //     lst.flags = 0;
+        //     push_opcode(cc, object->id, code, OP_PUSH);
+        //     push_const(cc, lst);
+        //     func->stack_size++;
 
-            return TYPE_LIST;
-        }
+        //     return TYPE_LIST;
+        // }
 
         car = &as_list(object)[0];
         arity = object->adt->len - 1;

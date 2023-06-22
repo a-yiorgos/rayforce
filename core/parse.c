@@ -458,7 +458,7 @@ rf_object_t parse_symbol(parser_t *parser, i8_t quote)
     shift(parser, pos - parser->current);
     span_extend(parser, &span);
     res.id = span_commit(parser, span);
-    res.flags |= quote;
+    // res.flags |= quote;
 
     return res;
 }
@@ -612,7 +612,7 @@ rf_object_t parse_list(parser_t *parser, i8_t quote)
 
     span_extend(parser, &span);
     lst.id = span_commit(parser, span);
-    lst.flags |= quote;
+    // lst.flags |= quote;
 
     return lst;
 }

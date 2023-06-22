@@ -53,6 +53,7 @@ extern "C"
 #define TYPE_FUNCTION 11
 #define TYPE_ERROR 12
 #define TYPE_ANY 127
+#define TYPE_MASK 0x7F
 
 // Result constants
 #define OK 0
@@ -75,6 +76,7 @@ extern "C"
 #define true (char)1
 #define false (char)0
 
+typedef int type_t;
 typedef char i8_t;
 typedef unsigned char u8_t;
 typedef char char_t;
@@ -132,6 +134,8 @@ CASSERT(sizeof(struct guid_t) == 16, rayforce_h)
 // Generic type
 typedef struct rf_object_t
 {
+    type_t type;
+    u32_t id;
     union
     {
         bool_t bool;
@@ -141,11 +145,6 @@ typedef struct rf_object_t
         guid_t *guid;
         header_t *adt;
     };
-
-    u32_t id;
-    u16_t tt;
-    i8_t type;
-    i8_t flags;
 
 } rf_object_t;
 
@@ -163,6 +162,7 @@ extern rf_object_t schar(char_t c);                                         // c
 extern rf_object_t vector(i8_t type, i64_t len);                            // vector of type
 extern rf_object_t string(i64_t len);                                       // string 
 
+#define type(x)               ((x)->type & TYPE_MASK)                       // get type
 #define null()                ((rf_object_t){.type = TYPE_NULL})            // null
 #define vector_bool(len)      (vector(TYPE_BOOL,          len ))            // bool vector
 #define vector_i64(len)       (vector(TYPE_I64,           len ))            // i64 vector
@@ -173,12 +173,12 @@ extern rf_object_t string(i64_t len);                                       // s
 #define list(len)             (vector(TYPE_LIST,          len ))            // list
 
 extern rf_object_t table(rf_object_t keys, rf_object_t vals);               // table
-extern rf_object_t dict(rf_object_t keys,  rf_object_t vals);                // dict
+extern rf_object_t dict(rf_object_t keys,  rf_object_t vals);               // dict
 
 // Reference counting   
 extern rf_object_t rf_object_clone(rf_object_t *rf_object);                 // clone
-extern rf_object_t rf_object_cow(rf_object_t   *rf_object);                   // clone if refcount > 1
-extern i64_t       rf_object_rc(rf_object_t    *rf_object);                    // get refcount
+extern rf_object_t rf_object_cow(rf_object_t   *rf_object);                 // clone if refcount > 1
+extern i64_t       rf_object_rc(rf_object_t    *rf_object);                 // get refcount
 
 // Error
 extern rf_object_t error(i8_t code, str_t message);
@@ -206,7 +206,7 @@ extern i64_t       vector_push(rf_object_t *vector, rf_object_t object);
 extern rf_object_t vector_pop(rf_object_t *vector);
 
 // Compare
-extern i8_t rf_object_eq(rf_object_t *a, rf_object_t *b);
+extern bool_t rf_object_eq(rf_object_t *a, rf_object_t *b);
 
 #ifdef __cplusplus
 }

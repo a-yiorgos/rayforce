@@ -47,9 +47,9 @@ typedef rf_object_t (*nary_t)(rf_object_t *, i64_t);
 typedef struct env_record_t
 {
     i64_t id;
-    u64_t op;             // opcode or function ptr
-    i8_t args[MAX_ARITY]; // argument types
-    i8_t ret;
+    u64_t op;               // opcode or function ptr
+    type_t args[MAX_ARITY]; // argument types
+    type_t ret;
 } env_record_t;
 
 /*
@@ -71,8 +71,8 @@ null_t free_env(env_t *env);
 
 rf_object_t *env_get_variable(env_t *env, rf_object_t *name);
 null_t env_set_variable(env_t *env, rf_object_t *name, rf_object_t value);
-i64_t env_get_typename_by_type(env_t *env, i8_t type);
-i8_t env_get_type_by_typename(env_t *env, i64_t name);
+i64_t env_get_typename_by_type(env_t *env, type_t type);
+type_t env_get_type_by_typename(env_t *env, i64_t name);
 i64_t env_add_usertype(env_t *env, rf_object_t type);
 rf_object_t env_get_usertype(env_t *env, i64_t id);
 

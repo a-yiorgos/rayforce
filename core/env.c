@@ -284,12 +284,12 @@ null_t env_set_variable(env_t *env, rf_object_t *name, rf_object_t value)
     dict_set(&env->variables, name, i64((i64_t)addr));
 }
 
-i64_t env_get_typename_by_type(env_t *env, i8_t type)
+i64_t env_get_typename_by_type(env_t *env, type_t type)
 {
     return env->typenames[type + TYPE_OFFSET];
 }
 
-i8_t env_get_type_by_typename(env_t *env, i64_t name)
+type_t env_get_type_by_typename(env_t *env, i64_t name)
 {
     for (i32_t i = 0; i < MAX_TYPE; i++)
         if (env->typenames[i] == name)
