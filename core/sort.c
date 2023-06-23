@@ -24,6 +24,8 @@
 #include "sort.h"
 #include "vector.h"
 
+#define COUNTING_SORT_LIMIT 1024 * 1024
+
 inline __attribute__((always_inline)) null_t swap(i64_t *a, i64_t *b)
 {
     i64_t t = *a;
@@ -258,9 +260,89 @@ i64_t count_out_of_order_desc(i64_t array[], i64_t n)
     return out_of_order_count;
 }
 
+null_t counting_sort_asc(i64_t array[], i64_t indices[], i64_t len, i64_t min, i64_t max)
+{
+    i64_t i, j = 0, l, n, p, range, *m, *v;
+    rf_object_t idxs, mask, *vv, vec;
+    ht_t *ht;
+    bucket_t *b;
+
+    range = max - min + 1;
+    mask = vector_i64(range);
+    m = as_vector_i64(&mask);
+
+    memset(m, 0, range * sizeof(i64_t));
+
+    for (i = 0; i < len; i++)
+    {
+        n = array[i] - min;
+        m[n]++;
+    }
+
+    j = 0;
+    p = 0;
+    for (i = 0; i < range; i++)
+    {
+        if (m[i] > 0)
+        {
+            p = j;
+            j += m[i];
+            m[i] = p;
+        }
+    }
+
+    for (i = 0; i < len; i++)
+    {
+        n = array[i] - min;
+        indices[m[n]++] = i;
+    }
+
+    rf_object_free(&mask);
+}
+
+null_t counting_sort_desc(i64_t array[], i64_t indices[], i64_t len, i64_t min, i64_t max)
+{
+    i64_t i, j = 0, l, n, p, range, *m, *v;
+    rf_object_t idxs, mask, *vv, vec;
+    ht_t *ht;
+    bucket_t *b;
+
+    range = max - min + 1;
+    mask = vector_i64(range);
+    m = as_vector_i64(&mask);
+
+    memset(m, 0, range * sizeof(i64_t));
+
+    for (i = 0; i < len; i++)
+    {
+        n = array[i] - min;
+        m[n]++;
+    }
+
+    j = 0;
+    p = 0;
+    for (i = range - 1; i >= 0; i--)
+    {
+        if (m[i] > 0)
+        {
+            p = j;
+            j += m[i];
+            m[i] = p;
+        }
+    }
+
+    for (i = 0; i < len; i++)
+    {
+        n = array[i] - min;
+        indices[m[n]++] = i;
+    }
+
+    rf_object_free(&mask);
+}
+
 rf_object_t rf_sort_asc(rf_object_t *vec)
 {
-    i64_t i, len = vec->adt->len, out_of_order;
+    i64_t i, len = vec->adt->len, out_of_order, range, inrange = 0, min, max;
     rf_object_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(&indices);
 
@@ -275,6 +357,25 @@ rf_object_t rf_sort_asc(rf_object_t *vec)
     {
         for (i = 0; i < len; i++)
             ov[i] = len - i - 1;
+        return indices;
+    }
+
+    max = min = iv[0];
+
+    for (i = 0; i < len; i++)
+    {
+        if (iv[i] < min)
+            min = iv[i];
+        else if (iv[i] > max)
+            max = iv[i];
+
+        if ((iv[i] - min) < COUNTING_SORT_LIMIT)
+            inrange++;
+    }
+
+    if (inrange == len)
+    {
+        counting_sort_asc(iv, ov, len, min, max);
         return indices;
     }
 
@@ -321,7 +422,7 @@ rf_object_t rf_sort_asc(rf_object_t *vec)
 
 rf_object_t rf_sort_desc(rf_object_t *vec)
 {
-    i64_t i, len = vec->adt->len, out_of_order;
+    i64_t i, len = vec->adt->len, out_of_order, range, inrange = 0, min, max;
     rf_object_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(&indices);
 
@@ -336,6 +437,25 @@ rf_object_t rf_sort_desc(rf_object_t *vec)
     {
         for (i64_t i = 0; i < len; i++)
             ov[i] = len - i - 1;
+        return indices;
+    }
+
+    max = min = iv[0];
+
+    for (i = 0; i < len; i++)
+    {
+        if (iv[i] < min)
+            min = iv[i];
+        else if (iv[i] > max)
+            max = iv[i];
+
+        if ((iv[i] - min) < COUNTING_SORT_LIMIT)
+            inrange++;
+    }
+
+    if (inrange == len)
+    {
+        counting_sort_desc(iv, ov, len, min, max);
         return indices;
     }
 
