@@ -37,7 +37,7 @@
 
 rf_object_t rf_type(rf_object_t *x)
 {
-    i64_t t = env_get_typename_by_type(&runtime_get()->env, x->type);
+    i64_t t = env_get_typename_by_type(&runtime_get()->env, type(x->type));
     return symboli64(t);
 }
 

@@ -626,13 +626,30 @@ type_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t 
     return TYPE_NONE;
 }
 
+type_t get_table_type(rf_object_t *table)
+{
+    i64_t *keys = as_vector_symbol(&as_list(table)[0]), i, len = as_list(table)[0].adt->len, tabletype;
+    rf_object_t *vals = as_list(&as_list(table)[1]), dkeys = vector_symbol(len), dvals = vector_symbol(len);
+    env_t *env = &runtime_get()->env;
+
+    for (i = 0; i < len; i++)
+    {
+        as_vector_symbol(&dkeys)[i] = keys[i];
+        as_vector_symbol(&dvals)[i] = env_get_typename_by_type(env, vals[i].type);
+    }
+
+    tabletype = env_add_tabletype(env, dict(dkeys, dvals));
+
+    return tabletype;
+}
+
 type_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
 {
     UNUSED(has_consumer);
 
     type_t type, i;
-    i64_t lbl1, lbl2, usertype;
-    rf_object_t *car, *params, key, val, *keys, *vals, *tkeys, *tvals, mtkeys, mtvals, tabletype;
+    i64_t lbl1, lbl2;
+    rf_object_t *car, *params, key, val, *keys, *vals, *tkeys, *tvals, mtkeys, mtvals;
     env_t *env = &runtime_get()->env;
 
     car = &as_list(object)[0];
@@ -655,22 +672,10 @@ type_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32
         type = cc_compile_expr(true, cc, &val);
         rf_object_free(&val);
 
-        if (type != TYPE_TABLE)
-            cerr(cc, car->id, ERR_LENGTH, "'select': 'from' is required");
+        if (type(type) != TYPE_TABLE)
+            cerr(cc, car->id, ERR_LENGTH, "'select': 'from <Table>' requires");
 
-        mtkeys = vector_symbol(3);
-        mtvals = vector_symbol(3);
-
-        as_vector_symbol(&mtkeys)[0] = symbol("Symbol").i64;
-        as_vector_symbol(&mtvals)[0] = symbol("Symbol").i64;
-        as_vector_symbol(&mtkeys)[1] = symbol("Price").i64;
-        as_vector_symbol(&mtvals)[1] = symbol("I64").i64;
-        as_vector_symbol(&mtkeys)[2] = symbol("Volume").i64;
-        as_vector_symbol(&mtvals)[2] = symbol("I64").i64;
-
-        tabletype = dict(mtkeys, mtvals);
-        usertype = env_add_usertype(env, tabletype);
-        cc->tabletype = usertype;
+        cc->tabletype = type;
 
         // compile filters
         key = symbol("where");
@@ -691,7 +696,8 @@ type_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32
             rf_object_free(&val);
 
         cc->tabletype = NULL_I64;
-        return TYPE_TABLE;
+
+        return type;
         // --
     }
 

@@ -273,7 +273,7 @@ null_t counting_sort_desc(i64_t array[], i64_t indices[], i64_t len, i64_t min, 
 
 rf_object_t rf_sort_asc(rf_object_t *vec)
 {
-    i64_t i, len = vec->adt->len, out_of_order, range, inrange = 0, min, max;
+    i64_t i, len = vec->adt->len, out_of_order = 0, range, inrange = 0, min, max;
     rf_object_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(&indices);
 
@@ -354,7 +354,7 @@ rf_object_t rf_sort_asc(rf_object_t *vec)
 
 rf_object_t rf_sort_desc(rf_object_t *vec)
 {
-    i64_t i, len = vec->adt->len, out_of_order, range, inrange = 0, min, max;
+    i64_t i, len = vec->adt->len, out_of_order = 0, range, inrange = 0, min, max;
     rf_object_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(&indices);
 

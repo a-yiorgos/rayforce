@@ -179,8 +179,9 @@ rf_object_t timestamp(i64_t val)
 
 rf_object_t table(rf_object_t keys, rf_object_t vals)
 {
-    rf_object_t *v;
-    i64_t i, len;
+    rf_object_t *v, table, tkeys, tvals;
+    i64_t *k, i, len, type;
+    env_t *env = &runtime_get()->env;
 
     if (keys.type != TYPE_SYMBOL || vals.type != TYPE_LIST)
         return error(ERR_TYPE, "Keys must be a symbol vector and rf_objects must be list");
@@ -188,6 +189,7 @@ rf_object_t table(rf_object_t keys, rf_object_t vals)
     if (keys.adt->len != vals.adt->len)
         return error(ERR_LENGTH, "Keys and rf_objects must have the same length");
 
+    k = as_vector_symbol(&keys);
     v = as_list(&vals);
     len = vals.adt->len;
 
@@ -197,12 +199,23 @@ rf_object_t table(rf_object_t keys, rf_object_t vals)
             return error(ERR_TYPE, "Values must not be scalars");
     }
 
-    rf_object_t table = list(2);
+    tkeys = vector_symbol(len);
+    tvals = vector_symbol(len);
+
+    for (i = 0; i < len; i++)
+    {
+        as_vector_symbol(&tkeys)[i] = k[i];
+        as_vector_symbol(&tvals)[i] = env_get_typename_by_type(env, v[i].type);
+    }
+
+    type = env_add_tabletype(env, dict(tkeys, tvals));
+
+    table = list(2);
 
     as_list(&table)[0] = keys;
     as_list(&table)[1] = vals;
 
-    table.type = TYPE_TABLE;
+    table.type = type << 8 | TYPE_TABLE;
 
     return table;
 }
