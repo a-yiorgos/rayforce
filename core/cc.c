@@ -863,6 +863,9 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object_t *object)
                 if (res == CC_ERROR)
                     return CC_ERROR;
 
+                if (!has_consumer)
+                    push_opcode(cc, car->id, code, OP_POP);
+
                 return CC_OK;
             }
         }
