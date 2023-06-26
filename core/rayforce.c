@@ -264,7 +264,7 @@ bool_t rf_object_eq(rf_object_t *a, rf_object_t *b)
 rf_object_t __attribute__((hot)) rf_object_clone(rf_object_t *object)
 {
     i64_t i, l;
-    type_t type = type(object->type);
+    type_t type = object->type;
 
     if (type == -TYPE_GUID)
     {
@@ -273,12 +273,12 @@ rf_object_t __attribute__((hot)) rf_object_clone(rf_object_t *object)
         return guid(object->guid->data);
     }
 
-    if (type < TYPE_BOOL)
+    type = type - TYPE_BOOL;
+
+    if (type < 0)
         return *object;
 
     rc_inc(object);
-
-    type = typeshift(type);
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp, &&type_guid,
@@ -295,8 +295,10 @@ type_f64:
 type_symbol:
     return *object;
 type_timestamp:
+    rc_inc(object);
     return *object;
 type_guid:
+    rc_inc(object);
     return *object;
 type_char:
     return *object;
@@ -325,7 +327,7 @@ type_error:
 null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
 {
     i64_t i, rc = 0, l;
-    type_t type = type(object->type);
+    type_t type = object->type;
 
     if (type == -TYPE_GUID)
     {
@@ -334,12 +336,12 @@ null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
         return;
     }
 
-    if (type < TYPE_BOOL)
+    type = type - TYPE_BOOL;
+
+    if (type < 0)
         return;
 
     rc_dec(rc, object);
-
-    type = typeshift(type);
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp, &&type_guid,
@@ -418,18 +420,15 @@ rf_object_t rf_object_cow(rf_object_t *object)
 {
     i64_t i, l;
     rf_object_t new;
-    type_t type = type(object->type);
-
-    if (type < TYPE_BOOL)
-        return *object;
-
-    if (object->adt == NULL)
-        return *object;
+    type_t type;
 
     if (rf_object_rc(object) == 1)
         return rf_object_clone(object);
 
-    type = typeshift(type);
+    type = object->type - TYPE_BOOL;
+
+    if (type < 0)
+        return *object;
 
     static null_t *types_table[] = {
         &&type_bool, &&type_i64, &&type_f64, &&type_symbol, &&type_timestamp,

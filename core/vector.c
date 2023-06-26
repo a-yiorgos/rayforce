@@ -28,12 +28,12 @@
 
 i64_t size_of_val(type_t type)
 {
-    type = type(type) - TYPE_BOOL;
+    type_t typet = type - TYPE_BOOL;
 
     static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
                                     &&type_timestamp, &&type_guid, &&type_char, &&type_list};
 
-    goto *types_table[type];
+    goto *types_table[typet];
 
 type_bool:
     return sizeof(bool_t);

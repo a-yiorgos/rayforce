@@ -179,7 +179,6 @@ cc_result_t cc_compile_time(bool_t has_consumer, cc_t *cc, rf_object_t *object, 
 
 cc_result_t cc_compile_set(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
 {
-    debug("SET!!!!");
     cc_result_t res;
     rf_object_t *car = &as_list(object)[0];
     function_t *func = as_function(&cc->function);
@@ -207,57 +206,39 @@ cc_result_t cc_compile_set(bool_t has_consumer, cc_t *cc, rf_object_t *object, u
     return CC_OK;
 }
 
-type_t cc_compile_fn(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
+cc_result_t cc_compile_fn(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
 {
     UNUSED(has_consumer);
 
-    type_t type = TYPE_NULL;
+    cc_result_t res = CC_NULL;
     rf_object_t *car = &as_list(object)[0], *b, fun;
     function_t *func = as_function(&cc->function);
     rf_object_t *code = &func->code;
     env_t *env = &runtime_get()->env;
 
-    if (car->i64 == symbol("fn").i64)
+    if (arity == 0)
+        cerr(cc, car->id, ERR_LENGTH, "'fn' expects vector of symbols with function arguments");
+
+    b = as_list(object) + 1;
+
+    if (b->type != TYPE_SYMBOL)
+        cerr(cc, b->id, ERR_LENGTH, "'fn' expects dict with function arguments");
+
+    arity -= 1;
+    fun = cc_compile_function(false, "anonymous", rf_object_clone(b), b + 1, car->id, arity, cc->debuginfo);
+
+    if (fun.type == TYPE_ERROR)
     {
-        if (arity == 0)
-            cerr(cc, car->id, ERR_LENGTH, "'fn' expects dict with function arguments");
-
-        b = as_list(object) + 1;
-
-        // first argument is return type
-        if (b->type == -TYPE_SYMBOL)
-        {
-            type = env_get_type_by_typename(env, b->i64);
-
-            if (type == TYPE_NONE)
-                ccerr(cc, as_list(object)[1].id, ERR_TYPE,
-                      str_fmt(0, "'fn': unknown type '%s", symbols_get(as_list(object)[1].i64)));
-
-            arity -= 1;
-            b += 1;
-        }
-
-        if (b->type != TYPE_DICT)
-            cerr(cc, b->id, ERR_LENGTH, "'fn' expects dict with function arguments");
-
-        arity -= 1;
-        fun = cc_compile_function(false, "anonymous", rf_object_clone(b), b + 1, car->id, arity, cc->debuginfo);
-
-        if (fun.type == TYPE_ERROR)
-        {
-            rf_object_free(&cc->function);
-            cc->function = fun;
-            return TYPE_ERROR;
-        }
-
-        push_opcode(cc, object->id, code, OP_PUSH);
-        push_const(cc, fun);
-        func->stack_size++;
-
-        return TYPE_FUNCTION;
+        rf_object_free(&cc->function);
+        cc->function = fun;
+        return TYPE_ERROR;
     }
 
-    return TYPE_NONE;
+    push_opcode(cc, object->id, code, OP_PUSH);
+    push_const(cc, fun);
+    func->stack_size++;
+
+    return TYPE_FUNCTION;
 }
 
 type_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
@@ -878,7 +859,7 @@ rf_object_t cc_compile_function(bool_t top, str_t name, rf_object_t args,
                              debuginfo_new(debuginfo->filename, name)),
     };
 
-    type_t type;
+    cc_result_t res;
     i32_t i;
     function_t *func = as_function(&cc.function);
     rf_object_t *code = &func->code, *b = body, err;
@@ -889,7 +870,6 @@ rf_object_t cc_compile_function(bool_t top, str_t name, rf_object_t args,
     {
         push_opcode(&cc, id, code, OP_PUSH);
         push_const(&cc, null());
-        type = TYPE_LIST;
         goto epilogue;
     }
     // Compile all arguments but the last one
@@ -900,17 +880,17 @@ rf_object_t cc_compile_function(bool_t top, str_t name, rf_object_t args,
         if (b->type != TYPE_LIST)
             continue;
 
-        type = cc_compile_expr(false, &cc, b);
+        res = cc_compile_expr(false, &cc, b);
 
-        if (type == TYPE_ERROR)
+        if (res == CC_ERROR)
             return cc.function;
     }
 
     // Compile last argument
     b += i;
-    type = cc_compile_expr(true, &cc, b);
+    res = cc_compile_expr(true, &cc, b);
 
-    if (type == TYPE_ERROR)
+    if (res == CC_ERROR)
         return cc.function;
     // --
 

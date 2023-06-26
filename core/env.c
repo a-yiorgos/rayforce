@@ -228,6 +228,7 @@ null_t init_kw_symbols()
     assert(symbol("`").i64     == KW_SYM_QUOTE);
     assert(symbol("set").i64   == KW_SYM_SET);
     assert(symbol("let").i64   == KW_SYM_LET);
+    assert(symbol("fn").i64    == KW_SYM_FN);
 }
 // clang-format on
 

@@ -511,7 +511,7 @@ i32_t function_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32
 
 i32_t rf_object_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, rf_object_t *object)
 {
-    switch (type(object->type))
+    switch (object->type)
     {
     case TYPE_NULL:
         return str_fmt_into(dst, len, offset, limit, "null");
