@@ -35,8 +35,9 @@
 
 #define REC(r, a, n, o)                          \
     {                                            \
+        i64_t id = intern_keyword(n, strlen(n)); \
         env_record_t rec = {                     \
-            .id = symbol(n).i64,                 \
+            .id = id,                            \
             .op = (i64_t)o,                      \
             .arity = a,                          \
         };                                       \
@@ -221,14 +222,15 @@ null_t init_typenames(i64_t *typenames)
     typenames[ TYPE_FUNCTION  + TYPE_OFFSET] = symbol("Function").i64;
 }
 
+
 null_t init_kw_symbols()
 {
-    assert(symbol("null").i64  == KW_SYM_NULL);
-    assert(symbol("time").i64  == KW_SYM_TIME);
-    assert(symbol("`").i64     == KW_SYM_QUOTE);
-    assert(symbol("set").i64   == KW_SYM_SET);
-    assert(symbol("let").i64   == KW_SYM_LET);
-    assert(symbol("fn").i64    == KW_SYM_FN);
+    assert(intern_symbol("",      0)  == NULL_SYM);
+    assert(intern_keyword("time", 4)  == KW_TIME);
+    assert(intern_keyword("`",    1)  == KW_QUOTE);
+    assert(intern_keyword("set",  3)  == KW_SET);
+    assert(intern_keyword("let",  3)  == KW_LET);
+    assert(intern_keyword("fn",   2)  == KW_FN);
 }
 // clang-format on
 

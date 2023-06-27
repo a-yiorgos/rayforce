@@ -120,7 +120,7 @@ rf_object_t f64(f64_t val)
 
 rf_object_t symbol(str_t s)
 {
-    i64_t id = symbols_intern(s, strlen(s));
+    i64_t id = intern_symbol(s, strlen(s));
     rf_object_t sym = {
         .type = -TYPE_SYMBOL,
         .i64 = id,

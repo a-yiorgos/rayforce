@@ -592,13 +592,13 @@ cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t 
 
     switch (car->i64)
     {
-    case KW_SYM_QUOTE:
+    case KW_QUOTE:
         res = cc_compile_quote(has_consumer, cc, object, arity);
         break;
-    case KW_SYM_TIME:
+    case KW_TIME:
         res = cc_compile_time(has_consumer, cc, object, arity);
         break;
-    case KW_SYM_SET:
+    case KW_SET:
         res = cc_compile_set(has_consumer, cc, object, arity);
         break;
     }

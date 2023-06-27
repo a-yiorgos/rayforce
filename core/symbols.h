@@ -44,6 +44,8 @@ typedef struct pool_node_t
  */
 typedef struct symbols_t
 {
+    i64_t next_kw_id;
+    i64_t next_sym_id;
     ht_t *str_to_id;
     ht_t *id_to_str;
     pool_node_t *pool_node_0;
@@ -51,11 +53,12 @@ typedef struct symbols_t
     str_t strings_pool;
 } symbols_t;
 
-i64_t symbols_intern(str_t s, i64_t len);
-str_t symbols_get(i64_t key);
+i64_t intern_symbol(str_t s, i64_t len);
+i64_t intern_keyword(str_t s, i64_t len);
 
 symbols_t *symbols_new();
 null_t symbols_free(symbols_t *symbols);
 i32_t i64_cmp(i64_t a, i64_t b);
+str_t symbols_get(i64_t key);
 
 #endif

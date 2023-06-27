@@ -452,7 +452,7 @@ rf_object_t parse_symbol(parser_t *parser)
         pos++;
     } while (is_alphanum(*pos) || is_op(*pos));
 
-    id = symbols_intern(parser->current, pos - parser->current);
+    id = intern_symbol(parser->current, pos - parser->current);
     res = i64(id);
     res.type = -TYPE_SYMBOL;
     shift(parser, pos - parser->current);

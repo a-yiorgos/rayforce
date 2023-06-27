@@ -35,12 +35,12 @@
 #define MAX_TYPE (TYPE_ERROR + TYPE_OFFSET + 2)
 
 // reserved symbols (keywords)
-#define KW_SYM_NULL 0
-#define KW_SYM_TIME 1
-#define KW_SYM_QUOTE 2
-#define KW_SYM_SET 3
-#define KW_SYM_LET 4
-#define KW_SYM_FN 5
+#define NULL_SYM 0
+#define KW_TIME -1
+#define KW_QUOTE -2
+#define KW_SET -3
+#define KW_LET -4
+#define KW_FN -5
 
 typedef rf_object_t (*nilary_t)();
 typedef rf_object_t (*unary_t)(rf_object_t *);

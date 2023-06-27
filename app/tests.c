@@ -111,7 +111,7 @@ int test_symbols()
     // {
     //     // printf("%s\n", st[i]);
     //     rf_object_t s = str(st[i], strlen(st[i]));
-    //     i64_t id = symbols_intern(&s);
+    //     i64_t id = intern_symbol(&s);
     //     // str_t val = symbols_get(id);
     //     // if (val == NULL)
     //     //     printf("NULL -- ID: %lld ORIG: %s\n", id, st[i]);
@@ -120,11 +120,11 @@ int test_symbols()
     // }
 
     // // rf_object_t s = str("code", 4);
-    // // i64_t id1 = symbols_intern(&s), id2;
+    // // i64_t id1 = intern_symbol(&s), id2;
     // // str_t val = symbols_get(id1);
 
     // // s = str("code", 4);
-    // // id2 = symbols_intern(&s);
+    // // id2 = intern_symbol(&s);
     // // val = symbols_get(id2);
 
     // // printf("%d == %d\n", id1, id2);
