@@ -241,67 +241,53 @@ cc_result_t cc_compile_fn(bool_t has_consumer, cc_t *cc, rf_object_t *object, u3
     return CC_OK;
 }
 
-type_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
+cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
 {
-    type_t type, type1;
+    cc_result_t res;
     i64_t lbl1, lbl2;
     rf_object_t *car = &as_list(object)[0];
     function_t *func = as_function(&cc->function);
     rf_object_t *code = &func->code;
     env_t *env = &runtime_get()->env;
 
-    if (car->i64 == symbol("if").i64)
+    if (arity < 2 || arity > 3)
+        cerr(cc, car->id, ERR_LENGTH, "'if' expects 2 .. 3 arguments");
+
+    res = cc_compile_expr(true, cc, &as_list(object)[1]);
+
+    if (res == CC_ERROR)
+        return CC_ERROR;
+
+    push_opcode(cc, car->id, code, OP_JNE);
+    push_u64(code, 0);
+    lbl1 = code->adt->len - sizeof(u64_t);
+
+    // true branch
+    res = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
+
+    if (res == CC_ERROR)
+        return CC_ERROR;
+
+    // there is else branch
+    if (arity == 3)
     {
-        if (arity < 2 || arity > 3)
-            cerr(cc, car->id, ERR_LENGTH, "'if' expects 2 .. 3 arguments");
-
-        type = cc_compile_expr(true, cc, &as_list(object)[1]);
-
-        if (type == TYPE_ERROR)
-            return type;
-
-        if (type != -TYPE_BOOL)
-            cerr(cc, car->id, ERR_TYPE, "'if': condition must have a bool result");
-
-        push_opcode(cc, car->id, code, OP_JNE);
+        push_opcode(cc, car->id, code, OP_JMP);
         push_u64(code, 0);
-        lbl1 = code->adt->len - sizeof(u64_t);
+        lbl2 = code->adt->len - sizeof(u64_t);
+        *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
-        // true branch
-        type = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
+        // false branch
+        res = cc_compile_expr(has_consumer, cc, &as_list(object)[3]);
 
-        if (type == TYPE_ERROR)
-            return type;
+        if (res == CC_ERROR)
+            return CC_ERROR;
 
-        // there is else branch
-        if (arity == 3)
-        {
-            push_opcode(cc, car->id, code, OP_JMP);
-            push_u64(code, 0);
-            lbl2 = code->adt->len - sizeof(u64_t);
-            *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
-
-            // false branch
-            type1 = cc_compile_expr(has_consumer, cc, &as_list(object)[3]);
-
-            if (type1 == TYPE_ERROR)
-                return type1;
-
-            if (type != type1)
-                ccerr(cc, object->id, ERR_TYPE,
-                      str_fmt(0, "'if': different types of branches: '%s', '%s'",
-                              symbols_get(env_get_typename_by_type(env, type)),
-                              symbols_get(env_get_typename_by_type(env, type1))));
-
-            *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
-        }
-        else
-            *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
-
-        return type;
+        *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
     }
+    else
+        *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
 
-    return TYPE_NONE;
+    return CC_OK;
 }
 
 type_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
@@ -600,6 +586,12 @@ cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object_t 
         break;
     case KW_SET:
         res = cc_compile_set(has_consumer, cc, object, arity);
+        break;
+    case KW_FN:
+        res = cc_compile_fn(has_consumer, cc, object, arity);
+        break;
+    case KW_IF:
+        res = cc_compile_cond(has_consumer, cc, object, arity);
         break;
     }
 

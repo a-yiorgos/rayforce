@@ -134,12 +134,17 @@ null_t init_typenames(i64_t *typenames)
 
 null_t init_kw_symbols()
 {
-    assert(intern_symbol("",      0)  == NULL_SYM);
-    assert(intern_keyword("time", 4)  == KW_TIME);
-    assert(intern_keyword("`",    1)  == KW_QUOTE);
-    assert(intern_keyword("set",  3)  == KW_SET);
-    assert(intern_keyword("let",  3)  == KW_LET);
-    assert(intern_keyword("fn",   2)  == KW_FN);
+    assert(intern_symbol("",       0)  == NULL_SYM);
+    assert(intern_keyword("time",  4)  == KW_TIME);
+    assert(intern_keyword("`",     1)  == KW_QUOTE);
+    assert(intern_keyword("set",   3)  == KW_SET);
+    assert(intern_keyword("let",   3)  == KW_LET);
+    assert(intern_keyword("fn",    2)  == KW_FN);
+    assert(intern_keyword("if",    2)  == KW_IF);
+    assert(intern_keyword("else",  4)  == KW_ELSE);
+    assert(intern_keyword("try",   3)  == KW_TRY);
+    assert(intern_keyword("catch", 5)  == KW_CATCH);
+    assert(intern_keyword("throw", 5)  == KW_THROW);
 }
 // clang-format on
 

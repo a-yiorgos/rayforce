@@ -130,3 +130,27 @@ u64_t rfi_i64_hash(i64_t key)
 {
     return (u64_t)key;
 }
+
+bool_t rfi_as_bool(rf_object_t *x)
+{
+    switch (x->type)
+    {
+    case -TYPE_BOOL:
+        return x->bool;
+    case -TYPE_I64:
+        return x->i64 != 0;
+    case -TYPE_F64:
+        return x->f64 != 0.0;
+    case -TYPE_CHAR:
+        return x->schar != 0;
+    case TYPE_BOOL:
+    case TYPE_I64:
+    case TYPE_F64:
+    case TYPE_CHAR:
+    case TYPE_LIST:
+        return x->adt->len != 0;
+
+    default:
+        return false;
+    }
+}
