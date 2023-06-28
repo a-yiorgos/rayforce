@@ -329,18 +329,20 @@ rf_object_t rf_max(rf_object_t *x)
 
 rf_object_t rf_not(rf_object_t *x)
 {
+    i32_t i;
+    i64_t l;
+    rf_object_t res;
+
     switch (MTYPE(x->type))
     {
     case MTYPE(-TYPE_BOOL):
         return bool(!x->bool);
 
     case MTYPE(TYPE_BOOL):
-        i32_t i;
-        i64_t l = x->adt->len;
-        rf_object_t res = vector_bool(l);
-        bool_t *iv = as_vector_bool(x), *ov = as_vector_bool(&res);
+        l = x->adt->len;
+        res = vector_bool(l);
         for (i = 0; i < l; i++)
-            ov[i] = !iv[i];
+            as_vector_bool(&res)[i] = !as_vector_bool(x)[i];
 
         return res;
 
@@ -375,15 +377,15 @@ rf_object_t rf_idesc(rf_object_t *x)
 
 rf_object_t rf_asc(rf_object_t *x)
 {
+    rf_object_t idx = rf_sort_asc(x);
+    i64_t l, i;
+
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        rf_object_t idx = rf_sort_asc(x);
-        i64_t len = x->adt->len, i,
-              *iv = as_vector_i64(x), *ov = as_vector_i64(&idx);
-
-        for (i = 0; i < len; i++)
-            ov[i] = iv[ov[i]];
+        l = x->adt->len;
+        for (i = 0; i < l; i++)
+            as_vector_i64(&idx)[i] = as_vector_i64(x)[as_vector_i64(&idx)[i]];
 
         idx.adt->attrs |= VEC_ATTR_ASC;
 
@@ -396,15 +398,15 @@ rf_object_t rf_asc(rf_object_t *x)
 
 rf_object_t rf_desc(rf_object_t *x)
 {
+    rf_object_t idx = rf_sort_desc(x);
+    i64_t l, i;
+
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        rf_object_t idx = rf_sort_desc(x);
-        i64_t len = x->adt->len, i,
-              *iv = as_vector_i64(x), *ov = as_vector_i64(&idx);
-
-        for (i = 0; i < len; i++)
-            ov[i] = iv[ov[i]];
+        l = x->adt->len;
+        for (i = 0; i < l; i++)
+            as_vector_i64(&idx)[i] = as_vector_i64(x)[as_vector_i64(&idx)[i]];
 
         idx.adt->attrs |= VEC_ATTR_DESC;
 
@@ -417,12 +419,16 @@ rf_object_t rf_desc(rf_object_t *x)
 
 rf_object_t rf_guid_generate(rf_object_t *x)
 {
+    i64_t i, count;
+    rf_object_t vec;
+    guid_t *g;
+
     switch (MTYPE(x->type))
     {
     case MTYPE(-TYPE_I64):
-        i64_t i, count = x->i64;
-        rf_object_t vec = vector_guid(count);
-        guid_t *g = as_vector_guid(&vec);
+        count = x->i64;
+        vec = vector_guid(count);
+        g = as_vector_guid(&vec);
 
         for (i = 0; i < count; i++)
             guid_generate(g + i);
