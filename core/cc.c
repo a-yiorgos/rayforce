@@ -33,6 +33,7 @@
 #include "runtime.h"
 #include "unary.h"
 #include "binary.h"
+#include "ternary.h"
 #include "function.h"
 #include "dict.h"
 #include "ops.h"
@@ -526,10 +527,12 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
     else
         rf_object_free(&val);
 
-    // push_opcode(cc, car->id, code, OP_CALL2);
-    // push_u64(code, rf_filter_Table_Bool);
-
+    push_opcode(cc, car->id, code, OP_PUSH);
+    push_const(cc, null());
     push_opcode(cc, car->id, code, OP_LDETACH);
+
+    push_opcode(cc, car->id, code, OP_CALL3);
+    push_u64(code, rf_collect_table);
 
     return CC_OK;
 }

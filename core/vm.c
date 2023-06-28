@@ -356,6 +356,7 @@ op_lget:
     b = vm->ip++;
     x1 = stack_pop(vm);
     j = f->locals.adt->len;
+    x2 = null();
     for (i = 0; i < j; i++)
     {
         x2 = dict_get(&as_list(&f->locals)[j - i - 1], &x1);
@@ -377,7 +378,7 @@ op_lattach:
 op_ldetach:
     b = vm->ip++;
     x1 = vector_pop(&f->locals);
-    rf_object_free(&x1);
+    stack_push(vm, x1);
     dispatch();
 op_cast:
     b = vm->ip++;

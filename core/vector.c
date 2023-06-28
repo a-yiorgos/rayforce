@@ -117,7 +117,6 @@ rf_object_t vector_pop(rf_object_t *vector)
         return null();
 
     type_t type = vector->type - TYPE_BOOL;
-    rf_object_t o;
     guid_t *g;
 
     static null_t *types_table[] = {&&type_bool, &&type_i64, &&type_f64, &&type_symbol,
@@ -141,8 +140,7 @@ type_guid:
 type_char:
     return schar(pop(vector, char_t));
 type_list:
-    o = pop(vector, rf_object_t);
-    return o;
+    return pop(vector, rf_object_t);
 }
 
 null_t vector_reserve(rf_object_t *vector, u32_t len)

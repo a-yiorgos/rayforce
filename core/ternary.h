@@ -27,5 +27,6 @@
 #include "rayforce.h"
 
 rf_object_t rf_rand(rf_object_t *x, rf_object_t *y, rf_object_t *z);
+rf_object_t rf_collect_table(rf_object_t *mask, rf_object_t *cols, rf_object_t *tab);
 
 #endif
