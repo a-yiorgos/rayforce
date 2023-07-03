@@ -535,6 +535,8 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
     if (params->type != TYPE_DICT)
         cerr(cc, car->id, ERR_LENGTH, "'select' takes dict of params");
 
+    l = as_list(params)[0].adt->len;
+
     key = symboli64(KW_FROM);
     val = dict_get(params, &key);
 
@@ -552,6 +554,31 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
 
     if (val.type != TYPE_NULL)
     {
+        // first determine which of columns are used in select
+        // for (i = 0; i < l; i++)
+        // {
+        //     k = as_vector_symbol(&as_list(params)[0])[i];
+        //     if (k != KW_FROM && k != KW_WHERE)
+        //     {
+        //         val = as_list(&as_list(params)[1])[i];
+        //         if (val.type == TYPE_LIST)
+        //         {
+        //         }
+        //     }
+        // }
+
+        cols = vector_symbol(0);
+        vector_push(&cols, symbol("a"));
+        vector_push(&cols, symbol("b"));
+        push_opcode(cc, car->id, code, OP_PUSH);
+        push_const(cc, cols);
+
+        push_opcode(cc, car->id, code, OP_LDETACH);
+        push_opcode(cc, car->id, code, OP_CALL2);
+        push_u64(code, rf_take);
+
+        push_opcode(cc, car->id, code, OP_LATTACH);
+
         res = cc_compile_expr(true, cc, &val);
         rf_object_free(&val);
 
@@ -561,18 +588,15 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         push_opcode(cc, car->id, code, OP_CALL1);
         push_u64(code, rf_where);
 
-        // push_opcode(cc, car->id, code, OP_PUSH);
-        // push_const(cc, cols);
-
         push_opcode(cc, car->id, code, OP_LDETACH);
-
         push_opcode(cc, car->id, code, OP_CALL2);
         push_u64(code, rf_take);
+        return CC_OK;
+
         push_opcode(cc, car->id, code, OP_LATTACH);
     }
 
     cols = vector_symbol(0);
-    l = params->adt->len;
     for (i = 0; i < l; i++)
     {
         k = as_vector_symbol(&as_list(params)[0])[i];

@@ -1072,8 +1072,8 @@ rf_object_t rf_filter(rf_object_t *x, rf_object_t *y)
 
 rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
 {
-    i64_t i, j, l, m, *p;
-    rf_object_t res, col;
+    i64_t i, j, l, *p;
+    rf_object_t res, col, cols, sym;
 
     switch (MTYPE2(x->type, y->type))
     {
@@ -1085,22 +1085,35 @@ rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
 
         return res;
 
-    case MTYPE2(TYPE_I64, TYPE_TABLE):
-        m = as_list(y)[0].adt->len;
-        res = table(rf_object_clone(&as_list(y)[0]), list(m));
+    case MTYPE2(TYPE_SYMBOL, TYPE_TABLE):
         l = x->adt->len;
-        p = as_vector_i64(x);
-
-        for (i = 0; i < m; i++)
+        p = as_vector_symbol(x);
+        cols = list(l);
+        for (i = 0; i < l; i++)
         {
-            col = vector(as_list(&as_list(y)[1])[i].type, l);
-            for (j = 0; j < l; j++)
-                as_vector_i64(&col)[j] = as_vector_i64(&as_list(&as_list(y)[1])[i])[p[j]];
-
-            as_list(&as_list(&res)[1])[i] = col;
+            sym = symboli64(p[i]);
+            as_list(&cols)[i] = dict_get(y, &sym);
         }
 
+        return table(rf_object_clone(x), cols);
+
+    case MTYPE2(TYPE_I64, TYPE_I64):
+        l = y->adt->len;
+        p = as_vector_i64(y);
+        res = vector_i64(l);
+
+        for (i = 0; i < l; i++)
+            as_vector_i64(&res)[i] = as_vector_i64(x)[p[i]];
+
         return res;
+
+    case MTYPE2(TYPE_I64, TYPE_TABLE):
+        l = as_list(y)[0].adt->len;
+        cols = list(l);
+        for (i = 0; i < l; i++)
+            as_list(&cols)[i] = rf_take(&as_list(&as_list(y)[1])[i], x);
+
+        return table(rf_object_clone(&as_list(y)[0]), cols);
 
     default:
         return error_type2(x->type, y->type, "take: unsupported types");

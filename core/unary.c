@@ -68,6 +68,8 @@ rf_object_t rf_count(rf_object_t *x)
     {
     case TYPE_FUNCTION:
         return i64(1);
+    case TYPE_TABLE:
+        return i64((&as_list(&as_list(x)[1])[0])->adt->len);
     default:
         return i64(x->adt->len);
     }
