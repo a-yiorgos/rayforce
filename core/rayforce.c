@@ -325,7 +325,7 @@ rf_object_t __attribute__((hot)) rf_object_clone(rf_object_t *object)
         rc_inc(object);
         return *object;
     default:
-        panic("clone: invalid type");
+        panic(str_fmt(0, "clone: invalid type: %d", object->type));
     }
 }
 
@@ -394,7 +394,7 @@ null_t __attribute__((hot)) rf_object_free(rf_object_t *object)
             rf_free(object->adt);
         return;
     default:
-        panic("free: invalid type");
+        panic(str_fmt(0, "free: invalid type: %d", object->type));
     }
 }
 
@@ -474,7 +474,7 @@ rf_object_t rf_object_cow(rf_object_t *object)
     case TYPE_ERROR:
         return *object;
     default:
-        panic("cow: invalid type");
+        panic(str_fmt(0, "cow: invalid type: %d", object->type));
     }
 }
 
