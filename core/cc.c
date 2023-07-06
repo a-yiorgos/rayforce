@@ -611,6 +611,13 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         push_opcode(cc, car->id, code, OP_CALL1);
         push_u64(code, rf_where);
 
+        // group by
+        // key = symboli64(KW_BY);
+        // val = dict_get(params, &key);
+        // if (val.type != TYPE_NULL)
+        // {
+        // }
+
         // remap table of columns (by applying filters)
         push_opcode(cc, car->id, code, OP_LDETACH);
         push_opcode(cc, car->id, code, OP_CALL2);
