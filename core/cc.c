@@ -576,7 +576,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         k = as_vector_symbol(&as_list(params)[0])[i];
         if (k != KW_FROM && k != KW_WHERE && k != KW_BY)
         {
-            find_used_symbols(&(&as_list(params)[0])[i], &syms);
+            find_used_symbols(&as_list(&as_list(params)[1])[i], &syms);
             vector_push(&cols, symboli64(k));
         }
     }
@@ -596,6 +596,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         }
         else
             rf_object_free(&syms);
+
         push_opcode(cc, car->id, code, OP_LATTACH);
 
         res = cc_compile_expr(true, cc, &val);
@@ -626,7 +627,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         for (i = 0; i < l; i++)
         {
             k = as_vector_symbol(&as_list(params)[0])[i];
-            if (k != KW_FROM && k != KW_WHERE)
+            if (k != KW_FROM && k != KW_WHERE && k != KW_BY)
             {
                 val = as_list(&as_list(params)[1])[i];
                 res = cc_compile_expr(true, cc, &val);
