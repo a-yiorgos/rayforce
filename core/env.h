@@ -52,9 +52,6 @@
 #define KW_BY -15
 #define KW_ORDER -16
 
-// primitives prototypes
-typedef rf_object_t (*unary_t)(rf_object_t *);
-typedef rf_object_t (*binary_t)(rf_object_t *, rf_object_t *);
 typedef rf_object_t (*vary_t)(rf_object_t *, i64_t n);
 
 /*

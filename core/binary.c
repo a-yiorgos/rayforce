@@ -34,6 +34,15 @@
 #include "hash.h"
 #include "set.h"
 
+// Atomic binary functions (iterates through list of arguments down to atoms)
+rf_object_t rf_call_binary_atomic(binary_t f, rf_object_t *x, rf_object_t *y)
+{
+    if (x->type > 0 && y->type > 0)
+        return f(x, y);
+
+    return f(x, y);
+}
+
 rf_object_t rf_set_variable(rf_object_t *key, rf_object_t *val)
 {
     return dict_set(&runtime_get()->env.variables, key, rf_object_clone(val));

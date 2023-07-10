@@ -336,58 +336,84 @@ rf_object_t vector_get(rf_object_t *vector, i64_t index)
     }
 }
 
-null_t vector_set(rf_object_t *vector, i64_t index, rf_object_t value)
+rf_object_t vector_set(rf_object_t *vec, i64_t index, rf_object_t value)
 {
     guid_t *g;
-    i64_t l;
+    i64_t i, l;
+    rf_object_t lst;
 
-    switch (vector->type)
+    // change vector type to a list
+    if (vec->type != -value.type && vec->type != TYPE_LIST)
+    {
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+
+        lst = list(l);
+        for (i = 0; i < index; i++)
+            as_list(&lst)[i] = vector_get(&vec[i], i);
+
+        as_list(&lst)[index] = value;
+
+        rf_object_free(vec);
+
+        *vec = lst;
+        return null();
+    }
+
+    switch (vec->type)
     {
     case TYPE_BOOL:
-        l = vector->adt->len;
-        if (index < l)
-            as_vector_bool(vector)[index] = value.bool;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_vector_bool(vec)[index] = value.bool;
+        return null();
     case TYPE_I64:
-        l = vector->adt->len;
-        if (index < l)
-            as_vector_i64(vector)[index] = value.i64;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_vector_i64(vec)[index] = value.i64;
+        return null();
     case TYPE_F64:
-        l = vector->adt->len;
-        if (index < l)
-            as_vector_f64(vector)[index] = value.f64;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_vector_f64(vec)[index] = value.f64;
+        return null();
     case TYPE_SYMBOL:
-        l = vector->adt->len;
-        if (index < l)
-            as_vector_i64(vector)[index] = value.i64;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_vector_i64(vec)[index] = value.i64;
+        return null();
     case TYPE_TIMESTAMP:
-        l = vector->adt->len;
-        if (index < l)
-            as_vector_i64(vector)[index] = value.i64;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_vector_i64(vec)[index] = value.i64;
+        return null();
     case TYPE_GUID:
-        l = vector->adt->len;
-        if (index < l)
-        {
-            g = as_vector_guid(vector);
-            memcpy(g + index, value.guid, sizeof(guid_t));
-        }
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        g = as_vector_guid(vec);
+        memcpy(g + index, value.guid, sizeof(guid_t));
+        return null();
     case TYPE_CHAR:
-        l = vector->adt->len;
-        if (index < l)
-            as_string(vector)[index] = value.schar;
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_string(vec)[index] = value.schar;
+        return null();
     case TYPE_LIST:
-        l = vector->adt->len;
-        if (index < l)
-            as_list(vector)[index] = rf_object_clone(&value);
-        return;
+        l = vec->adt->len;
+        if (index >= l)
+            return error(ERR_LENGTH, "vector set: index out of bounds");
+        as_list(vec)[index] = rf_object_clone(&value);
+        return null();
     default:
-        panic_type("vector_set: unknown type", vector->type);
+        panic_type("vector_set: unknown type", vec->type);
     }
 }
 

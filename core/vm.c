@@ -36,6 +36,7 @@
 #include "dict.h"
 #include "cast.h"
 #include "unary.h"
+#include "binary.h"
 
 #define stack_push(v, x) (v->stack[v->sp++] = x)
 #define stack_pop(v) (v->stack[--v->sp])
@@ -193,9 +194,8 @@ op_jmp:
 op_call1:
     b = vm->ip++;
     load_u64(l, vm);
-    f1 = (unary_t)l;
     x2 = stack_pop(vm);
-    x1 = f1(&x2);
+    x1 = rf_call_unary_atomic((unary_t)l, &x2);
     rf_object_free(&x2);
     unwrap(x1, b);
     stack_push(vm, x1);
@@ -203,10 +203,9 @@ op_call1:
 op_call2:
     b = vm->ip++;
     load_u64(l, vm);
-    f2 = (binary_t)l;
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
-    x1 = f2(&x2, &x3);
+    x1 = rf_call_binary_atomic((binary_t)l, &x2, &x3);
     rf_object_free(&x2);
     rf_object_free(&x3);
     unwrap(x1, b);
