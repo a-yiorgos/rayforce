@@ -28,6 +28,8 @@
 
 typedef rf_object_t (*binary_t)(rf_object_t *, rf_object_t *);
 
+rf_object_t rf_call_binary_left_atomic(binary_t f, rf_object_t *x, rf_object_t *y);
+rf_object_t rf_call_binary_right_atomic(binary_t f, rf_object_t *x, rf_object_t *y);
 rf_object_t rf_call_binary_atomic(binary_t f, rf_object_t *x, rf_object_t *y);
 rf_object_t rf_set_variable(rf_object_t *key, rf_object_t *val);
 rf_object_t rf_dict(rf_object_t *x, rf_object_t *y);

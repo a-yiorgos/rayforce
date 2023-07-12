@@ -34,6 +34,88 @@
 #include "hash.h"
 #include "set.h"
 
+rf_object_t rf_call_binary_left_atomic(binary_t f, rf_object_t *x, rf_object_t *y)
+{
+    u64_t i, l;
+    rf_object_t res, item, a, b;
+
+    if (x->type == TYPE_LIST)
+    {
+        l = x->adt->len;
+        a = vector_get(x, 0);
+        item = rf_call_binary_left_atomic(f, &a, y);
+        rf_object_free(&a);
+
+        if (item.type == TYPE_ERROR)
+            return item;
+
+        res = list(l);
+
+        vector_write(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            a = vector_get(x, i);
+            item = rf_call_binary_left_atomic(f, &a, y);
+            rf_object_free(&a);
+
+            if (item.type == TYPE_ERROR)
+            {
+                res.adt->len = i;
+                rf_object_free(&res);
+                return item;
+            }
+
+            vector_write(&res, i, item);
+        }
+
+        return res;
+    }
+
+    return f(x, y);
+}
+
+rf_object_t rf_call_binary_right_atomic(binary_t f, rf_object_t *x, rf_object_t *y)
+{
+    u64_t i, l;
+    rf_object_t res, item, a, b;
+
+    if (y->type == TYPE_LIST)
+    {
+        l = y->adt->len;
+        b = vector_get(y, 0);
+        item = rf_call_binary_right_atomic(f, x, &b);
+        rf_object_free(&b);
+
+        if (item.type == TYPE_ERROR)
+            return item;
+
+        res = list(l);
+
+        vector_write(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            b = vector_get(y, i);
+            item = rf_call_binary_right_atomic(f, x, &b);
+            rf_object_free(&b);
+
+            if (item.type == TYPE_ERROR)
+            {
+                res.adt->len = i;
+                rf_object_free(&res);
+                return item;
+            }
+
+            vector_write(&res, i, item);
+        }
+
+        return res;
+    }
+
+    return f(x, y);
+}
+
 // Atomic binary functions (iterates through list of arguments down to atoms)
 rf_object_t rf_call_binary_atomic(binary_t f, rf_object_t *x, rf_object_t *y)
 {
