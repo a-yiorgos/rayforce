@@ -480,126 +480,83 @@ null_t find_used_symbols(rf_object_t *lst, rf_object_t *syms)
     }
 }
 
-cc_result_t cc_compile_from(cc_t *cc, rf_object_t *params)
+cc_result_t cc_compile_where(cc_t *cc, rf_object_t *object)
 {
     cc_result_t res;
-    rf_object_t *car, key, val;
+    lambda_t *func = as_lambda(&cc->lambda);
+    rf_object_t *code = &func->code;
 
-    key = symboli64(KW_FROM);
-    val = dict_get(params, &key);
-    res = cc_compile_expr(true, cc, &val);
-    rf_object_free(&val);
+    res = cc_compile_expr(true, cc, object);
 
     if (res == CC_ERROR)
         return CC_ERROR;
 
-    return CC_OK;
-}
-
-cc_result_t cc_compile_where(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
-{
-    cc_result_t res;
-    i64_t i, l;
-    rf_object_t *car, *params, key, val, cols, syms, k, v;
-    lambda_t *func = as_lambda(&cc->lambda);
-    rf_object_t *code = &func->code;
-
-    // compile filters
-    key = symboli64(KW_WHERE);
-    val = dict_get(params, &key);
-    if (!is_null(&val))
-    {
-        push_opcode(cc, car->id, code, OP_LATTACH);
-
-        res = cc_compile_expr(true, cc, &val);
-        rf_object_free(&val);
-
-        // remap table of columns (if specified)
-        if (cols.adt->len > 0)
-        {
-            push_opcode(cc, car->id, code, OP_LDETACH);
-            push_opcode(cc, car->id, code, OP_PUSH);
-            push_const(cc, syms);
-            push_opcode(cc, car->id, code, OP_CALL2);
-            push_opcode(cc, car->id, code, 0);
-            push_u64(code, rf_take);
-            push_opcode(cc, car->id, code, OP_LATTACH);
-        }
-        else
-            rf_object_free(&syms);
-
-        if (res == CC_ERROR)
-        {
-            rf_object_free(&cols);
-            return CC_ERROR;
-        }
-
-        push_opcode(cc, car->id, code, OP_CALL1);
-        push_opcode(cc, car->id, code, 0);
-        push_u64(code, rf_where);
-
-        // remap table of columns (by applying filters)
-        push_opcode(cc, car->id, code, OP_LDETACH);
-        push_opcode(cc, car->id, code, OP_CALL2);
-        push_opcode(cc, car->id, code, 0);
-        push_u64(code, rf_group_table);
-    }
+    push_opcode(cc, object->id, code, OP_CALL1);
+    push_opcode(cc, object->id, code, 0);
+    push_u64(code, rf_where);
 
     return CC_OK;
 }
 
 cc_result_t cc_compile_by(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
 {
-    cc_result_t res;
-    i64_t i, l;
-    rf_object_t *car, *params, key, val, cols, syms, k, v;
-    lambda_t *func = as_lambda(&cc->lambda);
-    rf_object_t *code = &func->code;
+    UNUSED(has_consumer);
+    UNUSED(cc);
+    UNUSED(object);
+    UNUSED(arity);
 
-    // group by
-    key = symboli64(KW_BY);
-    val = dict_get(params, &key);
-    if (!is_null(&val))
-    {
-        push_opcode(cc, car->id, code, OP_LATTACH);
+    return CC_NONE;
 
-        res = cc_compile_expr(true, cc, &val);
-        rf_object_free(&val);
+    // cc_result_t res;
+    // i64_t i, l;
+    // rf_object_t *car, *params, key, val, cols, syms, k, v;
+    // lambda_t *func = as_lambda(&cc->lambda);
+    // rf_object_t *code = &func->code;
 
-        push_opcode(cc, car->id, code, OP_PUSH);
+    // // group by
+    // key = symboli64(KW_BY);
+    // val = dict_get(params, &key);
+    // if (!is_null(&val))
+    // {
+    //     push_opcode(cc, car->id, code, OP_LPUSH);
 
-        if (val.type == -TYPE_SYMBOL)
-        {
-            push_const(cc, val);
-        }
-        else
-        {
-            push_const(cc, symbol("x1"));
-        }
+    //     res = cc_compile_expr(true, cc, &val);
+    //     rf_object_free(&val);
 
-        if (res == CC_ERROR)
-        {
-            rf_object_free(&cols);
-            return CC_ERROR;
-        }
+    //     push_opcode(cc, car->id, code, OP_PUSH);
 
-        push_opcode(cc, car->id, code, OP_GROUP);
+    //     if (val.type == -TYPE_SYMBOL)
+    //     {
+    //         push_const(cc, val);
+    //     }
+    //     else
+    //     {
+    //         push_const(cc, symbol("x1"));
+    //     }
 
-        // detach and drop table from env
-        push_opcode(cc, car->id, code, OP_LDETACH);
-        return CC_OK;
-        push_opcode(cc, car->id, code, OP_PUSH);
-        push_const(cc, syms);
-        push_opcode(cc, car->id, code, OP_CALL2);
-        push_opcode(cc, car->id, code, 0);
-        push_u64(code, rf_take);
+    //     if (res == CC_ERROR)
+    //     {
+    //         rf_object_free(&cols);
+    //         return CC_ERROR;
+    //     }
 
-        push_opcode(cc, car->id, code, OP_CALL2);
-        push_opcode(cc, car->id, code, 0);
-        push_u64(code, rf_group_table);
-    }
+    //     push_opcode(cc, car->id, code, OP_GROUP);
 
-    return CC_OK;
+    //     // detach and drop table from env
+    //     push_opcode(cc, car->id, code, OP_LPOP);
+    //     return CC_OK;
+    //     push_opcode(cc, car->id, code, OP_PUSH);
+    //     push_const(cc, syms);
+    //     push_opcode(cc, car->id, code, OP_CALL2);
+    //     push_opcode(cc, car->id, code, 0);
+    //     push_u64(code, rf_take);
+
+    //     push_opcode(cc, car->id, code, OP_CALL2);
+    //     push_opcode(cc, car->id, code, 0);
+    //     push_u64(code, rf_group_table);
+    // }
+
+    // return CC_OK;
 }
 
 cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object, u32_t arity)
@@ -622,7 +579,11 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
 
     l = as_list(params)[0].adt->len;
 
-    res = cc_compile_from(cc, params);
+    // compile table
+    key = symboli64(KW_FROM);
+    val = dict_get(params, &key);
+    res = cc_compile_expr(true, cc, &val);
+    rf_object_free(&val);
 
     if (res == CC_ERROR)
         return CC_ERROR;
@@ -630,6 +591,17 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
     // determine which of columns are used in select and which names will be used for result columns
     cols = vector_symbol(0);
     syms = vector_symbol(0);
+    // first check by because it is special case in mapping
+    key = symboli64(KW_BY);
+    val = dict_get(params, &key);
+    if (!is_null(&val))
+    {
+        if (val.type == -TYPE_SYMBOL)
+            vector_push(&cols, val);
+        else
+            vector_push(&cols, symbol("x"));
+    }
+
     for (i = 0; i < l; i++)
     {
         k = vector_get(&as_list(params)[0], i);
@@ -638,14 +610,46 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
             v = dict_get(params, &k);
             find_used_symbols(&v, &syms);
             rf_object_free(&v);
+
+            if (k.i64 == KW_BY)
+                continue;
+
             vector_push(&cols, k);
         }
     }
 
-    res = cc_compile_where(has_consumer, cc, object, arity);
+    k = rf_distinct(&syms);
 
-    if (res == CC_ERROR)
+    if (k.type == TYPE_ERROR)
+    {
+        rf_object_free(&cols);
+        rf_object_free(&syms);
         return CC_ERROR;
+    }
+
+    rf_object_free(&syms);
+
+    push_opcode(cc, car->id, code, OP_PUSH);
+    push_const(cc, k);
+
+    push_opcode(cc, car->id, code, OP_LPUSH);
+
+    // compile filters
+    key = symboli64(KW_WHERE);
+    val = dict_get(params, &key);
+    if (!is_null(&val))
+    {
+        res = cc_compile_where(cc, &val);
+        rf_object_free(&val);
+
+        if (res == CC_ERROR)
+        {
+            rf_object_free(&cols);
+            return CC_ERROR;
+        }
+
+        push_opcode(cc, car->id, code, OP_FILTER);
+    }
 
     res = cc_compile_by(has_consumer, cc, object, arity);
 
@@ -655,7 +659,6 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
     // compile mappings (if specified)
     if (cols.adt->len > 0)
     {
-        push_opcode(cc, car->id, code, OP_LATTACH);
         push_opcode(cc, car->id, code, OP_PUSH);
         push_const(cc, cols);
 
@@ -664,8 +667,9 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
             k = vector_get(&as_list(params)[0], i);
             if (k.i64 != KW_FROM && k.i64 != KW_WHERE && k.i64 != KW_BY)
             {
-                val = as_list(&as_list(params)[1])[i];
-                res = cc_compile_expr(true, cc, &val);
+                v = dict_get(params, &k);
+                res = cc_compile_expr(true, cc, &v);
+                rf_object_free(&v);
 
                 if (res == CC_ERROR)
                     return CC_ERROR;
@@ -676,15 +680,10 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
         push_opcode(cc, car->id, code, (u8_t)cols.adt->len);
         push_opcode(cc, car->id, code, 0);
         push_u64(code, rf_list);
-        return CC_OK;
 
         push_opcode(cc, car->id, code, OP_CALL2);
         push_opcode(cc, car->id, code, 0);
         push_u64(code, rf_table);
-
-        // detach and drop table from env
-        push_opcode(cc, car->id, code, OP_LDETACH);
-        push_opcode(cc, car->id, code, OP_POP);
     }
     else
         rf_object_free(&cols);

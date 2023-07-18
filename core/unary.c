@@ -147,10 +147,19 @@ rf_object_t rf_til(rf_object_t *x)
 
 rf_object_t rf_distinct(rf_object_t *x)
 {
-    if (MTYPE(x->type) != MTYPE(TYPE_I64))
-        return error(ERR_TYPE, "distinct: expected I64");
+    rf_object_t res;
 
-    return rf_distinct_I64(x);
+    switch (MTYPE(x->type))
+    {
+    case MTYPE(TYPE_I64):
+        return rf_distinct_I64(x);
+    case MTYPE(TYPE_SYMBOL):
+        res = rf_distinct_I64(x);
+        res.type = TYPE_SYMBOL;
+        return res;
+    default:
+        return error(ERR_TYPE, "distinct: expected I64");
+    }
 }
 
 rf_object_t rf_group(rf_object_t *x)

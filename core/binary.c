@@ -276,7 +276,10 @@ rf_object_t rf_table(rf_object_t *x, rf_object_t *y)
     }
 
     if (x->adt->len != y->adt->len)
+    {
+        rf_object_free(&l);
         return error(ERR_LENGTH, "Keys and Values must have the same length");
+    }
 
     len = y->adt->len;
 
@@ -284,6 +287,7 @@ rf_object_t rf_table(rf_object_t *x, rf_object_t *y)
     {
         switch (as_list(y)[i].type)
         {
+        case TYPE_NULL:
         case -TYPE_BOOL:
         case -TYPE_I64:
         case -TYPE_F64:
@@ -310,7 +314,10 @@ rf_object_t rf_table(rf_object_t *x, rf_object_t *y)
 
     // there are no scalars and all columns are of the same length
     if (!s)
+    {
+        rf_object_free(&l);
         return table(rf_object_clone(x), rf_object_clone(y));
+    }
 
     // otherwise we need to expand scalars to vectors
     lst = list(len);
@@ -322,6 +329,7 @@ rf_object_t rf_table(rf_object_t *x, rf_object_t *y)
     {
         switch (as_list(y)[i].type)
         {
+        case TYPE_NULL:
         case -TYPE_BOOL:
         case -TYPE_I64:
         case -TYPE_F64:
@@ -1452,7 +1460,7 @@ rf_object_t rf_filter(rf_object_t *x, rf_object_t *y)
 rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
 {
     u64_t i, l;
-    rf_object_t res, cols, sym, syms, c;
+    rf_object_t res, cols, sym, c;
 
     switch (MTYPE2(x->type, y->type))
     {
@@ -1464,6 +1472,13 @@ rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
     case MTYPE2(TYPE_SYMBOL, -TYPE_I64):
         return vector_get(x, y->i64);
 
+    case MTYPE2(-TYPE_I64, TYPE_NULL):
+        l = x->i64;
+        res = list(l);
+        for (i = 0; i < l; i++)
+            as_list(&res)[i] = *y;
+
+        return res;
     case MTYPE2(-TYPE_I64, -TYPE_I64):
         l = x->i64;
         res = vector_i64(l);
@@ -1472,7 +1487,7 @@ rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
 
         return res;
 
-    case MTYPE2(-TYPE_F64, -TYPE_I64):
+    case MTYPE2(-TYPE_I64, -TYPE_F64):
         l = x->i64;
         res = vector_f64(l);
         for (i = 0; i < l; i++)
@@ -1480,7 +1495,7 @@ rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
 
         return res;
 
-    case MTYPE2(-TYPE_TIMESTAMP, -TYPE_I64):
+    case MTYPE2(-TYPE_I64, -TYPE_TIMESTAMP):
         l = x->i64;
         res = vector_timestamp(l);
         for (i = 0; i < l; i++)
@@ -1515,16 +1530,18 @@ rf_object_t rf_take(rf_object_t *x, rf_object_t *y)
         return res;
 
     case MTYPE2(TYPE_TABLE, TYPE_SYMBOL):
-        syms = rf_sect(&as_list(x)[0], y);
-        l = syms.adt->len;
+        l = y->adt->len;
         cols = list(l);
         for (i = 0; i < l; i++)
         {
-            sym = symboli64(as_vector_symbol(&syms)[i]);
+            sym = symboli64(as_vector_symbol(y)[i]);
             as_list(&cols)[i] = dict_get(x, &sym);
         }
 
-        return table(syms, cols);
+        res = rf_table(y, &cols);
+        rf_object_free(&cols);
+
+        return res;
 
     case MTYPE2(TYPE_I64, TYPE_I64):
         l = y->adt->len;
@@ -1785,59 +1802,4 @@ rf_object_t rf_cast(rf_object_t *x, rf_object_t *y)
     }
 
     return res;
-}
-
-rf_object_t rf_group_table(rf_object_t *x, rf_object_t *y)
-{
-    i64_t i, j, l, m;
-    rf_object_t res, col, c;
-
-    switch (MTYPE2(x->type, y->type))
-    {
-    case MTYPE2(TYPE_I64, TYPE_TABLE):
-        l = as_list(y)[0].adt->len;
-        res = list(l);
-
-        for (i = 0; i < l; i++)
-        {
-            c = rf_take(&as_list(&as_list(y)[1])[i], x);
-            if (c.type == TYPE_ERROR)
-            {
-                res.adt->len = i;
-                rf_object_free(&res);
-                return c;
-            }
-
-            if (is_scalar(&c))
-                c = rf_enlist(&c, 1);
-
-            as_list(&res)[i] = c;
-        }
-
-        return table(rf_object_clone(&as_list(y)[0]), res);
-
-    case MTYPE2(TYPE_LIST, TYPE_TABLE):
-        l = as_list(y)[0].adt->len;
-        m = x->adt->len;
-        res = list(l);
-
-        for (i = 0; i < l; i++)
-        {
-            c = rf_call_binary_right_atomic(&rf_take, &as_list(&as_list(y)[1])[i], x);
-
-            if (c.type == TYPE_ERROR)
-            {
-                res.adt->len = i;
-                rf_object_free(&res);
-                return c;
-            }
-
-            as_list(&res)[i] = c;
-        }
-
-        return table(rf_object_clone(&as_list(y)[0]), res);
-
-    default:
-        return error_type2(x->type, y->type, "group: unsupported types");
-    }
 }

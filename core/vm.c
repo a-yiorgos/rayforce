@@ -47,11 +47,14 @@
         rf_object_t o = stack_pop(v); \
         rf_object_free(&o);           \
     }
-#define stack_debug(v)                                                 \
-    {                                                                  \
-        i32_t i = v->sp;                                               \
-        while (i > 0)                                                  \
-            debug("%d: %s", v->sp - i, rf_object_fmt(&v->stack[--i])); \
+#define stack_debug(v)                                                     \
+    {                                                                      \
+        i32_t _i = v->sp;                                                  \
+        while (_i > 0)                                                     \
+        {                                                                  \
+            debug("%d: %s", v->sp - _i, rf_object_fmt(&v->stack[_i - 1])); \
+            _i--;                                                          \
+        }                                                                  \
     }
 
 typedef struct ctx_t
@@ -84,10 +87,10 @@ rf_object_t __attribute__((hot)) vm_exec(vm_t *vm, rf_object_t *fun)
     type_t c;
     lambda_t *f = as_lambda(fun);
     str_t code = as_string(&f->code);
-    rf_object_t x0, x1, x2, x3, x4, *addr;
+    rf_object_t x0, x1, x2, x3, x4, x5, *addr;
     i64_t t;
     u8_t n, flags;
-    u64_t l, p;
+    u64_t l, p, m;
     i32_t i, j, b;
     ctx_t ctx;
 
@@ -99,7 +102,7 @@ rf_object_t __attribute__((hot)) vm_exec(vm_t *vm, rf_object_t *fun)
     static null_t *dispatch_table[] = {
         &&op_halt, &&op_push, &&op_pop, &&op_jne, &&op_jmp, &&op_call1, &&op_call2, &&op_calln,
         &&op_calld, &&op_ret, &&op_timer_set, &&op_timer_get, &&op_store, &&op_load, &&op_lset,
-        &&op_lget, &&op_lattach, &&op_ldetach, &&op_group, &&op_try, &&op_catch, &&op_throw,
+        &&op_lget, &&op_lpush, &&op_lpop, &&op_filter, &&op_group, &&op_try, &&op_catch, &&op_throw,
         &&op_trace, &&op_alloc, &&op_map, &&op_collect};
 
 #define dispatch() goto *dispatch_table[(i32_t)code[vm->ip]]
@@ -327,7 +330,7 @@ op_lset:
     x1 = stack_pop(vm);
     if (f->locals.adt->len == 0)
         vector_push(&f->locals, dict(vector_symbol(0), list(0)));
-    dict_set(&as_list(&f->locals)[0], &x1, x2);
+    dict_set(&as_list(&f->locals)[f->locals.adt->len - 1], &x1, x2);
     dispatch();
 op_lget:
     b = vm->ip++;
@@ -345,24 +348,58 @@ op_lget:
     unwrap(x2, b);
     stack_push(vm, x2);
     dispatch();
-op_lattach:
+op_lpush:
     b = vm->ip++;
-    x1 = stack_pop(vm);
+    x0 = stack_pop(vm); // keys
+    x1 = stack_pop(vm); // table or dict
     if (x1.type != TYPE_TABLE && x1.type != TYPE_DICT)
         unwrap(error(ERR_TYPE, "expected dict or table"), b);
-    vector_push(&f->locals, x1);
+
+    x2 = rf_sect(&as_list(&x1)[0], &x0);
+    rf_object_free(&x0);
+
+    x3 = rf_take(&x1, &x2);
+    x3.type = TYPE_DICT;
+
+    rf_object_free(&x1);
+    rf_object_free(&x2);
+
+    vector_push(&f->locals, x3);
     dispatch();
-op_ldetach:
+op_lpop:
     b = vm->ip++;
     x1 = vector_pop(&f->locals);
     stack_push(vm, x1);
+    dispatch();
+op_filter:
+    b = vm->ip++;
+    m = f->locals.adt->len - 1;
+    stack_debug(vm);
+    x1 = stack_pop(vm); // filters
+    x2 = stack_pop(vm); // columns
+    x3 = rf_sect(&as_list(&as_list(&f->locals)[m])[0], &x2);
+
+    rf_object_free(&x2);
+
+    l = x3.adt->len;
+
+    for (p = 0; p < l; p++)
+    {
+        x2 = symboli64(as_vector_symbol(&x3)[p]);
+        x4 = dict_get(&as_list(&f->locals)[m], &x2);
+        x5 = rf_take(&x4, &x1);
+        dict_set(&as_list(&f->locals)[m], &x2, x5);
+        rf_object_free(&x4);
+    }
+
+    rf_object_free(&x1);
+    rf_object_free(&x3);
+
     dispatch();
 op_group:
     b = vm->ip++;
     x4 = stack_pop(vm);
     x3 = stack_pop(vm);
-    debug_object(&x4);
-    debug_object(&x3);
     x2 = rf_group(&x3);
     rf_object_free(&x3);
     unwrap(x2, b);

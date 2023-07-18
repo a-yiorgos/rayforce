@@ -50,8 +50,9 @@ typedef enum vm_opcode_t
     OP_LOAD,      // Load value from somewhere in a stack pointed by argument
     OP_LSET,      // Set local variable
     OP_LGET,      // Get local variable
-    OP_LATTACH,   // Attach dict frame to local variables
-    OP_LDETACH,   // Detach dict frame from local variables
+    OP_LPUSH,     // Attach dict frame to local variables
+    OP_LPOP,      // Detach dict frame from local variables
+    OP_FILTER,    //  Apply filters to a table
     OP_GROUP,     // Call group and remap result dict key as column and value push onto a stack
     OP_TRY,       // Trap an expression to return here on error
     OP_CATCH,     // Catch an error from vm register and push it onto the stack
