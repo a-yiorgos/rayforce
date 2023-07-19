@@ -688,7 +688,8 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object_t *object
             rf_object_free(&k);
     }
 
-    push_opcode(cc, car->id, code, OP_LPUSH);
+    if (cols.adt->len > 0)
+        push_opcode(cc, car->id, code, OP_LPUSH);
 
     res = cc_compile_by(has_consumer, cc, object, arity);
 
