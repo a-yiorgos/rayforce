@@ -354,17 +354,21 @@ op_lpush:
     x1 = stack_pop(vm); // table or dict
     if (x1.type != TYPE_TABLE && x1.type != TYPE_DICT)
         unwrap(error(ERR_TYPE, "expected dict or table"), b);
+    if (!is_null(&x0))
+    {
+        x2 = rf_sect(&as_list(&x1)[0], &x0);
+        rf_object_free(&x0);
 
-    x2 = rf_sect(&as_list(&x1)[0], &x0);
-    rf_object_free(&x0);
+        x3 = rf_take(&x1, &x2);
+        x3.type = TYPE_DICT;
 
-    x3 = rf_take(&x1, &x2);
-    x3.type = TYPE_DICT;
+        rf_object_free(&x1);
+        rf_object_free(&x2);
 
-    rf_object_free(&x1);
-    rf_object_free(&x2);
-
-    vector_push(&f->locals, x3);
+        vector_push(&f->locals, x3);
+    }
+    else
+        vector_push(&f->locals, x1);
     dispatch();
 op_lpop:
     b = vm->ip++;
@@ -374,12 +378,7 @@ op_lpop:
 op_filter:
     b = vm->ip++;
     m = f->locals.adt->len - 1;
-    stack_debug(vm);
     x1 = stack_pop(vm); // filters
-    x2 = stack_pop(vm); // columns
-    x3 = rf_sect(&as_list(&as_list(&f->locals)[m])[0], &x2);
-
-    rf_object_free(&x2);
 
     l = x3.adt->len;
 
