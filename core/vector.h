@@ -53,14 +53,14 @@
  */
 #define reserve(v, t, n)                                                                                                \
     {                                                                                                                   \
-        i64_t occup = (v)->adt->len * sizeof(t) + sizeof(header_t);                                                     \
+        i64_t occup = (v)->len * sizeof(t);                                                                             \
         i64_t cap = capacity(occup);                                                                                    \
         i64_t req_cap = n * sizeof(t);                                                                                  \
         if (cap < req_cap + occup)                                                                                      \
         {                                                                                                               \
             i64_t new_cap = capacity(cap + req_cap);                                                                    \
             /*debug("realloc: len %lld n %lld from %lld to %lld occup: %lld", (v)->adt->len, n, cap, new_cap, occup);*/ \
-            (v)->adt = rf_realloc((v)->adt, new_cap);                                                                   \
+            (v)->ptr = rf_realloc((v)->ptr, new_cap);                                                                   \
         }                                                                                                               \
     }
 
@@ -70,31 +70,31 @@
  * t - type of rf_objectect to append
  * x - rf_objectect to append
  */
-#define push(v, t, x)                                                      \
-    {                                                                      \
-        reserve(v, t, 1);                                                  \
-        memcpy(as_string(v) + ((v)->adt->len * sizeof(t)), &x, sizeof(t)); \
-        (v)->adt->len++;                                                   \
+#define push(v, t, x)                                                 \
+    {                                                                 \
+        reserve(v, t, 1);                                             \
+        memcpy(as_string(v) + ((v)->len * sizeof(t)), &x, sizeof(t)); \
+        (v)->len++;                                                   \
     }
 
-#define pop(v, t) ((t *)(as_string(v)))[--(v)->adt->len]
+#define pop(v, t) ((t *)(as_string(v)))[--(v)->len]
 
 i64_t size_of_val(type_t type);
-i64_t vector_find(rf_object_t *vec, rf_object_t *key);
+i64_t vector_find(rf_object vec, rf_object key);
 
-rf_object_t vector_get(rf_object_t *vec, i64_t index);
-rf_object_t vector_filter(rf_object_t *vec, bool_t mask[], i64_t len);
-rf_object_t vector_set(rf_object_t *vec, i64_t index, rf_object_t value);
-null_t vector_write(rf_object_t *vec, i64_t index, rf_object_t value);
-rf_object_t vector_push(rf_object_t *vec, rf_object_t object);
-rf_object_t list_push(rf_object_t *vec, rf_object_t object);
-rf_object_t rf_list(rf_object_t *x, u32_t n);
-rf_object_t rf_enlist(rf_object_t *x, u32_t n);
+rf_object vector_get(rf_object vec, i64_t index);
+rf_object vector_filter(rf_object vec, bool_t mask[], i64_t len);
+rf_object vector_set(rf_object vec, i64_t index, rf_object value);
+null_t vector_write(rf_object vec, i64_t index, rf_object value);
+rf_object vector_push(rf_object vec, rf_object object);
+rf_object list_push(rf_object vec, rf_object object);
+rf_object rf_list(rf_object x, u32_t n);
+rf_object rf_enlist(rf_object x, u32_t n);
 
-null_t vector_reserve(rf_object_t *vec, u32_t len);
-null_t vector_grow(rf_object_t *vec, u32_t len);
-null_t vector_shrink(rf_object_t *vec, u32_t len);
-null_t vector_free(rf_object_t *vec);
-null_t vector_clear(rf_object_t *vec);
+null_t vector_reserve(rf_object vec, u32_t len);
+null_t vector_grow(rf_object vec, u32_t len);
+null_t vector_shrink(rf_object vec, u32_t len);
+null_t vector_free(rf_object vec);
+null_t vector_clear(rf_object vec);
 
 #endif

@@ -28,6 +28,17 @@
 #include "hash.h"
 
 /*
+ * Points to a actual error position in a source code
+ */
+typedef struct span_t
+{
+    u16_t start_line;
+    u16_t end_line;
+    u16_t start_column;
+    u16_t end_column;
+} span_t;
+
+/*
  * Holds a dict with such fields:
  * file: Char
  * lambda: Char

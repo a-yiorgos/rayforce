@@ -49,7 +49,7 @@ i64_t size_of_val(type_t type)
     case TYPE_CHAR:
         return sizeof(char_t);
     case TYPE_LIST:
-        return sizeof(rf_object_t);
+        return sizeof(rf_object);
     default:
         panic_type("size of val unknown type", type);
     }
@@ -58,93 +58,86 @@ i64_t size_of_val(type_t type)
 /*
  * Creates new vector of type type
  */
-rf_object_t vector(type_t type, i64_t len)
+rf_object vector(type_t type, i64_t len)
 {
-    i64_t size = capacity(len * size_of_val(type) + sizeof(header_t));
-    header_t *adt = rf_malloc(size);
+    i64_t size = capacity(len * size_of_val(type));
+    rf_object vec = rf_malloc(sizeof(struct rf_object_t));
 
-    if (adt == NULL)
-        panic("OOM");
+    vec->type = type;
+    vec->rc = 1;
+    vec->len = len;
+    vec->ptr = rf_malloc(size);
 
-    adt->len = len;
-    adt->rc = 1;
-    adt->attrs = (attrs_t){0};
-
-    rf_object_t v = {
-        .type = type,
-        .adt = adt,
-    };
-
-    return v;
+    return vec;
 }
 
-rf_object_t _push(rf_object_t *vec, rf_object_t value)
+rf_object _push(rf_object vec, rf_object value)
 {
     switch (vec->type)
     {
     case TYPE_BOOL:
-        push(vec, bool_t, value.bool);
+        push(vec, bool_t, value->bool);
         return null();
     case TYPE_I64:
-        push(vec, i64_t, value.i64);
+        push(vec, i64_t, value->i64);
         return null();
     case TYPE_F64:
-        push(vec, f64_t, value.f64);
+        push(vec, f64_t, value->f64);
         return null();
     case TYPE_SYMBOL:
-        push(vec, i64_t, value.i64);
+        push(vec, i64_t, value->i64);
         return null();
     case TYPE_TIMESTAMP:
-        push(vec, i64_t, value.i64);
+        push(vec, i64_t, value->i64);
         return null();
-    case TYPE_GUID:
-        push(vec, guid_t, *value.guid);
-        return null();
+    // case TYPE_GUID:
+    //     push(vec, guid_t, *value->guid);
+    //     return null();
     case TYPE_CHAR:
-        push(vec, char_t, value.schar);
+        push(vec, char_t, value->schar);
         return null();
     case TYPE_LIST:
-        push(vec, rf_object_t, value);
+        push(vec, rf_object, rf_object_clone(value));
         return null();
     default:
         panic("vector push: can not push to a unknown type");
     }
 }
 
-rf_object_t list_push(rf_object_t *vec, rf_object_t value)
+rf_object list_push(rf_object vec, rf_object value)
 {
     debug_assert(is_vector(vec));
 
-    if (vec->type != -value.type && vec->type != TYPE_LIST)
+    if (vec->type != -value->type && vec->type != TYPE_LIST)
         panic("vector push: can not push to a non-list");
 
     return _push(vec, value);
 }
 
-rf_object_t vector_push(rf_object_t *vec, rf_object_t value)
+rf_object vector_push(rf_object vec, rf_object value)
 {
     u64_t i, l;
-    rf_object_t lst;
+    rf_object lst = NULL;
 
     debug_assert(is_vector(vec));
 
-    l = vec->adt->len;
+    l = vec->len;
 
     if (l == 0)
     {
-        if (is_scalar(&value))
-            vec->type = -value.type;
+        if (is_scalar(value))
+            vec->type = -value->type;
         else
             vec->type = TYPE_LIST;
     }
     else
     {
         // change vector type to a list
-        if (vec->type != -value.type && vec->type != TYPE_LIST)
+        if (vec->type != -value->type && vec->type != TYPE_LIST)
         {
             lst = list(l + 1);
             for (i = 0; i < l; i++)
-                as_list(&lst)[i] = vector_get(vec, i);
+                as_list(lst)[i] = vector_get(vec, i);
 
             as_list(&lst)[l] = value;
 

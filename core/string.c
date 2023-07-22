@@ -31,9 +31,9 @@
  * Creates new rf_object_t string from a C string.
  * Guarantees that the string is null-terminated.
  */
-extern rf_object_t string(i64_t len)
+rf_object string(i64_t len)
 {
-    rf_object_t string = vector(TYPE_CHAR, len + 1);
+    rf_object string = vector(TYPE_CHAR, len + 1);
     as_string(&string)[len] = '\0';
     string.adt->len = len;
     return string;

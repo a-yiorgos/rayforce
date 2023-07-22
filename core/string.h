@@ -28,6 +28,6 @@
 #include "rayforce.h"
 
 bool_t string_match(str_t str, str_t pat);
-rf_object_t string_from_str(str_t str, i32_t len);
+rf_object string_from_str(str_t str, i32_t len);
 
 #endif
