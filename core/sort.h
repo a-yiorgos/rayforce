@@ -26,7 +26,7 @@
 
 #include "rayforce.h"
 
-rf_objectrf_sort_asc(rf_object*vec);
-rf_objectrf_sort_desc(rf_object*vec);
+object_trf_sort_asc(object_t*vec);
+object_trf_sort_desc(object_t*vec);
 
 #endif

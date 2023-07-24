@@ -34,9 +34,9 @@
 #include "hash.h"
 #include "set.h"
 
-rf_object call_binary(binary_t f, rf_object x, rf_object y)
+object_t call_binary(binary_t f, object_t x, object_t y)
 {
-    rf_object cx, cy, res;
+    object_t cx, cy, res;
 
     // no need to cast
     if (x->type == y->type || x->type == -y->type)
@@ -85,17 +85,17 @@ rf_object call_binary(binary_t f, rf_object x, rf_object y)
     }
 }
 
-rf_object rf_call_binary_left_atomic(binary_t f, rf_object x, rf_object y)
+object_t rf_call_binary_left_atomic(binary_t f, object_t x, object_t y)
 {
     u64_t i, l;
-    rf_object res, item, a;
+    object_t res, item, a;
 
     if (x->type == TYPE_LIST)
     {
         l = x->len;
         a = vector_get(x, 0);
         item = rf_call_binary_left_atomic(f, &a, y);
-        drop(&a);
+        drop(a);
 
         if (item->type == TYPE_ERROR)
             return item;
@@ -108,12 +108,12 @@ rf_object rf_call_binary_left_atomic(binary_t f, rf_object x, rf_object y)
         {
             a = vector_get(x, i);
             item = rf_call_binary_left_atomic(f, &a, y);
-            drop(&a);
+            drop(a);
 
-            if (item.type == TYPE_ERROR)
+            if (item->type == TYPE_ERROR)
             {
-                res.adt->len = i;
-                drop(&res);
+                res->len = i;
+                drop(res);
                 return item;
             }
 
@@ -126,10 +126,10 @@ rf_object rf_call_binary_left_atomic(binary_t f, rf_object x, rf_object y)
     return f(x, y);
 }
 
-rf_object rf_call_binary_right_atomic(binary_t f, rf_object x, rf_object y)
+object_t rf_call_binary_right_atomic(binary_t f, object_t x, object_t y)
 {
     u64_t i, l;
-    rf_object res, item, b;
+    object_t res, item, b;
 
     if (y->type == TYPE_LIST)
     {
@@ -168,10 +168,10 @@ rf_object rf_call_binary_right_atomic(binary_t f, rf_object x, rf_object y)
 }
 
 // Atomic binary functions (iterates through list of arguments down to atoms)
-rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
+object_t rf_call_binary_atomic(binary_t f, object_t x, object_t y)
 {
     u64_t i, l;
-    rf_object res, item, a, b;
+    object_t res, item, a, b;
 
     if ((x->type == TYPE_LIST && is_vector(y)) ||
         (y->type == TYPE_LIST && is_vector(x)))
@@ -202,10 +202,10 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
             drop(&a);
             drop(&b);
 
-            if (item.type == TYPE_ERROR)
+            if (item->type == TYPE_ERROR)
             {
-                res.adt->len = i;
-                drop(&res);
+                res->len = i;
+                drop(res);
                 return item;
             }
 
@@ -216,12 +216,12 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
     }
     else if (x->type == TYPE_LIST)
     {
-        l = x->adt->len;
+        l = x->len;
         a = vector_get(x, 0);
         item = rf_call_binary_atomic(f, &a, y);
         drop(&a);
 
-        if (item.type == TYPE_ERROR)
+        if (item->type == TYPE_ERROR)
             return item;
 
         res = list(l);
@@ -232,12 +232,12 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
         {
             a = vector_get(x, i);
             item = rf_call_binary_atomic(f, &a, y);
-            drop(&a);
+            drop(a);
 
-            if (item.type == TYPE_ERROR)
+            if (item->type == TYPE_ERROR)
             {
-                res.adt->len = i;
-                drop(&res);
+                res->len = i;
+                drop(res);
                 return item;
             }
 
@@ -248,12 +248,12 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
     }
     else if (y->type == TYPE_LIST)
     {
-        l = y->adt->len;
+        l = y->len;
         b = vector_get(y, 0);
         item = rf_call_binary_atomic(f, x, &b);
         drop(&b);
 
-        if (item.type == TYPE_ERROR)
+        if (item->type == TYPE_ERROR)
             return item;
 
         res = list(l);
@@ -266,9 +266,9 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
             item = rf_call_binary_atomic(f, x, &b);
             drop(&b);
 
-            if (item.type == TYPE_ERROR)
+            if (item->type == TYPE_ERROR)
             {
-                res.adt->len = i;
+                res->len = i;
                 drop(&res);
                 return item;
             }
@@ -282,7 +282,7 @@ rf_object rf_call_binary_atomic(binary_t f, rf_object x, rf_object y)
     return call_binary(f, x, y);
 }
 
-rf_object rf_call_binary(u8_t flags, binary_t f, rf_object x, rf_object y)
+object_t rf_call_binary(u8_t flags, binary_t f, object_t x, object_t y)
 {
     switch (flags)
     {
@@ -297,28 +297,28 @@ rf_object rf_call_binary(u8_t flags, binary_t f, rf_object x, rf_object y)
     }
 }
 
-rf_object rf_set_variable(rf_object key, rf_object val)
+object_t rf_set_variable(object_t key, object_t val)
 {
     return dict_set(&runtime_get()->env.variables, key, clone(val));
 }
 
-rf_object rf_dict(rf_object x, rf_object y)
+object_t rf_dict(object_t x, object_t y)
 {
     return dict(clone(x), clone(y));
 }
 
-rf_object rf_table(rf_object x, rf_object y)
+object_t rf_table(object_t x, object_t y)
 {
     // bool_t s = false;
     // u64_t i, j, len, cl = 0;
-    // rf_object lst, c, l = null();
+    // object_t lst, c, l = null();
 
     // if (x->type != TYPE_SYMBOL)
     //     return error(ERR_TYPE, "Keys must be a symbol vector");
 
     // if (y->type != TYPE_LIST)
     // {
-    //     if (x->adt->len != 1)
+    //     if (x->len != 1)
     //         return error(ERR_LENGTH, "Keys and Values must have the same length");
 
     //     l = list(1);
@@ -326,13 +326,13 @@ rf_object rf_table(rf_object x, rf_object y)
     //     y = &l;
     // }
 
-    // if (x->adt->len != y->adt->len)
+    // if (x->len != y->len)
     // {
     //     drop(&l);
     //     return error(ERR_LENGTH, "Keys and Values must have the same length");
     // }
 
-    // len = y->adt->len;
+    // len = y->len;
 
     // for (i = 0; i < len; i++)
     // {
@@ -354,7 +354,7 @@ rf_object rf_table(rf_object x, rf_object y)
     //     case TYPE_CHAR:
     //     case TYPE_SYMBOL:
     //     case TYPE_LIST:
-    //         j = as_list(y)[i].adt->len;
+    //         j = as_list(y)[i]->len;
     //         if (cl != 0 && j != cl)
     //             return error(ERR_LENGTH, "Values must be of the same length");
 
@@ -402,10 +402,10 @@ rf_object rf_table(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_rand(rf_object x, rf_object y)
+object_t rf_rand(object_t x, object_t y)
 {
     i64_t i, count;
-    rf_object vec;
+    object_t vec;
 
     switch (MTYPE2(x->type, y->type))
     {
@@ -423,10 +423,10 @@ rf_object rf_rand(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_add(rf_object x, rf_object y)
+object_t rf_add(object_t x, object_t y)
 {
     u64_t i, l;
-    rf_object vec, v;
+    object_t vec, v;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -448,7 +448,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_F64, TYPE_F64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = ADDF64(x->f64, as_F64(y)[i]);
@@ -456,7 +456,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_TIMESTAMP, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     vec = Timestamp(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = ADDI64(x->i64, as_I64(y)[i]);
@@ -464,7 +464,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Timestamp(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = ADDI64(as_I64(x)[i], y->i64);
@@ -472,7 +472,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Timestamp(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = ADDI64(as_I64(x)[i], as_I64(y)[i]);
@@ -480,7 +480,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = ADDI64(as_I64(x)[i], y->i64);
@@ -488,8 +488,8 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
-    //     if (l != y->adt->len)
+    //     l = x->len;
+    //     if (l != y->len)
     //         return error(ERR_LENGTH, "add: vectors must be of the same length");
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
@@ -498,7 +498,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = ADDF64(as_F64(x)[i], y->f64);
@@ -506,8 +506,8 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
-    //     if (l != y->adt->len)
+    //     l = x->len;
+    //     if (l != y->len)
     //         return error(ERR_LENGTH, "add: vectors must be of the same length");
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
@@ -516,12 +516,12 @@ rf_object rf_add(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_LIST, TYPE_LIST):
-    //     l = x->adt->len;
-    //     if (l != y->adt->len)
+    //     l = x->len;
+    //     if (l != y->len)
     //         return error(ERR_LENGTH, "add: lists must be of the same length");
 
     //     vec = list(l);
-    //     vec.adt->len = 0;
+    //     vec->len = 0;
 
     //     for (i = 0; i < l; i++)
     //     {
@@ -531,7 +531,7 @@ rf_object rf_add(rf_object x, rf_object y)
     //             drop(&vec);
     //             return v;
     //         }
-    //         as_list(&vec)[vec.adt->len++] = v;
+    //         as_list(&vec)[vec->len++] = v;
     //     }
 
     //     return vec;
@@ -543,11 +543,11 @@ rf_object rf_add(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_sub(rf_object x, rf_object y)
+object_t rf_sub(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -558,7 +558,7 @@ rf_object rf_sub(rf_object x, rf_object y)
     //     return (f64(SUBF64(x->f64, y->f64)));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = SUBI64(as_I64(x)[i], y->i64);
@@ -566,7 +566,7 @@ rf_object rf_sub(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = SUBI64(as_I64(x)[i], as_I64(y)[i]);
@@ -574,7 +574,7 @@ rf_object rf_sub(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = SUBF64(as_F64(x)[i], y->f64);
@@ -582,7 +582,7 @@ rf_object rf_sub(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = SUBF64(as_F64(x)[i], as_F64(y)[i]);
@@ -596,11 +596,11 @@ rf_object rf_sub(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_mul(rf_object x, rf_object y)
+object_t rf_mul(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -611,7 +611,7 @@ rf_object rf_mul(rf_object x, rf_object y)
     //     return (f64(MULF64(x->f64, y->f64)));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = MULI64(as_I64(x)[i], y->i64);
@@ -619,7 +619,7 @@ rf_object rf_mul(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = MULI64(as_I64(x)[i], as_I64(y)[i]);
@@ -627,7 +627,7 @@ rf_object rf_mul(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = MULF64(as_F64(x)[i], y->f64);
@@ -635,7 +635,7 @@ rf_object rf_mul(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = MULF64(as_F64(x)[i], as_F64(y)[i]);
@@ -649,11 +649,11 @@ rf_object rf_mul(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_div(rf_object x, rf_object y)
+object_t rf_div(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -664,7 +664,7 @@ rf_object rf_div(rf_object x, rf_object y)
     //     return (f64(DIVF64(x->f64, y->f64)));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = DIVI64(as_I64(x)[i], y->i64);
@@ -672,7 +672,7 @@ rf_object rf_div(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = DIVI64(as_I64(x)[i], as_I64(y)[i]);
@@ -680,7 +680,7 @@ rf_object rf_div(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = DIVF64(as_F64(x)[i], y->f64);
@@ -688,7 +688,7 @@ rf_object rf_div(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = DIVF64(as_F64(x)[i], as_F64(y)[i]);
@@ -702,11 +702,11 @@ rf_object rf_div(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_fdiv(rf_object x, rf_object y)
+object_t rf_fdiv(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -717,7 +717,7 @@ rf_object rf_fdiv(rf_object x, rf_object y)
     //     return (f64(FDIVF64(x->f64, y->f64)));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = FDIVI64(as_I64(x)[i], y->i64);
@@ -725,7 +725,7 @@ rf_object rf_fdiv(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = FDIVI64(as_I64(x)[i], as_I64(y)[i]);
@@ -733,7 +733,7 @@ rf_object rf_fdiv(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = FDIVF64(as_F64(x)[i], y->f64);
@@ -741,7 +741,7 @@ rf_object rf_fdiv(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = FDIVF64(as_F64(x)[i], as_F64(y)[i]);
@@ -755,11 +755,11 @@ rf_object rf_fdiv(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_mod(rf_object x, rf_object y)
+object_t rf_mod(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -770,7 +770,7 @@ rf_object rf_mod(rf_object x, rf_object y)
     //     return (f64(MODF64(x->f64, y->f64)));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = MODI64(as_I64(x)[i], y->i64);
@@ -778,7 +778,7 @@ rf_object rf_mod(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&vec)[i] = MODI64(as_I64(x)[i], as_I64(y)[i]);
@@ -786,7 +786,7 @@ rf_object rf_mod(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = MODF64(as_F64(x)[i], y->f64);
@@ -794,7 +794,7 @@ rf_object rf_mod(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = F64(l);
     //     for (i = 0; i < l; i++)
     //         as_F64(&vec)[i] = MODF64(as_F64(x)[i], as_F64(y)[i]);
@@ -808,7 +808,7 @@ rf_object rf_mod(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_like(rf_object x, rf_object y)
+object_t rf_like(object_t x, object_t y)
 {
     switch (MTYPE2(x->type, y->type))
     {
@@ -820,10 +820,10 @@ rf_object rf_like(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_eq(rf_object x, rf_object y)
+object_t rf_eq(object_t x, object_t y)
 {
     // i64_t i, l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -837,7 +837,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return (bool(x->f64 == y->f64));
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -846,7 +846,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -855,7 +855,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_I64, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -864,7 +864,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_F64, TYPE_F64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -873,7 +873,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -882,7 +882,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_SYMBOL, TYPE_SYMBOL):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -891,10 +891,10 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "eq: vectors of different length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -903,10 +903,10 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "eq: vectors of different length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -915,10 +915,10 @@ rf_object rf_eq(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_LIST, TYPE_LIST):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "eq: lists of different length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -933,7 +933,7 @@ rf_object rf_eq(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_ne(rf_object x, rf_object y)
+object_t rf_ne(object_t x, object_t y)
 {
     switch (MTYPE2(x->type, y->type))
     {
@@ -951,7 +951,7 @@ rf_object rf_ne(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_lt(rf_object x, rf_object y)
+object_t rf_lt(object_t x, object_t y)
 {
     switch (MTYPE2(x->type, y->type))
     {
@@ -966,7 +966,7 @@ rf_object rf_lt(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_le(rf_object x, rf_object y)
+object_t rf_le(object_t x, object_t y)
 {
     switch (MTYPE2(x->type, y->type))
     {
@@ -981,10 +981,10 @@ rf_object rf_le(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_gt(rf_object x, rf_object y)
+object_t rf_gt(object_t x, object_t y)
 {
     // i64_t i, l;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -995,10 +995,10 @@ rf_object rf_gt(rf_object x, rf_object y)
     //     return (bool(x->f64 > y->f64));
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "gt: vectors of different length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     vec = Bool(l);
 
     //     for (i = 0; i < l; i++)
@@ -1013,7 +1013,7 @@ rf_object rf_gt(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_ge(rf_object x, rf_object y)
+object_t rf_ge(object_t x, object_t y)
 {
     switch (MTYPE2(x->type, y->type))
     {
@@ -1028,11 +1028,11 @@ rf_object rf_ge(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_and(rf_object x, rf_object y)
+object_t rf_and(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object res;
+    // object_t res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1040,8 +1040,8 @@ rf_object rf_and(rf_object x, rf_object y)
     //     return (bool(x->bool && y->bool));
 
     // case MTYPE2(TYPE_BOOL, TYPE_BOOL):
-    //     l = x->adt->len;
-    //     res = Bool(x->adt->len);
+    //     l = x->len;
+    //     res = Bool(x->len);
     //     for (i = 0; i < l; i++)
     //         as_Bool(&res)[i] = as_Bool(x)[i] & as_Bool(y)[i];
 
@@ -1054,11 +1054,11 @@ rf_object rf_and(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_or(rf_object x, rf_object y)
+object_t rf_or(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t l;
-    // rf_object res;
+    // object_t res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1066,8 +1066,8 @@ rf_object rf_or(rf_object x, rf_object y)
     //     return (bool(x->bool || y->bool));
 
     // case MTYPE2(TYPE_BOOL, TYPE_BOOL):
-    //     l = x->adt->len;
-    //     res = Bool(x->adt->len);
+    //     l = x->len;
+    //     res = Bool(x->len);
     //     for (i = 0; i < l; i++)
     //         as_Bool(&res)[i] = as_Bool(x)[i] | as_Bool(y)[i];
 
@@ -1080,11 +1080,11 @@ rf_object rf_or(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_get(rf_object x, rf_object y)
+object_t rf_get(object_t x, object_t y)
 {
     // i32_t i;
     // i64_t yl, xl;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1101,8 +1101,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return dict_get(x, y);
 
     // case MTYPE2(TYPE_BOOL, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = Bool(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1115,8 +1115,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = I64(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1129,8 +1129,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = F64(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1143,8 +1143,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = Timestamp(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1157,8 +1157,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return vec;
 
     //     // case MTYPE2(TYPE_GUID, TYPE_I64):
-    //     //     yl = y->adt->len;
-    //     //     xl = x->adt->len;
+    //     //     yl = y->len;
+    //     //     xl = x->len;
     //     //     vec = Guid(yl);
     //     //     for (i = 0; i < yl; i++)
     //     //     {
@@ -1171,8 +1171,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     //     return vec;
 
     // case MTYPE2(TYPE_CHAR, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = string(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1185,8 +1185,8 @@ rf_object rf_get(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_LIST, TYPE_I64):
-    //     yl = y->adt->len;
-    //     xl = x->adt->len;
+    //     yl = y->len;
+    //     xl = x->len;
     //     vec = list(yl);
     //     for (i = 0; i < yl; i++)
     //     {
@@ -1205,11 +1205,11 @@ rf_object rf_get(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_find_I64_I64(rf_object x, rf_object y)
+object_t rf_find_I64_I64(object_t x, object_t y)
 {
-    u64_t i, n, range, xl = x->adt->len, yl = y->adt->len;
+    u64_t i, n, range, xl = x->len, yl = y->len;
     i64_t max = 0, min = 0;
-    rf_object vec = I64(yl), found;
+    object_t vec = I64(yl), found;
     i64_t *iv1 = as_I64(x), *iv2 = as_I64(y),
           *ov = as_I64(vec), *fv;
     ht_t *ht;
@@ -1268,7 +1268,7 @@ rf_object rf_find_I64_I64(rf_object x, rf_object y)
     return vec;
 }
 
-rf_object rf_find(rf_object x, rf_object y)
+object_t rf_find(object_t x, object_t y)
 {
     i64_t l, i;
 
@@ -1299,10 +1299,10 @@ rf_object rf_find(rf_object x, rf_object y)
     }
 }
 
-rf_object rf_concat(rf_object x, rf_object y)
+object_t rf_concat(object_t x, object_t y)
 {
     // i64_t i, xl, yl;
-    // rf_object vec;
+    // object_t vec;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1343,7 +1343,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_BOOL, -TYPE_BOOL):
-    //     xl = x->adt->len;
+    //     xl = x->len;
     //     vec = Bool(xl + 1);
     //     for (i = 0; i < xl; i++)
     //         as_Bool(&vec)[i] = as_Bool(x)[i];
@@ -1352,7 +1352,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, -TYPE_I64):
-    //     xl = x->adt->len;
+    //     xl = x->len;
     //     vec = I64(xl + 1);
     //     for (i = 0; i < xl; i++)
     //         as_I64(&vec)[i] = as_I64(x)[i];
@@ -1361,7 +1361,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(-TYPE_I64, TYPE_I64):
-    //     yl = y->adt->len;
+    //     yl = y->len;
     //     vec = I64(yl + 1);
     //     as_I64(&vec)[0] = x->i64;
     //     for (i = 1; i <= yl; i++)
@@ -1370,7 +1370,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, -TYPE_F64):
-    //     xl = x->adt->len;
+    //     xl = x->len;
     //     vec = F64(xl + 1);
     //     for (i = 0; i < xl; i++)
     //         as_F64(&vec)[i] = as_F64(x)[i];
@@ -1379,7 +1379,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
-    //     xl = x->adt->len;
+    //     xl = x->len;
     //     vec = Timestamp(xl + 1);
     //     for (i = 0; i < xl; i++)
     //         as_Timestamp(&vec)[i] = as_Timestamp(x)[i];
@@ -1388,7 +1388,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_GUID, -TYPE_GUID):
-    //     xl = x->adt->len;
+    //     xl = x->len;
     //     vec = Guid(xl + 1);
     //     for (i = 0; i < xl; i++)
     //         as_Guid(&vec)[i] = as_Guid(x)[i];
@@ -1397,8 +1397,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_BOOL, TYPE_BOOL):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = Bool(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_Bool(&vec)[i] = as_Bool(x)[i];
@@ -1407,8 +1407,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = I64(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_I64(&vec)[i] = as_I64(x)[i];
@@ -1417,8 +1417,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_F64, TYPE_F64):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = F64(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_F64(&vec)[i] = as_F64(x)[i];
@@ -1427,8 +1427,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = Timestamp(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_Timestamp(&vec)[i] = as_Timestamp(x)[i];
@@ -1437,8 +1437,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_GUID, TYPE_GUID):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = Guid(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_Guid(&vec)[i] = as_Guid(x)[i];
@@ -1447,8 +1447,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_CHAR, TYPE_CHAR):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = string(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_string(&vec)[i] = as_string(x)[i];
@@ -1457,8 +1457,8 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     return vec;
 
     // case MTYPE2(TYPE_LIST, TYPE_LIST):
-    //     xl = x->adt->len;
-    //     yl = y->adt->len;
+    //     xl = x->len;
+    //     yl = y->len;
     //     vec = list(xl + yl);
     //     for (i = 0; i < xl; i++)
     //         as_list(&vec)[i] = clone(&as_list(x)[i]);
@@ -1469,7 +1469,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     // default:
     //     if (x->type == TYPE_LIST)
     //     {
-    //         xl = x->adt->len;
+    //         xl = x->len;
     //         vec = list(xl + 1);
     //         for (i = 0; i < xl; i++)
     //             as_list(&vec)[i] = clone(&as_list(x)[i]);
@@ -1479,7 +1479,7 @@ rf_object rf_concat(rf_object x, rf_object y)
     //     }
     //     if (y->type == TYPE_LIST)
     //     {
-    //         yl = y->adt->len;
+    //         yl = y->len;
     //         vec = list(yl + 1);
     //         as_list(&vec)[0] = clone(x);
     //         for (i = 0; i < yl; i++)
@@ -1494,20 +1494,20 @@ rf_object rf_concat(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_filter(rf_object x, rf_object y)
+object_t rf_filter(object_t x, object_t y)
 {
     // i32_t i, j = 0;
     // i64_t l, p = NULL_I64;
-    // rf_object res, *vals, col;
+    // object_t res, *vals, col;
 
     // switch (MTYPE2(x->type, y->type))
     // {
 
     // case MTYPE2(TYPE_BOOL, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = Bool(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1518,10 +1518,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_I64, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = I64(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1532,10 +1532,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_SYMBOL, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = Symbol(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1546,10 +1546,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_F64, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = F64(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1560,10 +1560,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = Timestamp(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1574,10 +1574,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_GUID, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = Guid(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1588,10 +1588,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_CHAR, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = string(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1602,10 +1602,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_LIST, TYPE_BOOL):
-    //     if (x->adt->len != y->adt->len)
+    //     if (x->len != y->len)
     //         return error(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = list(l);
     //     for (i = 0; i < l; i++)
     //         if (as_Bool(y)[i])
@@ -1617,13 +1617,13 @@ rf_object rf_filter(rf_object x, rf_object y)
 
     // case MTYPE2(TYPE_TABLE, TYPE_BOOL):
     //     vals = &as_list(x)[1];
-    //     l = vals->adt->len;
+    //     l = vals->len;
     //     res = list(l);
 
     //     for (i = 0; i < l; i++)
     //     {
     //         col = vector_filter(&as_list(vals)[i], as_Bool(y), p);
-    //         p = col.adt->len;
+    //         p = col->len;
     //         as_list(&res)[i] = col;
     //     }
 
@@ -1636,10 +1636,10 @@ rf_object rf_filter(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_take(rf_object x, rf_object y)
+object_t rf_take(object_t x, object_t y)
 {
     u64_t i, l, m;
-    rf_object res, cols, sym, c;
+    object_t res, cols, sym, c;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1652,7 +1652,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return vector_get(x, y->i64);
 
     // case MTYPE2(-TYPE_I64, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     m = x->i64;
     //     res = I64(m);
 
@@ -1693,7 +1693,7 @@ rf_object rf_take(rf_object x, rf_object y)
 
     // case MTYPE2(TYPE_TABLE, -TYPE_I64):
     // case MTYPE2(TYPE_TABLE, TYPE_I64):
-    //     l = as_list(x)[0].adt->len;
+    //     l = as_list(x)[0]->len;
     //     cols = list(l);
     //     for (i = 0; i < l; i++)
     //     {
@@ -1704,7 +1704,7 @@ rf_object rf_take(rf_object x, rf_object y)
 
     //         if (c.type == TYPE_ERROR)
     //         {
-    //             res.adt->len = i;
+    //             res->len = i;
     //             drop(&res);
     //             return c;
     //         }
@@ -1718,7 +1718,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_TABLE, TYPE_SYMBOL):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     cols = list(l);
     //     for (i = 0; i < l; i++)
     //     {
@@ -1732,7 +1732,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_I64, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = I64(l);
 
     //     for (i = 0; i < l; i++)
@@ -1741,7 +1741,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_SYMBOL, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = Symbol(l);
 
     //     for (i = 0; i < l; i++)
@@ -1750,7 +1750,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_F64, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = F64(l);
 
     //     for (i = 0; i < l; i++)
@@ -1759,7 +1759,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = Timestamp(l);
 
     //     for (i = 0; i < l; i++)
@@ -1768,7 +1768,7 @@ rf_object rf_take(rf_object x, rf_object y)
     //     return res;
 
     // case MTYPE2(TYPE_LIST, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = list(l);
 
     //     for (i = 0; i < l; i++)
@@ -1783,10 +1783,10 @@ rf_object rf_take(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_in(rf_object x, rf_object y)
+object_t rf_in(object_t x, object_t y)
 {
     i64_t i, xl, yl;
-    rf_object vec;
+    object_t vec;
     set_t *set;
 
     // switch
@@ -1794,8 +1794,8 @@ rf_object rf_in(rf_object x, rf_object y)
     //     {
     //     case MTYPE2(TYPE_I64, TYPE_I64):
     //     case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
-    //         xl = x->adt->len;
-    //         yl = y->adt->len;
+    //         xl = x->len;
+    //         yl = y->len;
     //         set = set_new(yl, &rfi_i64_hash, &i64_cmp);
 
     //         for (i = 0; i < yl; i++)
@@ -1817,9 +1817,9 @@ rf_object rf_in(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_sect(rf_object x, rf_object y)
+object_t rf_sect(object_t x, object_t y)
 {
-    rf_object mask, res;
+    object_t mask, res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -1836,16 +1836,16 @@ rf_object rf_sect(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_except(rf_object x, rf_object y)
+object_t rf_except(object_t x, object_t y)
 {
     i64_t i, j = 0, l;
-    rf_object mask, res;
+    object_t mask, res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
     // case MTYPE2(TYPE_I64, -TYPE_I64):
     // case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
-    //     l = x->adt->len;
+    //     l = x->len;
     //     res = vector(x->type, l);
 
     //     for (i = 0; i < l; i++)
@@ -1876,7 +1876,7 @@ rf_object rf_except(rf_object x, rf_object y)
  * If the cast is not possible, returns an error object.
  * If object is already of the specified type, returns the object itself (cloned).
  */
-rf_object rf_cast(rf_object x, rf_object y)
+object_t rf_cast(object_t x, object_t y)
 {
     // if (x->type != -TYPE_SYMBOL)
     //     return error_type2(x->type, y->type, "cast: unsupported types");
@@ -1884,7 +1884,7 @@ rf_object rf_cast(rf_object x, rf_object y)
     // env_t *env = &runtime_get()->env;
     // type_t type = env_get_type_by_typename(env, *x);
 
-    // rf_object res, err;
+    // object_t res, err;
     // i64_t i, l;
     // str_t s, msg;
 
@@ -1894,9 +1894,9 @@ rf_object rf_cast(rf_object x, rf_object y)
 
     // if (type == TYPE_CHAR)
     // {
-    //     s = rf_object_fmt(y);
+    //     s = object_t_fmt(y);
     //     if (s == NULL)
-    //         panic("rf_object_fmt() returned NULL");
+    //         panic("object_t_fmt() returned NULL");
     //     return string_from_str(s, strlen(s));
     // }
 
@@ -1932,8 +1932,8 @@ rf_object rf_cast(rf_object x, rf_object y)
     //     res.type = type;
     //     break;
     // case MTYPE2(TYPE_I64, TYPE_LIST):
-    //     res = I64(y->adt->len);
-    //     l = (i64_t)y->adt->len;
+    //     res = I64(y->len);
+    //     l = (i64_t)y->len;
     //     for (i = 0; i < l; i++)
     //     {
     //         if (as_list(y)[i].type != -TYPE_I64)
@@ -1950,14 +1950,14 @@ rf_object rf_cast(rf_object x, rf_object y)
     //     }
     //     break;
     // case MTYPE2(TYPE_F64, TYPE_I64):
-    //     res = F64(y->adt->len);
-    //     l = (i64_t)y->adt->len;
+    //     res = F64(y->len);
+    //     l = (i64_t)y->len;
     //     for (i = 0; i < l; i++)
     //         as_F64(&res)[i] = (f64_t)as_I64(y)[i];
     //     break;
     // case MTYPE2(TYPE_F64, TYPE_LIST):
-    //     res = F64(y->adt->len);
-    //     l = (i64_t)y->adt->len;
+    //     res = F64(y->len);
+    //     l = (i64_t)y->len;
     //     for (i = 0; i < l; i++)
     //     {
     //         if (as_list(y)[i].type != -TYPE_F64)
@@ -1974,8 +1974,8 @@ rf_object rf_cast(rf_object x, rf_object y)
     //     }
     //     break;
     // case MTYPE2(TYPE_BOOL, TYPE_I64):
-    //     res = Bool(y->adt->len);
-    //     l = (i64_t)y->adt->len;
+    //     res = Bool(y->len);
+    //     l = (i64_t)y->len;
     //     for (i = 0; i < l; i++)
     //         as_Bool(&res)[i] = as_list(y)[i].i64 != 0;
     //     break;
@@ -2010,13 +2010,13 @@ rf_object rf_cast(rf_object x, rf_object y)
     //     res = i64(y->i64);
     //     break;
     // case MTYPE2(TYPE_I64, TYPE_TIMESTAMP):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = I64(l);
     //     for (i = 0; i < l; i++)
     //         as_I64(&res)[i] = as_Timestamp(y)[i];
     //     break;
     // case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
-    //     l = y->adt->len;
+    //     l = y->len;
     //     res = Timestamp(l);
     //     for (i = 0; i < l; i++)
     //         as_Timestamp(&res)[i] = as_I64(y)[i];
@@ -2035,15 +2035,15 @@ rf_object rf_cast(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_group_Table(rf_object x, rf_object y)
+object_t rf_group_Table(object_t x, object_t y)
 {
     // i64_t i, l;
-    // rf_object res;
+    // object_t res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
     // case MTYPE2(TYPE_TABLE, TYPE_LIST):
-    //     l = as_list(x)[1].adt->len;
+    //     l = as_list(x)[1]->len;
     //     res = list(l);
     //     for (i = 0; i < l; i++)
     //         as_list(&res)[i] = rf_call_binary_right_atomic(rf_take, &as_list(&as_list(x)[1])[i], y);
@@ -2057,9 +2057,9 @@ rf_object rf_group_Table(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_xasc(rf_object x, rf_object y)
+object_t rf_xasc(object_t x, object_t y)
 {
-    // rf_object idx, col, res;
+    // object_t idx, col, res;
 
     // switch (MTYPE2(x->type, y->type))
     // {
@@ -2087,9 +2087,9 @@ rf_object rf_xasc(rf_object x, rf_object y)
     return null();
 }
 
-rf_object rf_xdesc(rf_object x, rf_object y)
+object_t rf_xdesc(object_t x, object_t y)
 {
-    // rf_object idx, col, res;
+    // object_t idx, col, res;
 
     // switch (MTYPE2(x->type, y->type))
     // {

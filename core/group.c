@@ -47,8 +47,8 @@ bool_t pos_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
     // contains count of elements (replace with vector)
     if ((*tval & (1ll << 62)) == 0)
     {
-        rf_object *vv = (rf_object *)seed;
-        rf_object v = I64(*tval);
+        object_t *vv = (object_t *)seed;
+        object_t v = I64(*tval);
         as_I64(v)[0] = val;
         v->len = 1;
         *vv = v;
@@ -58,17 +58,17 @@ bool_t pos_update(i64_t key, i64_t val, null_t *seed, i64_t *tkey, i64_t *tval)
     }
 
     // contains vector
-    rf_object vv = (rf_object)(*tval & ~(1ll << 62));
+    object_t vv = (object_t)(*tval & ~(1ll << 62));
     i64_t *v = as_I64(vv);
     v[vv->len++] = val;
     return true;
 }
 
-rf_object rf_distinct_I64(rf_object x)
+object_t rf_distinct_I64(object_t x)
 {
     i64_t i, j = 0, p = 0, w = 0, xl = x->len;
     i64_t n = 0, range, inrange = 0, min, max, *m, *iv1 = as_I64(x), *ov;
-    rf_object mask, vec;
+    object_t mask, vec;
     set_t *set;
 
     if (xl == 0)
@@ -184,10 +184,10 @@ set:
     return vec;
 }
 
-rf_object rf_group_I64(rf_object x)
+object_t rf_group_I64(object_t x)
 {
     i64_t i, j = 0, xl = x->len, *iv1 = as_I64(x), *kv, range, inrange = 0, min, max, *m, n;
-    rf_object keys, vals, mask, *vv;
+    object_t keys, vals, mask, *vv;
     ht_t *ht;
 
     if (xl == 0)
@@ -240,12 +240,12 @@ rf_object rf_group_I64(rf_object x)
             n = normalize(iv1[i]);
             if (m[n] & (1ll << 62))
             {
-                rf_object v = (rf_object)(m[n] & ~(1ll << 62));
+                object_t v = (object_t)(m[n] & ~(1ll << 62));
                 as_I64(v)[v->len++] = i;
             }
             else
             {
-                rf_object v = I64(m[n]);
+                object_t v = I64(m[n]);
                 as_I64(v)[0] = i;
                 v->len = 1;
                 vv[j] = v;
@@ -305,12 +305,12 @@ rf_object rf_group_I64(rf_object x)
             {
                 if (m[n] & (1ll << 62))
                 {
-                    rf_object v = (rf_object)(m[n] & ~(1ll << 62));
+                    object_t v = (object_t)(m[n] & ~(1ll << 62));
                     as_I64(v)[v->len++] = i;
                 }
                 else
                 {
-                    rf_object v = I64(m[n]);
+                    object_t v = I64(m[n]);
                     as_I64(v)[0] = i;
                     v->len = 1;
                     vv[j] = v;

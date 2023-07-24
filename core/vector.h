@@ -59,16 +59,16 @@
         if (cap < req_cap + occup)                                                                                      \
         {                                                                                                               \
             i64_t new_cap = capacity(cap + req_cap);                                                                    \
-            /*debug("realloc: len %lld n %lld from %lld to %lld occup: %lld", (v)->adt->len, n, cap, new_cap, occup);*/ \
+            /*debug("realloc: len %lld n %lld from %lld to %lld occup: %lld", (v)->len, n, cap, new_cap, occup);*/ \
             (v)->ptr = rf_realloc((v)->ptr, new_cap);                                                                   \
         }                                                                                                               \
     }
 
 /*
- * Appends rf_objectect to the end of vector (dynamically grows vector if needed)
+ * Appends object_tect to the end of vector (dynamically grows vector if needed)
  * v - vector to append to
- * t - type of rf_objectect to append
- * x - rf_objectect to append
+ * t - type of object_tect to append
+ * x - object_tect to append
  */
 #define push(v, t, x)                                                 \
     {                                                                 \
@@ -80,21 +80,21 @@
 #define pop(v, t) ((t *)(as_string(v)))[--(v)->len]
 
 i64_t size_of_val(type_t type);
-i64_t vector_find(rf_object vec, rf_object key);
+i64_t vector_find(object_t vec, object_t key);
 
-rf_object vector_get(rf_object vec, i64_t index);
-rf_object vector_filter(rf_object vec, bool_t mask[], i64_t len);
-rf_object vector_set(rf_object vec, i64_t index, rf_object value);
-null_t vector_write(rf_object vec, i64_t index, rf_object value);
-rf_object vector_push(rf_object vec, rf_object object);
-rf_object list_push(rf_object vec, rf_object object);
-rf_object rf_list(rf_object x, u32_t n);
-rf_object rf_enlist(rf_object x, u32_t n);
+object_t vector_get(object_t vec, i64_t index);
+object_t vector_filter(object_t vec, bool_t mask[], i64_t len);
+object_t vector_set(object_t vec, i64_t index, object_t value);
+null_t vector_write(object_t vec, i64_t index, object_t value);
+object_t vector_push(object_t vec, object_t object);
+object_t list_push(object_t vec, object_t object);
+object_t rf_list(object_t x, u32_t n);
+object_t rf_enlist(object_t x, u32_t n);
 
-null_t vector_reserve(rf_object vec, u32_t len);
-null_t vector_grow(rf_object vec, u32_t len);
-null_t vector_shrink(rf_object vec, u32_t len);
-null_t vector_free(rf_object vec);
-null_t vector_clear(rf_object vec);
+null_t vector_reserve(object_t vec, u32_t len);
+null_t vector_grow(object_t vec, u32_t len);
+null_t vector_shrink(object_t vec, u32_t len);
+null_t vector_free(object_t vec);
+null_t vector_clear(object_t vec);
 
 #endif

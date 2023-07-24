@@ -49,7 +49,7 @@ i64_t size_of_val(type_t type)
     case TYPE_CHAR:
         return sizeof(char_t);
     case TYPE_LIST:
-        return sizeof(rf_object);
+        return sizeof(object_t);
     default:
         panic_type("size of val unknown type", type);
     }
@@ -58,10 +58,10 @@ i64_t size_of_val(type_t type)
 /*
  * Creates new vector of type
  */
-rf_object vector(type_t type, i64_t len)
+object_t vector(type_t type, i64_t len)
 {
     i64_t size = capacity(len * size_of_val(type));
-    rf_object vec = rf_malloc(sizeof(struct rf_object_t));
+    object_t vec = rf_malloc(sizeof(struct object_t));
 
     vec->type = type;
     vec->rc = 1;
@@ -71,7 +71,7 @@ rf_object vector(type_t type, i64_t len)
     return vec;
 }
 
-rf_object _push(rf_object vec, rf_object value)
+object_t _push(object_t vec, object_t value)
 {
     switch (vec->type)
     {
@@ -97,14 +97,14 @@ rf_object _push(rf_object vec, rf_object value)
         push(vec, char_t, value->schar);
         return null();
     // case TYPE_LIST:
-    //     push(vec, rf_object, clone(value));
+    //     push(vec, object_t, clone(value));
     //     return null();
     default:
         panic("vector push: can not push to a unknown type");
     }
 }
 
-rf_object list_push(rf_object vec, rf_object value)
+object_t list_push(object_t vec, object_t value)
 {
     debug_assert(is_vector(vec));
 
@@ -114,10 +114,10 @@ rf_object list_push(rf_object vec, rf_object value)
     return _push(vec, value);
 }
 
-rf_object vector_push(rf_object vec, rf_object value)
+object_t vector_push(object_t vec, object_t value)
 {
     u64_t i, l;
-    rf_object lst = NULL;
+    object_t lst = NULL;
 
     debug_assert(is_vector(vec));
 
@@ -151,7 +151,7 @@ rf_object vector_push(rf_object vec, rf_object value)
     return _push(vec, value);
 }
 
-rf_object vector_pop(rf_object vec)
+object_t vector_pop(object_t vec)
 {
     guid_t *g;
 
@@ -178,13 +178,13 @@ rf_object vector_pop(rf_object vec)
     case TYPE_LIST:
         if (vec->ptr == NULL)
             return null();
-        return pop(vec, rf_object);
+        return pop(vec, object_t);
     default:
         panic_type("vector pop: unknown type", vec->type);
     }
 }
 
-null_t vector_reserve(rf_object vec, u32_t len)
+null_t vector_reserve(object_t vec, u32_t len)
 {
     switch (vec->type)
     {
@@ -212,14 +212,14 @@ null_t vector_reserve(rf_object vec, u32_t len)
     case TYPE_LIST:
         if (vec->ptr == NULL)
             panic_type("vector reserve: can not reserve a null", vec->type);
-        reserve(vec, rf_object, len);
+        reserve(vec, object_t, len);
         return;
     default:
         panic_type("vector reserve: unknown type", vec->type);
     }
 }
 
-null_t vector_grow(rf_object vec, u32_t len)
+null_t vector_grow(object_t vec, u32_t len)
 {
     debug_assert(is_vector(vec));
 
@@ -230,7 +230,7 @@ null_t vector_grow(rf_object vec, u32_t len)
     vec->len = len;
 }
 
-null_t vector_shrink(rf_object vec, u32_t len)
+null_t vector_shrink(object_t vec, u32_t len)
 {
     debug_assert(is_vector(vec));
 
@@ -244,20 +244,20 @@ null_t vector_shrink(rf_object vec, u32_t len)
     vec->len = len;
 }
 
-i64_t vector_find(rf_object vec, rf_object key)
+i64_t vector_find(object_t vec, object_t key)
 {
     return 0;
     // char_t kc, *vc;
     // bool_t kb, *vb;
     // i64_t ki, *vi;
     // f64_t kf, *vf;
-    // rf_object*kl, *vl;
+    // object_t*kl, *vl;
     // i64_t i, l;
     // guid_t *kg, *vg;
 
     // debug_assert(is_vector(vec));
 
-    // l = vec->adt->len;
+    // l = vec->len;
 
     // if (key->type != -vec->type && vec->type != TYPE_LIST)
     //     return l;
@@ -317,7 +317,7 @@ i64_t vector_find(rf_object vec, rf_object key)
     //     vl = as_list(vec);
     //     kl = key;
     //     for (i = 0; i < l; i++)
-    //         if (rf_object_eq(&vl[i], kl))
+    //         if (object_t_eq(&vl[i], kl))
     //             return i;
     //     return l;
     // default:
@@ -325,13 +325,13 @@ i64_t vector_find(rf_object vec, rf_object key)
     // }
 }
 
-rf_object vector_get(rf_object vec, i64_t index)
+object_t vector_get(object_t vec, i64_t index)
 {
     i64_t l;
 
     debug_assert(is_vector(vec));
 
-    // l = vec->adt->len;
+    // l = vec->len;
 
     // switch (vec->type)
     // {
@@ -374,15 +374,15 @@ rf_object vector_get(rf_object vec, i64_t index)
     return null();
 }
 
-rf_object vector_set(rf_object vec, i64_t index, rf_object value)
+object_t vector_set(object_t vec, i64_t index, object_t value)
 {
     guid_t *g;
     i64_t i, l;
-    rf_object lst;
+    object_t lst;
 
     debug_assert(is_vector(vec));
 
-    // l = vec->adt->len;
+    // l = vec->len;
 
     // if (index >= l)
     //     return error(ERR_LENGTH, "vector set: index out of bounds");
@@ -441,13 +441,13 @@ rf_object vector_set(rf_object vec, i64_t index, rf_object value)
 /*
  * same as vector_set, but does not check bounds and does not free old value in case of list
  */
-null_t vector_write(rf_object vec, i64_t index, rf_object value)
+null_t vector_write(object_t vec, i64_t index, object_t value)
 {
     // guid_t *g;
     // i64_t i, l;
-    // rf_objectlst;
+    // object_tlst;
 
-    // l = vec->adt->len;
+    // l = vec->len;
 
     // // change vector type to a list
     // if (vec->type != -value.type && vec->type != TYPE_LIST)
@@ -498,17 +498,17 @@ null_t vector_write(rf_object vec, i64_t index, rf_object value)
     // }
 }
 
-rf_object vector_filter(rf_object vec, bool_t mask[], i64_t len)
+object_t vector_filter(object_t vec, bool_t mask[], i64_t len)
 {
     i64_t i, j = 0, l, ol;
-    rf_object res = NULL;
+    object_t res = NULL;
 
     debug_assert(is_vector(vec));
 
     return res;
 
-    // l = vec->adt->len;
-    // ol = (len == NULL_I64) ? (i64_t)vec->adt->len : len;
+    // l = vec->len;
+    // ol = (len == NULL_I64) ? (i64_t)vec->len : len;
 
     // switch (vec->type)
     // {
@@ -581,12 +581,12 @@ rf_object vector_filter(rf_object vec, bool_t mask[], i64_t len)
     // }
 }
 
-null_t vector_clear(rf_object vec)
+null_t vector_clear(object_t vec)
 {
     // if (vec->type == TYPE_LIST)
     // {
-    //     i64_t i, l = vec->adt->len;
-    //     rf_object*list = as_list(vec);
+    //     i64_t i, l = vec->len;
+    //     object_t*list = as_list(vec);
 
     //     for (i = 0; i < l; i++)
     //         drop(&list[i]);
@@ -595,9 +595,9 @@ null_t vector_clear(rf_object vec)
     // vector_shrink(vec, 0);
 }
 
-rf_object rf_list(rf_object x, u32_t n)
+object_t rf_list(object_t x, u32_t n)
 {
-    rf_object l = list(n);
+    object_t l = list(n);
     u32_t i;
 
     for (i = 0; i < n; i++)
@@ -606,14 +606,14 @@ rf_object rf_list(rf_object x, u32_t n)
     return l;
 }
 
-rf_object rf_enlist(rf_object x, u32_t n)
+object_t rf_enlist(object_t x, u32_t n)
 {
-    rf_object l = list(0);
+    object_t l = list(0);
     u32_t i;
 
     for (i = 0; i < n; i++)
     {
-        rf_object item = x + i;
+        object_t item = x + i;
         vector_push(l, clone(item));
     }
 

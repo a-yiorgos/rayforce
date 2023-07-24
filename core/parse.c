@@ -99,12 +99,12 @@ bool_t at_term(i8_t c)
     return c == ')' || c == ']' || c == '}' || c == ':' || c == '\n';
 }
 
-bool_t is_at(rf_object token, i8_t c)
+bool_t is_at(object_t token, i8_t c)
 {
     return token->type == TYPE_TOKEN && token->i64 == (i64_t)c;
 }
 
-bool_t is_at_term(rf_object token)
+bool_t is_at_term(object_t token)
 {
     return token->type == TYPE_TOKEN && at_term(token->i64);
 }
@@ -121,20 +121,20 @@ i8_t shift(parser_t *parser, i32_t num)
     return res;
 }
 
-rf_object to_token(parser_t *parser)
+object_t to_token(parser_t *parser)
 {
-    rf_object tok = i64(*parser->current);
+    object_t tok = i64(*parser->current);
     tok->type = TYPE_TOKEN;
     tok->id = span_commit(parser, span_start(parser));
     return tok;
 }
 
-rf_object parse_timestamp(parser_t *parser)
+object_t parse_timestamp(parser_t *parser)
 {
     str_t end, current = parser->current;
     u32_t nanos;
     timestamp_t ts = {0};
-    rf_object res;
+    object_t res;
     span_t span = span_start(parser);
 
     // check if null
@@ -271,12 +271,12 @@ rf_object parse_timestamp(parser_t *parser)
     return res;
 }
 
-rf_object parse_number(parser_t *parser)
+object_t parse_number(parser_t *parser)
 {
     str_t end;
     i64_t num_i64;
     f64_t num_f64;
-    rf_object num;
+    object_t num;
     span_t span = span_start(parser);
 
     // check if null
@@ -345,11 +345,11 @@ rf_object parse_number(parser_t *parser)
     return num;
 }
 
-rf_object parse_char(parser_t *parser)
+object_t parse_char(parser_t *parser)
 {
     span_t span = span_start(parser);
     str_t pos = parser->current + 1; // skip '''
-    rf_object ch, err;
+    object_t ch, err;
 
     if (at_eof(*pos) || *pos == '\n')
     {
@@ -376,12 +376,12 @@ rf_object parse_char(parser_t *parser)
     return ch;
 }
 
-rf_object parse_string(parser_t *parser)
+object_t parse_string(parser_t *parser)
 {
     span_t span = span_start(parser);
     str_t pos = parser->current + 1; // skip '"'
     i32_t len;
-    rf_object str, err;
+    object_t str, err;
 
     while (!at_eof(*pos) && *pos != '\n')
     {
@@ -412,10 +412,10 @@ rf_object parse_string(parser_t *parser)
     return str;
 }
 
-rf_object parse_symbol(parser_t *parser)
+object_t parse_symbol(parser_t *parser)
 {
     str_t pos = parser->current;
-    rf_object res;
+    object_t res;
     span_t span = span_start(parser);
     i64_t id;
 
@@ -462,9 +462,9 @@ rf_object parse_symbol(parser_t *parser)
     return res;
 }
 
-rf_object parse_vector(parser_t *parser)
+object_t parse_vector(parser_t *parser)
 {
-    rf_object token, vec = I64(0), err;
+    object_t token, vec = I64(0), err;
     i32_t i;
     span_t span = span_start(parser);
 
@@ -586,9 +586,9 @@ rf_object parse_vector(parser_t *parser)
     return vec;
 }
 
-rf_object parse_list(parser_t *parser)
+object_t parse_list(parser_t *parser)
 {
-    rf_object lst = list(0), token, err;
+    object_t lst = list(0), token, err;
     span_t span = span_start(parser);
     str_t msg;
 
@@ -636,9 +636,9 @@ rf_object parse_list(parser_t *parser)
     return lst;
 }
 
-rf_object parse_dict(parser_t *parser)
+object_t parse_dict(parser_t *parser)
 {
-    rf_object token, keys = list(0), vals = list(0), d, err;
+    object_t token, keys = list(0), vals = list(0), d, err;
     span_t span = span_start(parser);
 
     shift(parser, 1); // skip '{'
@@ -716,9 +716,9 @@ rf_object parse_dict(parser_t *parser)
     return d;
 }
 
-rf_object advance(parser_t *parser)
+object_t advance(parser_t *parser)
 {
-    rf_object tok, err;
+    object_t tok, err;
     str_t msg;
 
     // Skip all whitespaces
@@ -804,9 +804,9 @@ rf_object advance(parser_t *parser)
     return err;
 }
 
-rf_object parse_program(parser_t *parser)
+object_t parse_program(parser_t *parser)
 {
-    rf_object token, lst = list(0), err;
+    object_t token, lst = list(0), err;
     str_t msg;
 
     while (!at_eof(*parser->current))
@@ -838,9 +838,9 @@ rf_object parse_program(parser_t *parser)
     return list;
 }
 
-rf_object parse(parser_t *parser, str_t filename, str_t input)
+object_t parse(parser_t *parser, str_t filename, str_t input)
 {
-    rf_object prg;
+    object_t prg;
 
     parser->debuginfo.lambda = "";
     parser->debuginfo.filename = filename;

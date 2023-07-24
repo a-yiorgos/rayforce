@@ -33,24 +33,24 @@
 
 #define regf(r, n, t, f, o)                                                   \
     {                                                                         \
-        rf_object k = symboli64(intern_keyword(n, strlen(n)));                \
-        dict_set(r, &k, (rf_object){.type = t, .flags = f, .i64 = (i64_t)o}); \
+        object_t k = symboli64(intern_keyword(n, strlen(n)));                \
+        dict_set(r, &k, (object_t){.type = t, .flags = f, .i64 = (i64_t)o}); \
     };
 
 #define regt(r, i, s)               \
     {                               \
-        rf_object k = i64(i);       \
+        object_t k = i64(i);       \
         dict_set(r, &k, symbol(s)); \
     };
 
-rf_object rf_env()
+object_t rf_env()
 {
     return clone(&runtime_get()->env.variables);
 }
 
-rf_object rf_memstat()
+object_t rf_memstat()
 {
-    // rf_object keys, vals;
+    // object_t keys, vals;
     // memstat_t stat = rf_alloc_memstat();
 
     // keys = Symbol(3);
@@ -69,7 +69,7 @@ rf_object rf_memstat()
 }
 
 // clang-format off
-null_t init_functions(rf_object functions)
+null_t init_functions(object_t functions)
 {
     // Unary
     // REC(functions,  "trace",      OP_TRACE);   
@@ -137,7 +137,7 @@ null_t init_functions(rf_object functions)
     // regf(functions,  "println",   TYPE_VARY,     FLAG_NONE,         rf_println);
 }    
     
-null_t init_typenames(rf_object typenames)    
+null_t init_typenames(object_t typenames)    
 {
     // regt(typenames,   -TYPE_BOOL,       "bool");
     // regt(typenames,   -TYPE_I64,        "i64");
@@ -191,9 +191,9 @@ null_t init_kw_symbols()
 
 env_t create_env()
 {
-    rf_object functions = dict(Symbol(0), list(0));
-    rf_object variables = dict(Symbol(0), list(0));
-    rf_object typenames = dict(I64(0), Symbol(0));
+    object_t functions = dict(Symbol(0), list(0));
+    object_t variables = dict(Symbol(0), list(0));
+    object_t typenames = dict(I64(0), Symbol(0));
 
     init_kw_symbols();
 
@@ -219,7 +219,7 @@ null_t free_env(env_t *env)
 
 i64_t env_get_typename_by_type(env_t *env, type_t type)
 {
-    // rf_objectk, n;
+    // object_tk, n;
     // k = i64(type);
     // n = dict_get(&env->typenames, &k);
 
@@ -228,10 +228,10 @@ i64_t env_get_typename_by_type(env_t *env, type_t type)
     return NULL_I64;
 }
 
-type_t env_get_type_by_typename(env_t *env, rf_object sym)
+type_t env_get_type_by_typename(env_t *env, object_t sym)
 {
     // i64_t i, l;
-    // l = as_list(&env->typenames)[1].adt->len;
+    // l = as_list(&env->typenames)[1]->len;
 
     // i = vector_find(&as_list(&env->typenames)[1], &sym);
 

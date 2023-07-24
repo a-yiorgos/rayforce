@@ -39,7 +39,7 @@ bool_t rfi_is_nan(f64_t x)
     return (bits & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL && (bits & 0x000FFFFFFFFFFFFFULL) != 0;
 }
 
-bool_t rfi_eq(rf_object x, rf_object y)
+bool_t rfi_eq(object_t x, object_t y)
 {
     if (x->type != y->type)
         return false;
@@ -59,7 +59,7 @@ bool_t rfi_eq(rf_object x, rf_object y)
     }
 }
 
-bool_t rfi_lt(rf_object x, rf_object y)
+bool_t rfi_lt(object_t x, object_t y)
 {
     if (x->type != y->type)
         return false;
@@ -131,7 +131,7 @@ u64_t rfi_i64_hash(i64_t key)
     return (u64_t)key;
 }
 
-bool_t rfi_as_bool(rf_object x)
+bool_t rfi_as_bool(object_t x)
 {
     switch (x->type)
     {

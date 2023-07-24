@@ -25,9 +25,9 @@
 #include "string.h"
 #include "alloc.h"
 
-rf_object lambda(rf_object args, rf_object code, debuginfo_t debuginfo)
+object_t lambda(object_t args, object_t code, debuginfo_t debuginfo)
 {
-    rf_object obj = rf_malloc(sizeof(struct rf_object_t));
+    object_t obj = rf_malloc(sizeof(struct object_t));
     lambda_t *f = (lambda_t *)rf_malloc(sizeof(lambda_t));
 
     f->args = args;

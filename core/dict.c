@@ -27,25 +27,9 @@
 #include "format.h"
 #include "util.h"
 
-rf_object dict(rf_object keys, rf_object vals)
+object_t dict_get(object_t dict, object_t key)
 {
-    rf_object dict;
-
-    if (!is_vector(keys) || !is_vector(vals))
-        return error(ERR_TYPE, "Keys and Values must be lists");
-
-    if (keys->len != vals->len)
-        return error(ERR_LENGTH, "Keys and Values must have the same length");
-
-    dict = list(2, keys, vals);
-    dict->type = TYPE_DICT;
-
-    return dict;
-}
-
-rf_object dict_get(rf_object dict, rf_object key)
-{
-    rf_object keys = as_list(dict)[0], vals = as_list(dict)[1];
+    object_t keys = as_list(dict)[0], vals = as_list(dict)[1];
     i64_t i;
 
     i = vector_find(keys, key);
@@ -53,10 +37,10 @@ rf_object dict_get(rf_object dict, rf_object key)
     return vector_get(vals, i);
 }
 
-rf_object dict_set(rf_object dict, rf_object key, rf_object val)
+object_t dict_set(object_t dict, object_t key, object_t val)
 {
-    rf_object keys = as_list(dict)[0];
-    rf_object vals = as_list(dict)[1];
+    object_t keys = as_list(dict)[0];
+    object_t vals = as_list(dict)[1];
     i64_t index = vector_find(keys, key);
 
     if (index == (i64_t)keys->len)
@@ -71,10 +55,10 @@ rf_object dict_set(rf_object dict, rf_object key, rf_object val)
     return val;
 }
 
-null_t dict_clear(rf_object dict)
+null_t dict_clear(object_t dict)
 {
-    rf_object keys = as_list(dict)[0];
-    rf_object vals = as_list(dict)[1];
+    object_t keys = as_list(dict)[0];
+    object_t vals = as_list(dict)[1];
 
     if (keys->len == 0)
         return;

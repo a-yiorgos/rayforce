@@ -26,32 +26,32 @@
 
 #include "rayforce.h"
 
-typedef rf_object (*unary_t)(rf_object);
+typedef object_t (*unary_t)(object_t);
 
-rf_object rf_call_unary(u8_t flags, unary_t f, rf_object x);
-rf_object rf_get_variable(rf_object x);
-rf_object rf_type(rf_object x);
-rf_object rf_count(rf_object x);
-rf_object rf_til(rf_object x);
-rf_object rf_distinct(rf_object x);
-rf_object rf_group(rf_object x);
-rf_object rf_group_remap(rf_object x);
-rf_object rf_sum(rf_object x);
-rf_object rf_avg(rf_object x);
-rf_object rf_min(rf_object x);
-rf_object rf_max(rf_object x);
-rf_object rf_not(rf_object x);
-rf_object rf_iasc(rf_object x);
-rf_object rf_idesc(rf_object x);
-rf_object rf_asc(rf_object x);
-rf_object rf_desc(rf_object x);
-rf_object rf_guid_generate(rf_object x);
-rf_object rf_neg(rf_object x);
-rf_object rf_where(rf_object x);
-rf_object rf_key(rf_object x);
-rf_object rf_value(rf_object x);
-rf_object rf_fread(rf_object x);
-rf_object rf_parse(rf_object x);
-rf_object rf_read_parse_compile(rf_object x);
+object_t rf_call_unary(u8_t flags, unary_t f, object_t x);
+object_t rf_get_variable(object_t x);
+object_t rf_type(object_t x);
+object_t rf_count(object_t x);
+object_t rf_til(object_t x);
+object_t rf_distinct(object_t x);
+object_t rf_group(object_t x);
+object_t rf_group_remap(object_t x);
+object_t rf_sum(object_t x);
+object_t rf_avg(object_t x);
+object_t rf_min(object_t x);
+object_t rf_max(object_t x);
+object_t rf_not(object_t x);
+object_t rf_iasc(object_t x);
+object_t rf_idesc(object_t x);
+object_t rf_asc(object_t x);
+object_t rf_desc(object_t x);
+object_t rf_guid_generate(object_t x);
+object_t rf_neg(object_t x);
+object_t rf_where(object_t x);
+object_t rf_key(object_t x);
+object_t rf_value(object_t x);
+object_t rf_fread(object_t x);
+object_t rf_parse(object_t x);
+object_t rf_read_parse_compile(object_t x);
 
 #endif

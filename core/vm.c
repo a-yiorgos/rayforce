@@ -45,14 +45,14 @@ CASSERT(OP_INVALID < 127, vm_h)
 #define stack_pop(v) (v->stack[--v->sp])
 #define stack_peek(v) (&v->stack[v->sp - 1])
 #define stack_peek_n(v, n) (&v->stack[v->sp - 1 - (n)])
-#define stack_debug(v)                                                     \
-    {                                                                      \
-        i32_t _i = v->sp;                                                  \
-        while (_i > 0)                                                     \
-        {                                                                  \
-            debug("%d: %s", v->sp - _i, rf_object_fmt(&v->stack[_i - 1])); \
-            _i--;                                                          \
-        }                                                                  \
+#define stack_debug(v)                                                    \
+    {                                                                     \
+        i32_t _i = v->sp;                                                 \
+        while (_i > 0)                                                    \
+        {                                                                 \
+            debug("%d: %s", v->sp - _i, object_t_fmt(&v->stack[_i - 1])); \
+            _i--;                                                         \
+        }                                                                 \
     }
 
 typedef struct ctx_t
@@ -62,11 +62,11 @@ typedef struct ctx_t
     i32_t bp;
 } ctx_t;
 
-// CASSERT(sizeof(struct ctx_t) == sizeof(struct rf_object_t), vm_c)
+// CASSERT(sizeof(struct ctx_t) == sizeof(struct object_t), vm_c)
 
 vm_t vm_new()
 {
-    rf_object stack = (rf_object)mmap_stack(VM_STACK_SIZE);
+    object_t stack = (object_t)mmap_stack(VM_STACK_SIZE);
 
     vm_t vm = {
         .trace = 0,
@@ -79,12 +79,12 @@ vm_t vm_new()
 /*
  * Execute the lambda
  */
-rf_object __attribute__((hot)) vm_exec(vm_t *vm, rf_object fun)
+object_t __attribute__((hot)) vm_exec(vm_t *vm, object_t fun)
 {
     type_t c;
     lambda_t *f = as_lambda(fun);
     str_t code = as_string(f->code);
-    rf_object x0, x1, x2, x3, *addr;
+    object_t x0, x1, x2, x3, *addr;
     i64_t t;
     u8_t n, flags;
     u64_t l, p;
@@ -104,14 +104,14 @@ rf_object __attribute__((hot)) vm_exec(vm_t *vm, rf_object fun)
 
 #define dispatch() goto *dispatch_table[(i32_t)code[vm->ip]]
 
-#define unwrap(x, y)              \
-    {                             \
-        rf_object o = x;          \
-        if (o.type == TYPE_ERROR) \
-        {                         \
-                                  \
-            return o;             \
-        }                         \
+#define unwrap(x, y)               \
+    {                              \
+        object_t o = x;            \
+        if (o->type == TYPE_ERROR) \
+        {                          \
+                                   \
+            return o;              \
+        }                          \
     }
 
 #define load_u64(x, v)                                    \
@@ -138,7 +138,7 @@ op_push:
     dispatch();
 op_pop:
     vm->ip++;
-    stack_pop_free(vm);
+    drop(stack_pop(vm));
     dispatch();
 op_swap:
     vm->ip++;
@@ -194,7 +194,7 @@ op_calln:
     flags = code[vm->ip++];
     load_u64(l, vm);
 made_calln:
-    addr = (rf_object *)(&vm->stack[vm->sp - n]);
+    addr = (object_t)(&vm->stack[vm->sp - n]);
     x1 = rf_call_vary(flags, (vary_t)l, addr, n);
     for (i = 0; i < n; i++)
         drop(stack_pop(vm)); // pop args
@@ -205,76 +205,76 @@ op_calld:
     b = vm->ip++;
     n = code[vm->ip++];
 made_calld:
-    addr = stack_peek(vm);
-    switch (*addr->type)
-    {
-    case TYPE_UNARY:
-        if (n != 1)
-            unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
-        x0 = stack_pop(vm);
-        l = x0.i64;
-        flags = x0.flags;
-        goto made_call1;
-    case TYPE_BINARY:
-        if (n != 2)
-            unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
-        x0 = stack_pop(vm);
-        l = x0.i64;
-        flags = x0.flags;
-        goto made_call2;
-    case TYPE_VARY:
-        x0 = stack_pop(vm);
-        l = x0.i64;
-        flags = x0.flags;
-        goto made_calln;
-    case TYPE_LAMBDA:
-        /* Call stack of user lambda call looks as follows:
-         * +-------------------+
-         * |       ...         |
-         * +-------------------+
-         * | ctx {ret, ip, sp} | <- bp
-         * +-------------------+
-         * |     <lambda>      |
-         * +-------------------+
-         * |       argn        |
-         * +-------------------+
-         * |       ...         |
-         * +-------------------+
-         * |       arg2        |
-         * +-------------------+
-         * |       arg1        |
-         * +-------------------+
-         */
-        if (n != as_lambda(*addr)->args->len)
-            unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
-        if ((vm->sp + as_lambda(addr)->stack_size) * sizeof(rf_object_t) > VM_STACK_SIZE)
-            unwrap(error(ERR_STACK_OVERFLOW, "stack overflow"), b);
-        // save ctx
-        ctx = (ctx_t){.addr = f, .ip = vm->ip, .bp = vm->bp};
-        vm->ip = 0;
-        vm->bp = vm->sp;
-        ((ctx_t *)vm->stack)[vm->sp++] = ctx;
-        // --
-        f = as_lambda(addr);
-        code = as_string(&f->code);
-        break;
-    default:
-        unwrap(error(ERR_TYPE, "call"), b);
-    }
+    // addr = stack_peek(vm);
+    // switch ((*addr)->type)
+    // {
+    // case TYPE_UNARY:
+    //     if (n != 1)
+    //         unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
+    //     x0 = stack_pop(vm);
+    //     l = x0->i64;
+    //     flags = x0->flags;
+    //     goto made_call1;
+    // case TYPE_BINARY:
+    //     if (n != 2)
+    //         unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
+    //     x0 = stack_pop(vm);
+    //     l = x0.i64;
+    //     flags = x0.flags;
+    //     goto made_call2;
+    // case TYPE_VARY:
+    //     x0 = stack_pop(vm);
+    //     l = x0.i64;
+    //     flags = x0.flags;
+    //     goto made_calln;
+    // case TYPE_LAMBDA:
+    //     /* Call stack of user lambda call looks as follows:
+    //      * +-------------------+
+    //      * |       ...         |
+    //      * +-------------------+
+    //      * | ctx {ret, ip, sp} | <- bp
+    //      * +-------------------+
+    //      * |     <lambda>      |
+    //      * +-------------------+
+    //      * |       argn        |
+    //      * +-------------------+
+    //      * |       ...         |
+    //      * +-------------------+
+    //      * |       arg2        |
+    //      * +-------------------+
+    //      * |       arg1        |
+    //      * +-------------------+
+    //      */
+    //     if (n != as_lambda(*addr)->args->len)
+    //         unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
+    //     if ((vm->sp + as_lambda(addr)->stack_size) * sizeof(rf_) > VM_STACK_SIZE)
+    //         unwrap(error(ERR_STACK_OVERFLOW, "stack overflow"), b);
+    //     // save ctx
+    //     ctx = (ctx_t){.addr = f, .ip = vm->ip, .bp = vm->bp};
+    //     vm->ip = 0;
+    //     vm->bp = vm->sp;
+    //     ((ctx_t *)vm->stack)[vm->sp++] = ctx;
+    //     // --
+    //     f = as_lambda(addr);
+    //     code = as_string(&f->code);
+    //     break;
+    // default:
+    //     unwrap(error(ERR_TYPE, "call"), b);
+    // }
     dispatch();
 op_ret:
     vm->ip++;
     x3 = stack_pop(vm); // return value
     x2 = stack_pop(vm); // ctx
-    j = (i32_t)f->args.adt->len;
-    stack_pop_free(vm); // free lambda
+    j = (i32_t)f->args->len;
+    drop(stack_pop(vm)); // free lambda
     for (i = 0; i < j; i++)
-        stack_pop_free(vm); // pop args
+        drop(stack_pop(vm)); // pop args
     ctx = *(ctx_t *)&x2;
     vm->ip = ctx.ip;
     vm->bp = ctx.bp;
     f = ctx.addr;
-    code = as_string(&f->code);
+    code = as_string(f->code);
     stack_push(vm, x3); // push back return value
     dispatch();
 op_timer_set:
@@ -301,18 +301,18 @@ op_lset:
     b = vm->ip++;
     x2 = stack_pop(vm);
     x1 = stack_pop(vm);
-    if (f->locals.adt->len == 0)
+    if (f->locals->len == 0)
         vector_push(&f->locals, dict(Symbol(0), list(0)));
-    dict_set(&as_list(&f->locals)[f->locals.adt->len - 1], &x1, x2);
+    dict_set(&as_list(f->locals)[f->locals->len - 1], x1, x2);
     dispatch();
 op_lget:
     b = vm->ip++;
     x1 = stack_pop(vm);
-    j = f->locals.adt->len;
+    j = f->locals->len;
     x2 = null();
     for (i = 0; i < j; i++)
     {
-        x2 = dict_get(&as_list(&f->locals)[j - i - 1], &x1);
+        x2 = dict_get(&as_list(f->locals)[j - i - 1], x1);
         if (!is_null(&x2))
             break;
     }
@@ -324,7 +324,7 @@ op_lget:
 op_lpush:
     b = vm->ip++;
     x1 = stack_pop(vm); // table or dict
-    if (x1.type != TYPE_TABLE && x1.type != TYPE_DICT)
+    if (x1->type != TYPE_TABLE && x1->type != TYPE_DICT)
         unwrap(error(ERR_TYPE, "expected dict or table"), b);
     vector_push(&f->locals, x1);
     dispatch();
@@ -344,90 +344,90 @@ op_try:
     dispatch();
 op_catch:
     b = vm->ip++;
-    x1 = vm->acc;
-    x1.type = TYPE_CHAR;
-    vm->acc = null();
-    stack_push(vm, x1);
+    // x1 = vm->acc;
+    // x1.type = TYPE_CHAR;
+    // vm->acc = null();
+    // stack_push(vm, x1);
     dispatch();
 op_throw:
     b = vm->ip++;
-    x1 = stack_pop(vm);
-    x1.type = TYPE_ERROR;
-    x1.adt->code = ERR_THROW;
-    unwrap(x1, b);
+    // x1 = stack_pop(vm);
+    // x1.type = TYPE_ERROR;
+    // x1.adt->code = ERR_THROW;
+    // unwrap(x1, b);
     // must not ever rich here, just to satisfy compiler
     dispatch();
 op_trace:
     b = vm->ip++;
-    x1 = stack_pop(vm);
-    vm->trace = (u8_t)x1.i64;
+    // x1 = stack_pop(vm);
+    // vm->trace = (u8_t)x1.i64;
     dispatch();
 op_alloc:
     b = vm->ip++;
     c = code[vm->ip++];
-    addr = stack_peek_n(vm, c - 1);
-    l = addr->adt->len;
-    // allocate result and write to a preserved space on the stack
-    x1 = vector(addr->type, l);
-    x1.adt->len = 0;
-    *stack_peek_n(vm, c) = x1;
-    // push counter
-    stack_push(vm, i64(l));
+    // addr = stack_peek_n(vm, c - 1);
+    // l = addr->len;
+    // // allocate result and write to a preserved space on the stack
+    // x1 = vector(addr->type, l);
+    // x1->len = 0;
+    // *stack_peek_n(vm, c) = x1;
+    // // push counter
+    // stack_push(vm, i64(l));
     dispatch();
 op_map:
     b = vm->ip++;
     // arguments count
-    c = code[vm->ip++];
-    l = stack_peek_n(vm, c)->adt->len;
-    j = 0;
-    // push arguments
-    for (i = c - 1; i >= 0; i--)
-    {
-        addr = stack_peek_n(vm, i + j++);
-        if (addr->type > 0)
-            stack_push(vm, vector_get(addr, l));
-        else
-            stack_push(vm, *addr);
-    }
+    // c = code[vm->ip++];
+    // l = stack_peek_n(vm, c)->len;
+    // j = 0;
+    // // push arguments
+    // for (i = c - 1; i >= 0; i--)
+    // {
+    //     addr = stack_peek_n(vm, i + j++);
+    //     if (addr->type > 0)
+    //         stack_push(vm, vector_get(addr, l));
+    //     else
+    //         stack_push(vm, *addr);
+    // }
     dispatch();
 op_collect:
     b = vm->ip++;
     // arguments count
-    c = code[vm->ip++];
-    // get the result from previous iteration
-    x1 = stack_pop(vm);
-    // load result
-    addr = stack_peek_n(vm, c);
-    l = addr->adt->len++;
-    // store result
-    vector_write(addr, l, x1);
-    // load first argument len
-    p = stack_peek_n(vm, c - 1)->adt->len;
-    // push counter
-    stack_push(vm, i64(p - l - 1));
+    // c = code[vm->ip++];
+    // // get the result from previous iteration
+    // x1 = stack_pop(vm);
+    // // load result
+    // addr = stack_peek_n(vm, c);
+    // l = addr->len++;
+    // // store result
+    // vector_write(addr, l, x1);
+    // // load first argument len
+    // p = stack_peek_n(vm, c - 1)->len;
+    // // push counter
+    // stack_push(vm, i64(p - l - 1));
     dispatch();
 op_eval:
     b = vm->ip++;
-    x1 = stack_pop(vm);
-    if (x1.type != TYPE_LIST)
-    {
-        drop(&x1);
-        unwrap(error(ERR_TYPE, "eval: expects list"), b);
-    }
-    x2 = cc_compile_lambda(false, "anonymous", Symbol(0), as_list(x1), x1.id, x1.adt->len, NULL);
-    drop(&x1);
-    unwrap(x2, b);
-    stack_push(vm, x2);
-    n = 0;
+    // x1 = stack_pop(vm);
+    // if (x1.type != TYPE_LIST)
+    // {
+    //     drop(&x1);
+    //     unwrap(error(ERR_TYPE, "eval: expects list"), b);
+    // }
+    // x2 = cc_compile_lambda(false, "anonymous", Symbol(0), as_list(x1), x1.id, x1->len, NULL);
+    // drop(&x1);
+    // unwrap(x2, b);
+    // stack_push(vm, x2);
+    // n = 0;
     goto made_calld;
 op_fload:
     b = vm->ip++;
-    x1 = stack_pop(vm);
-    x2 = rf_read_parse_compile(&x1);
-    drop(&x1);
-    unwrap(x2, b);
-    stack_push(vm, x2);
-    n = 0;
+    // x1 = stack_pop(vm);
+    // x2 = rf_read_parse_compile(&x1);
+    // drop(&x1);
+    // unwrap(x2, b);
+    // stack_push(vm, x2);
+    // n = 0;
     goto made_calld;
 }
 
@@ -435,19 +435,19 @@ null_t vm_free(vm_t *vm)
 {
     // clear stack (if any)
     while (vm->sp)
-        stack_pop_free(vm);
+        drop(stack_pop(vm));
     mmap_free(vm->stack, VM_STACK_SIZE);
 }
 
 /*
  * Format code object in a user readable form for debugging
  */
-str_t vm_code_fmt(rf_object fun)
+str_t vm_code_fmt(object_t fun)
 {
     lambda_t *f = as_lambda(fun);
-    str_t code = as_string(&f->code);
+    str_t code = as_string(f->code);
     i32_t c = 0, l = 0, o = 0;
-    u32_t ip = 0, len = (u32_t)f->code.adt->len;
+    u32_t ip = 0, len = (u32_t)f->code->len;
     str_t s = NULL;
 
     while (ip < len)
@@ -463,24 +463,24 @@ str_t vm_code_fmt(rf_object fun)
             break;
         case OP_PUSH:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] push ", c++, ip++);
-            rf_object_fmt_into(&s, &l, &o, 0, 0, (rf_object)(code + ip));
+            object_t_fmt_into(&s, &l, &o, 0, 0, (object_t)(code + ip));
             str_fmt_into(&s, &l, &o, 0, "\n");
-            ip += sizeof(rf_object);
+            ip += sizeof(object_t);
             break;
         case OP_POP:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] pop\n", c++, ip++);
             break;
         case OP_JNE:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] jne ", c++, ip++);
-            rf_object_fmt_into(&s, &l, &o, 0, 0, (rf_object)(code + ip));
+            object_t_fmt_into(&s, &l, &o, 0, 0, (object_t)(code + ip));
             str_fmt_into(&s, &l, &o, 0, "\n");
-            ip += sizeof(rf_object);
+            ip += sizeof(object_t);
             break;
         case OP_JMP:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] jmp ", c++, ip++);
-            rf_object_fmt_into(&s, &l, &o, 0, 0, (rf_object)(code + ip));
+            object_t_fmt_into(&s, &l, &o, 0, 0, (object_t)(code + ip));
             str_fmt_into(&s, &l, &o, 0, "\n");
-            ip += sizeof(rf_object);
+            ip += sizeof(object_t);
             break;
         case OP_CALL1:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call1 ", c++, ip++);
@@ -492,18 +492,18 @@ str_t vm_code_fmt(rf_object fun)
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] timer_get\n", c++, ip++);
             break;
         case OP_STORE:
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] store [%d]\n", c++, ip, (i32_t)((rf_object)(code + ip + 1))->i64);
-            ip += 1 + sizeof(rf_object);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] store [%d]\n", c++, ip, (i32_t)((object_t)(code + ip + 1))->i64);
+            ip += 1 + sizeof(object_t);
             break;
         case OP_LOAD:
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] load [%d]\n", c++, ip, (i32_t)((rf_object)(code + ip + 1))->i64);
-            ip += 1 + sizeof(rf_object);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] load [%d]\n", c++, ip, (i32_t)((object_t)(code + ip + 1))->i64);
+            ip += 1 + sizeof(object_t);
             break;
         case OP_TRY:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] try ", c++, ip++);
-            rf_object_fmt_into(&s, &l, &o, 0, 0, (rf_object)(code + ip));
+            object_t_fmt_into(&s, &l, &o, 0, 0, (object_t)(code + ip));
             str_fmt_into(&s, &l, &o, 0, "\n");
-            ip += sizeof(rf_object);
+            ip += sizeof(object_t);
             break;
         case OP_CATCH:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] catch ", c++, ip++);

@@ -28,23 +28,23 @@
 #include "util.h"
 
 /*
- * Creates new rf_objectstring from a C string.
+ * Creates new object_tstring from a C string.
  * Guarantees that the string is null-terminated.
  */
-rf_object string(i64_t len)
+object_t string(i64_t len)
 {
-    rf_object string = vector(TYPE_CHAR, len + 1);
+    object_t string = vector(TYPE_CHAR, len + 1);
     as_string(string)[len] = '\0';
     string->len = len;
     return string;
 }
 
 /*
- * Creates new rf_objectstring from a C string.
+ * Creates new object_tstring from a C string.
  */
-rf_object string_from_str(str_t str, i32_t len)
+object_t string_from_str(str_t str, i32_t len)
 {
-    rf_object s = string(len);
+    object_t s = string(len);
     if (len > 0)
         strncpy(as_string(s), str, len);
 
@@ -53,7 +53,7 @@ rf_object string_from_str(str_t str, i32_t len)
 
 /*
  * match() lambda takes in two pointers to character arrays: pattern and text.
- * It returns a i8_t rf_object indicating whether the text string matches the pattern string.
+ * It returns a i8_t object_t indicating whether the text string matches the pattern string.
  * Note that this implementation assumes that the pattern and text strings do not contain any null characters ('\0').
  * If this is not the case, a more sophisticated implementation may be required.
  */

@@ -228,14 +228,14 @@ i32_t guid_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, guid_t *
     return n;
 }
 
-i32_t vector_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_object object)
+i32_t vector_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, object_t object)
 {
     if (object->len == 0)
         return str_fmt_into(dst, len, offset, limit, "[]");
 
     i32_t i, n = str_fmt_into(dst, len, offset, limit, "["), indent = 0;
     i64_t l;
-    rf_object v = NULL;
+    object_t v = NULL;
 
     if (n > limit)
         return n;
@@ -245,7 +245,7 @@ i32_t vector_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_obj
     for (i = 0; i < l; i++)
     {
         v = vector_get(object, i);
-        n += rf_object_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v);
+        n += object_t_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v);
         drop(&v);
 
         if (n > limit)
@@ -266,7 +266,7 @@ i32_t vector_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_obj
     return n;
 }
 
-i32_t list_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, rf_object object)
+i32_t list_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, object_t object)
 {
     i32_t i, n, list_height = object->len;
 
@@ -283,7 +283,7 @@ i32_t list_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
     for (i = 0; i < list_height; i++)
     {
         maxn(n, str_fmt_into(dst, len, offset, 0, "\n%*.*s", indent, indent, PADDING));
-        maxn(n, rf_object_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &as_list(object)[i]));
+        maxn(n, object_t_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &as_list(object)[i]));
     }
 
     if (list_height < (i32_t)object->len)
@@ -295,7 +295,7 @@ i32_t list_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
     return n;
 }
 
-i32_t string_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_object object)
+i32_t string_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, object_t object)
 {
     if (object->ptr == NULL)
         return str_fmt_into(dst, len, offset, limit, "\"\"");
@@ -308,9 +308,9 @@ i32_t string_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_obj
     return n;
 }
 
-i32_t dict_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, rf_object object)
+i32_t dict_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, object_t object)
 {
-    rf_object keys = as_list(object)[0], vals = as_list(object)[1], v;
+    object_t keys = as_list(object)[0], vals = as_list(object)[1], v;
     i32_t i, n, dict_height = keys->len;
 
     if (dict_height == 0)
@@ -327,13 +327,13 @@ i32_t dict_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
     {
         maxn(n, str_fmt_into(dst, len, offset, 0, "\n%*.*s", indent, indent, PADDING));
         v = vector_get(keys, i);
-        maxn(n, rf_object_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v));
+        maxn(n, object_t_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v));
         drop(&v);
 
         n += str_fmt_into(dst, len, offset, MAX_ROW_WIDTH, ": ");
 
         v = vector_get(vals, i);
-        maxn(n, rf_object_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v));
+        maxn(n, object_t_fmt_into(dst, len, offset, indent, MAX_ROW_WIDTH, &v));
         drop(&v);
     }
 
@@ -347,10 +347,10 @@ i32_t dict_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
     return n;
 }
 
-i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, rf_object object)
+i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, object_t object)
 {
     i64_t *header = as_Symbol(as_list(object)[0]);
-    rf_object columns = as_list(object)[1], column_widths, c;
+    object_t columns = as_list(object)[1], column_widths, c;
     i32_t table_width, table_height;
     str_t s, formatted_columns[TABLE_MAX_WIDTH][TABLE_MAX_HEIGHT] = {{NULL}};
     i32_t i, j, l, o, n = str_fmt_into(dst, len, offset, 0, "|");
@@ -375,13 +375,13 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, rf_obj
         // Then traverse column until maximum height limit
         for (j = 0; j < table_height; j++)
         {
-            rf_object column = as_list(columns)[i];
+            object_t column = as_list(columns)[i];
             s = NULL;
             l = 0;
             o = 0;
 
             c = vector_get(column, j);
-            maxn(n, rf_object_fmt_into(&s, &l, &o, 0, 31, &c));
+            maxn(n, object_t_fmt_into(&s, &l, &o, 0, 31, &c));
             drop(&c);
 
             formatted_columns[i][j] = s;
@@ -433,16 +433,16 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, rf_obj
     return n;
 }
 
-i32_t error_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_object error)
+i32_t error_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, object_t error)
 {
     UNUSED(limit);
 
     return str_fmt_into(dst, len, offset, limit, "** [E%.3d] error: %s", error->code, as_string(error));
 }
 
-i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_object object)
+i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, object_t object)
 {
-    rf_object functions = &runtime_get()->env.functions;
+    object_t functions = &runtime_get()->env.functions;
     i64_t id, sym;
 
     id = vector_find(&as_list(functions)[1], object);
@@ -451,17 +451,17 @@ i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_o
     return symbol_fmt_into(dst, len, offset, limit, sym);
 }
 
-i32_t lambda_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, rf_object object)
+i32_t lambda_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, object_t object)
 {
     UNUSED(limit);
     UNUSED(object);
 
-    // lambda_t *lambda = as_lambda(rf_object);
+    // lambda_t *lambda = as_lambda(object_t);
 
     return str_fmt_into(dst, len, offset, 0, "<lambda>");
 }
 
-i32_t rf_object_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, rf_object object)
+i32_t object_t_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, object_t object)
 {
     switch (object->type)
     {
@@ -515,11 +515,11 @@ i32_t rf_object_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i3
 /*
  * Format an object into a string
  */
-str_t rf_object_fmt(rf_object object)
+str_t object_t_fmt(object_t object)
 {
     i32_t len = 0, offset = 0, limit = MAX_ROW_WIDTH;
     str_t dst = NULL;
-    rf_object_fmt_into(&dst, &len, &offset, 0, limit, object);
+    object_t_fmt_into(&dst, &len, &offset, 0, limit, object);
     if (dst == NULL)
         panic("format: returns null");
 
@@ -531,18 +531,18 @@ str_t rf_object_fmt(rf_object object)
  * using format string as a template with
  * '%' placeholders.
  */
-str_t rf_object_fmt_n(rf_object x, u32_t n)
+str_t object_t_fmt_n(object_t x, u32_t n)
 {
     u32_t i;
     i32_t l = 0, o = 0, sz = 0;
     str_t s = NULL, p, start = NULL, end = NULL;
-    rf_object b = x;
+    object_t b = x;
 
     if (n == 0)
         return NULL;
 
     if (n == 1)
-        return rf_object_fmt(b);
+        return object_t_fmt(b);
 
     if (b->type != TYPE_CHAR)
         return NULL;
@@ -571,7 +571,7 @@ str_t rf_object_fmt_n(rf_object x, u32_t n)
         sz -= (end + 1 - start);
         start = end + 1;
 
-        rf_object_fmt_into(&s, &l, &o, 0, 0, b);
+        object_t_fmt_into(&s, &l, &o, 0, 0, b);
     }
 
     if (sz > 0 && memchr(start, '%', sz))
@@ -587,7 +587,7 @@ str_t rf_object_fmt_n(rf_object x, u32_t n)
     return s;
 }
 
-null_t print_error(rf_object error, str_t filename, str_t source, u32_t len)
+null_t print_error(object_t error, str_t filename, str_t source, u32_t len)
 {
     const str_t PADDING = "                                                  ";
     u16_t line_number = 0, i, l;

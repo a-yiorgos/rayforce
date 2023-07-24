@@ -33,11 +33,11 @@
 #include "string.h"
 #include "runtime.h"
 
-CASSERT(sizeof(struct rf_object_t) == 32, rayforce_h)
+CASSERT(sizeof(struct object_t) == 32, rayforce_h)
 
-rf_object atom(type_t type)
+object_t atom(type_t type)
 {
-    rf_object a = (rf_object)rf_malloc(sizeof(struct rf_object_t));
+    object_t a = (object_t)rf_malloc(sizeof(struct object_t));
 
     a->type = -type;
     a->rc = 1;
@@ -45,29 +45,29 @@ rf_object atom(type_t type)
     return a;
 }
 
-rf_object list(i64_t len, ...)
+object_t list(i64_t len, ...)
 {
     i32_t i;
-    rf_object l = (rf_object)rf_malloc(sizeof(struct rf_object_t));
+    object_t l = (object_t)rf_malloc(sizeof(struct object_t));
 
     l->type = TYPE_LIST;
     l->rc = 1;
-    l->ptr = rf_malloc(sizeof(rf_object) * len);
+    l->ptr = rf_malloc(sizeof(object_t) * len);
 
     va_list args;
     va_start(args, len);
 
     for (i = 0; i < len; i++)
-        l->ptr[i] = va_arg(args, rf_object);
+        l->ptr[i] = va_arg(args, object_t);
 
     va_end(args);
 
     return l;
 }
 
-rf_object error(i8_t code, str_t message)
+object_t error(i8_t code, str_t message)
 {
-    rf_object err = rf_malloc(sizeof(struct rf_object_t));
+    object_t err = rf_malloc(sizeof(struct object_t));
 
     err->type = TYPE_ERROR;
     err->len = strlen(message);
@@ -76,50 +76,50 @@ rf_object error(i8_t code, str_t message)
     return err;
 }
 
-rf_object null()
+object_t null()
 {
     return NULL;
 }
 
-rf_object bool(bool_t val)
+object_t bool(bool_t val)
 {
-    rf_object b = atom(TYPE_BOOL);
+    object_t b = atom(TYPE_BOOL);
     b->bool = val;
     return b;
 }
 
-rf_object i64(i64_t val)
+object_t i64(i64_t val)
 {
-    rf_object i = atom(TYPE_I64);
+    object_t i = atom(TYPE_I64);
     i->i64 = val;
     return i;
 }
 
-rf_object f64(f64_t val)
+object_t f64(f64_t val)
 {
-    rf_object f = atom(TYPE_F64);
+    object_t f = atom(TYPE_F64);
     f->f64 = val;
     return f;
 }
 
-rf_object symbol(str_t s)
+object_t symbol(str_t s)
 {
     i64_t id = intern_symbol(s, strlen(s));
-    rf_object a = atom(TYPE_SYMBOL);
+    object_t a = atom(TYPE_SYMBOL);
     a->i64 = id;
 
     return a;
 }
 
-rf_object symboli64(i64_t id)
+object_t symboli64(i64_t id)
 {
-    rf_object a = atom(TYPE_SYMBOL);
+    object_t a = atom(TYPE_SYMBOL);
     a->i64 = id;
 
     return a;
 }
 
-rf_object guid(u8_t data[])
+object_t guid(u8_t data[])
 {
 
     // if (data == NULL)
@@ -135,29 +135,45 @@ rf_object guid(u8_t data[])
     return NULL;
 }
 
-rf_object schar(char_t c)
+object_t schar(char_t c)
 {
-    rf_object s = atom(TYPE_CHAR);
+    object_t s = atom(TYPE_CHAR);
     s->schar = c;
     return s;
 }
 
-rf_object timestamp(i64_t val)
+object_t timestamp(i64_t val)
 {
-    rf_object t = atom(TYPE_TIMESTAMP);
+    object_t t = atom(TYPE_TIMESTAMP);
     t->i64 = val;
     return t;
 }
 
-rf_object table(rf_object keys, rf_object vals)
+object_t table(object_t keys, object_t vals)
 {
-    rf_object t = list(2, keys, vals);
+    object_t t = list(2, keys, vals);
     t->type = TYPE_TABLE;
 
     return t;
 }
 
-bool_t is_null(rf_object object)
+object_t dict(object_t keys, object_t vals)
+{
+    object_t dict;
+
+    if (!is_vector(keys) || !is_vector(vals))
+        return error(ERR_TYPE, "Keys and Values must be lists");
+
+    if (keys->len != vals->len)
+        return error(ERR_LENGTH, "Keys and Values must have the same length");
+
+    dict = list(2, keys, vals);
+    dict->type = TYPE_DICT;
+
+    return dict;
+}
+
+bool_t is_null(object_t object)
 {
     return (object->type == TYPE_LIST && object->ptr == NULL) ||
            (object->type == -TYPE_I64 && object->i64 == NULL_I64) ||
@@ -167,7 +183,7 @@ bool_t is_null(rf_object object)
            (object->type == -TYPE_CHAR && object->schar == '\0');
 }
 
-bool_t rf_object_eq(rf_object a, rf_object b)
+bool_t object_t_eq(object_t a, object_t b)
 {
     i64_t i, l;
 
@@ -216,9 +232,9 @@ bool_t rf_object_eq(rf_object a, rf_object b)
 }
 
 /*
- * Increment the reference count of an rf_object
+ * Increment the reference count of an object_t
  */
-rf_object __attribute__((hot)) clone(rf_object object)
+object_t __attribute__((hot)) clone(object_t object)
 {
     i64_t i, l;
     u16_t slaves = runtime_get()->slaves;
@@ -257,9 +273,9 @@ rf_object __attribute__((hot)) clone(rf_object object)
 }
 
 /*
- * Free an rf_object
+ * Free an object_t
  */
-null_t __attribute__((hot)) drop(rf_object object)
+null_t __attribute__((hot)) drop(object_t object)
 {
     i64_t i, rc, l;
     u16_t slaves = runtime_get()->slaves;
@@ -281,14 +297,14 @@ null_t __attribute__((hot)) drop(rf_object object)
     case TYPE_TIMESTAMP:
     case TYPE_CHAR:
         if (rc == 0)
-            vector_free(object);
+            rf_free(object->ptr);
         return;
     case TYPE_LIST:
         l = object->len;
         for (i = 0; i < l; i++)
-            drop(&as_list(object)[i]);
+            drop(as_list(object)[i]);
         if (rc == 0)
-            vector_free(object);
+            rf_free(object->ptr);
         return;
     case TYPE_TABLE:
     case TYPE_DICT:
@@ -318,66 +334,66 @@ null_t __attribute__((hot)) drop(rf_object object)
 }
 
 /*
- * Copy on write rf_object_t
+ * Copy on write rf_
  */
-rf_object cow(rf_object object)
+object_t cow(object_t object)
 {
     i64_t i, l;
-    rf_object new = NULL;
+    object_t new = NULL;
 
     // TODO: implement copy on write
     return object;
 
-    // if (rf_object_rc(object) == 1)
+    // if (object_t_rc(object) == 1)
     //     return clone(object);
 
     // switch (object->type)
     // {
     // case TYPE_BOOL:
-    //     new = Bool(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_Bool(&new), as_Bool(object), object->adt->len);
+    //     new = Bool(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_Bool(&new), as_Bool(object), object->len);
     //     return new;
     // case TYPE_I64:
-    //     new = I64(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_I64(&new), as_I64(object), object->adt->len * sizeof(i64_t));
+    //     new = I64(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_I64(&new), as_I64(object), object->len * sizeof(i64_t));
     //     return new;
     // case TYPE_F64:
-    //     new = F64(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_F64(&new), as_F64(object), object->adt->len * sizeof(f64_t));
+    //     new = F64(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_F64(&new), as_F64(object), object->len * sizeof(f64_t));
     //     return new;
     // case TYPE_SYMBOL:
-    //     new = Symbol(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_Symbol(&new), as_Symbol(object), object->adt->len * sizeof(i64_t));
+    //     new = Symbol(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_Symbol(&new), as_Symbol(object), object->len * sizeof(i64_t));
     //     return new;
     // case TYPE_TIMESTAMP:
-    //     new = Timestamp(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_Timestamp(&new), as_Timestamp(object), object->adt->len * sizeof(i64_t));
+    //     new = Timestamp(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_Timestamp(&new), as_Timestamp(object), object->len * sizeof(i64_t));
     //     return new;
     // case TYPE_CHAR:
-    //     new = string(object->adt->len);
-    //     new.adt->attrs = object->adt->attrs;
-    //     memcpy(as_string(&new), as_string(object), object->adt->len);
+    //     new = string(object->len);
+    //     new.adt->attrs = object->attrs;
+    //     memcpy(as_string(&new), as_string(object), object->len);
     //     return new;
     // case TYPE_LIST:
-    //     l = object->adt->len;
+    //     l = object->len;
     //     new = list(l);
-    //     new.adt->attrs = object->adt->attrs;
+    //     new.adt->attrs = object->attrs;
     //     for (i = 0; i < l; i++)
     //         as_list(&new)[i] = cow(&as_list(object)[i]);
     //     return new;
     // case TYPE_DICT:
     //     as_list(object)[0] = cow(&as_list(object)[0]);
     //     as_list(object)[1] = cow(&as_list(object)[1]);
-    //     new.adt->attrs = object->adt->attrs;
+    //     new.adt->attrs = object->attrs;
     //     return new;
     // case TYPE_TABLE:
     //     new = table(cow(&as_list(object)[0]), cow(&as_list(object)[1]));
-    //     new.adt->attrs = object->adt->attrs;
+    //     new.adt->attrs = object->attrs;
     //     return new;
     // case TYPE_LAMBDA:
     //     return *object;
@@ -389,9 +405,9 @@ rf_object cow(rf_object object)
 }
 
 /*
- * Get the reference count of an rf_object_t
+ * Get the reference count of an rf_
  */
-i64_t rc(rf_object object)
+i64_t rc(object_t object)
 {
     i64_t rc;
     u16_t slaves = runtime_get()->slaves;

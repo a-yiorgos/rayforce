@@ -96,7 +96,7 @@ typedef struct guid_t
 /*
 * Generic type
 */ 
-typedef struct rf_object_t
+typedef struct object_t
 {
     type_t type;
     u8_t flags;
@@ -114,22 +114,22 @@ typedef struct rf_object_t
             str_t ptr;
         };
     };
-} *rf_object;
+} *object_t;
 
 // Constructors
-extern rf_object null();                                                     // create null
-extern rf_object atom(type_t type);                                          // create atom of type
-extern rf_object list(i64_t len, ...);                                       // create list
-extern rf_object vector(type_t type, i64_t len);                             // create vector of type
-extern rf_object bool(bool_t val);                                           // bool scalar
-extern rf_object i64(i64_t val);                                             // i64 scalar
-extern rf_object f64(f64_t val);                                             // f64 scalar
-extern rf_object symbol(str_t ptr);                                          // symbol
-extern rf_object symboli64(i64_t id);                                        // symbol from i64
-extern rf_object timestamp(i64_t val);                                       // timestamp
-extern rf_object guid(u8_t data[]);                                          // GUID
-extern rf_object schar(char_t c);                                            // char
-extern rf_object string(i64_t len);                                          // string 
+extern object_t null();                                                     // create null
+extern object_t atom(type_t type);                                          // create atom of type
+extern object_t list(i64_t len, ...);                                       // create list
+extern object_t vector(type_t type, i64_t len);                             // create vector of type
+extern object_t bool(bool_t val);                                           // bool scalar
+extern object_t i64(i64_t val);                                             // i64 scalar
+extern object_t f64(f64_t val);                                             // f64 scalar
+extern object_t symbol(str_t ptr);                                          // symbol
+extern object_t symboli64(i64_t id);                                        // symbol from i64
+extern object_t timestamp(i64_t val);                                       // timestamp
+extern object_t guid(u8_t data[]);                                          // GUID
+extern object_t schar(char_t c);                                            // char
+extern object_t string(i64_t len);                                          // string 
 
 #define Bool(len)      (vector(TYPE_BOOL,       len ))  // bool vector
 #define I64(len)       (vector(TYPE_I64,        len ))  // i64 vector
@@ -138,19 +138,19 @@ extern rf_object string(i64_t len);                                          // 
 #define Timestamp(len) (vector(TYPE_TIMESTAMP,  len ))  // char vector
 #define Guid(len)      (vector(TYPE_GUID,       len ))  // GUID vector
 
-extern rf_object table(rf_object keys, rf_object vals);                  // table
-extern rf_object dict(rf_object keys,  rf_object vals);                  // dict
+extern object_t table(object_t keys, object_t vals);                  // table
+extern object_t dict(object_t keys,  object_t vals);                  // dict
 
 // Reference counting   
-extern rf_object clone(rf_object object);                    // clone
-extern rf_object cow(rf_object   object);                    // clone if refcount > 1
-extern i64_t     rc(rf_object    object);                    // get refcount
+extern object_t clone(object_t object);                    // clone
+extern object_t cow(object_t   object);                    // clone if refcount > 1
+extern i64_t     rc(object_t    object);                    // get refcount
 
 // Error
-extern rf_object error(i8_t code, str_t message);
+extern object_t error(i8_t code, str_t message);
 
 // Destructor
-extern null_t drop(rf_object   object);
+extern null_t drop(object_t   object);
 
 // Accessors
 #define as_string(object)    ((object)->ptr)
@@ -160,20 +160,20 @@ extern null_t drop(rf_object   object);
 #define as_Symbol(object)    ((i64_t *)(as_string(object)))
 #define as_Timestamp(object) ((i64_t *)(as_string(object)))
 #define as_Guid(object)      ((guid_t *)(as_string(object)))
-#define as_list(object)      ((rf_object *)(as_string(object)))
+#define as_list(object)      ((object_t *)(as_string(object)))
 
 // Checkers
-extern bool_t is_null(rf_object object);
+extern bool_t is_null(object_t object);
 #define is_error(object)  ((object)->type == TYPE_ERROR)
 #define is_scalar(object) ((object)->type < 0)
 #define is_vector(object) ((object)->type > 0 && (object)->type < TYPE_TABLE)
 
 // Mutators
-extern rf_object vector_push(rf_object vector, rf_object object);
-extern rf_object vector_pop(rf_object  vector);
+extern object_t vector_push(object_t vector, object_t object);
+extern object_t vector_pop(object_t  vector);
 
 // Compare
-extern bool_t rf_object_eq(rf_object a, rf_object b);
+extern bool_t object_t_eq(object_t a, object_t b);
 
 #ifdef __cplusplus
 }

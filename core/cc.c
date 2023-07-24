@@ -43,10 +43,10 @@
 #define stack_malloc(size) alloca(size)
 #endif
 
-#define push_u8(c, x)                            \
-    {                                            \
-        vector_reserve((c), 1);                  \
-        as_string(c)[(c)->adt->len++] = (u8_t)x; \
+#define push_u8(c, x)                       \
+    {                                       \
+        vector_reserve((c), 1);             \
+        as_string(c)[(c)->len++] = (u8_t)x; \
     }
 
 #define push_opcode(c, k, v, x)                               \
@@ -54,50 +54,48 @@
         debuginfo_t *d = (c)->debuginfo;                      \
         debuginfo_t *p = &as_lambda(&(c)->lambda)->debuginfo; \
         span_t u = debuginfo_get(d, k);                       \
-        debuginfo_insert(p, (u32_t)(v)->adt->len, u);         \
+        debuginfo_insert(p, (u32_t)(v)->len, u);              \
         push_u8(v, x);                                        \
     }
 
-#define push_u64(c, x)                                                  \
-    {                                                                   \
-        str_t _p = align8(as_string(c) + (c)->adt->len);                \
-        u64_t _o = _p - (as_string(c) + (c)->adt->len) + sizeof(u64_t); \
-        vector_reserve((c), _o);                                        \
-        _p = align8(as_string(c) + (c)->adt->len);                      \
-        *(u64_t *)_p = (u64_t)x;                                        \
-        (c)->adt->len += _o;                                            \
+#define push_u64(c, x)                                             \
+    {                                                              \
+        str_t _p = align8(as_string(c) + (c)->len);                \
+        u64_t _o = _p - (as_string(c) + (c)->len) + sizeof(u64_t); \
+        vector_reserve((c), _o);                                   \
+        _p = align8(as_string(c) + (c)->len);                      \
+        *(u64_t *)_p = (u64_t)x;                                   \
+        (c)->len += _o;                                            \
     }
 
-#define push_const(c, k)                             \
-    {                                                \
-        lambda_t *_f = as_lambda(&(c)->lambda);      \
-        push_u64(&_f->code, _f->constants.adt->len); \
-        vector_push(&_f->constants, k);              \
+#define push_const(c, k)                         \
+    {                                            \
+        lambda_t *_f = as_lambda(&(c)->lambda);  \
+        push_u64(&_f->code, _f->constants->len); \
+        vector_push(&_f->constants, k);          \
     }
 
-#define cerr(c, i, t, e)                                            \
-    {                                                               \
-        drop(&(c)->lambda);                                         \
-        (c)->lambda = error(t, e);                                  \
-        (c)->lambda.adt->span = debuginfo_get((c)->debuginfo, (i)); \
-        return CC_ERROR;                                            \
+#define cerr(c, i, t, e)           \
+    {                              \
+        drop(&(c)->lambda);        \
+        (c)->lambda = error(t, e); \
+        return CC_ERROR;           \
     }
 
-#define ccerr(c, i, t, e)                                           \
-    {                                                               \
-        str_t m = e;                                                \
-        drop(&(c)->lambda);                                         \
-        (c)->lambda = error(t, m);                                  \
-        rf_free(m);                                                 \
-        (c)->lambda.adt->span = debuginfo_get((c)->debuginfo, (i)); \
-        return CC_ERROR;                                            \
+#define ccerr(c, i, t, e)          \
+    {                              \
+        str_t m = e;               \
+        drop(&(c)->lambda);        \
+        (c)->lambda = error(t, m); \
+        rf_free(m);                \
+        return CC_ERROR;           \
     }
 
-cc_result_t cc_compile_quote(bool_t has_consumer, cc_t *cc, rf_object object)
+cc_result_t cc_compile_quote(bool_t has_consumer, cc_t *cc, object_t object)
 {
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (!has_consumer)
     //     return CC_NULL;
@@ -108,12 +106,12 @@ cc_result_t cc_compile_quote(bool_t has_consumer, cc_t *cc, rf_object object)
     return CC_OK;
 }
 
-cc_result_t cc_compile_time(cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_time(cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 1)
     //     cerr(cc, car->id, ERR_LENGTH, "'time' takes one argument");
@@ -129,12 +127,12 @@ cc_result_t cc_compile_time(cc_t *cc, rf_object object, u32_t arity)
     return CC_OK;
 }
 
-cc_result_t cc_compile_set(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_set(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 2)
     //     cerr(cc, car->id, ERR_LENGTH, "'set' takes two arguments");
@@ -159,12 +157,12 @@ cc_result_t cc_compile_set(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     return CC_OK;
 }
 
-cc_result_t cc_compile_let(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_let(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 2)
     //     cerr(cc, car->id, ERR_LENGTH, "'let' takes two arguments");
@@ -188,11 +186,11 @@ cc_result_t cc_compile_let(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     return CC_OK;
 }
 
-cc_result_t cc_compile_fn(cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_fn(cc_t *cc, object_t object, u32_t arity)
 {
-    // rf_object car = &as_list(object)[0], *b, fun;
+    // object_t car = &as_list(object)[0], *b, fun;
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity < 2)
     //     cerr(cc, car->id, ERR_LENGTH, "'fn' expects vector of symbols with lambda arguments and a list body");
@@ -216,13 +214,13 @@ cc_result_t cc_compile_fn(cc_t *cc, rf_object object, u32_t arity)
     return CC_OK;
 }
 
-cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
     // i64_t lbl1, lbl2;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity < 2 || arity > 3)
     //     cerr(cc, car->id, ERR_LENGTH, "'if' expects 2 .. 3 arguments");
@@ -234,7 +232,7 @@ cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object object, u32
 
     // push_opcode(cc, car->id, code, OP_JNE);
     // push_u64(code, 0);
-    // lbl1 = code->adt->len - sizeof(u64_t);
+    // lbl1 = code->len - sizeof(u64_t);
 
     // // true branch
     // res = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
@@ -247,8 +245,8 @@ cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object object, u32
     // {
     //     push_opcode(cc, car->id, code, OP_JMP);
     //     push_u64(code, 0);
-    //     lbl2 = code->adt->len - sizeof(u64_t);
-    //     *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
+    //     lbl2 = code->len - sizeof(u64_t);
+    //     *(u64_t *)(as_string(code) + lbl1) = code->len;
 
     //     // false branch
     //     res = cc_compile_expr(has_consumer, cc, &as_list(object)[3]);
@@ -256,28 +254,28 @@ cc_result_t cc_compile_cond(bool_t has_consumer, cc_t *cc, rf_object object, u32
     //     if (res == CC_ERROR)
     //         return CC_ERROR;
 
-    //     *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
+    //     *(u64_t *)(as_string(code) + lbl2) = code->len;
     // }
     // else
-    //     *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
+    //     *(u64_t *)(as_string(code) + lbl1) = code->len;
 
     return CC_OK;
 }
 
-cc_result_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_try(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
     // i64_t lbl1, lbl2;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 2)
     //     cerr(cc, car->id, ERR_LENGTH, "'try': expects 2 arguments");
 
     // push_opcode(cc, car->id, code, OP_TRY);
     // push_u64(code, 0);
-    // lbl1 = code->adt->len - sizeof(u64_t);
+    // lbl1 = code->len - sizeof(u64_t);
 
     // // compile expression under trap
     // res = cc_compile_expr(true, cc, &as_list(object)[1]);
@@ -287,9 +285,9 @@ cc_result_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object object, u32_
 
     // push_opcode(cc, car->id, code, OP_JMP);
     // push_u64(code, 0);
-    // lbl2 = code->adt->len - sizeof(u64_t);
+    // lbl2 = code->len - sizeof(u64_t);
 
-    // *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
+    // *(u64_t *)(as_string(code) + lbl1) = code->len;
 
     // // compile expression under catch
     // res = cc_compile_expr(has_consumer, cc, &as_list(object)[2]);
@@ -297,17 +295,17 @@ cc_result_t cc_compile_try(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     // if (res == CC_ERROR)
     //     return CC_ERROR;
 
-    // *(u64_t *)(as_string(code) + lbl2) = code->adt->len;
+    // *(u64_t *)(as_string(code) + lbl2) = code->len;
 
     return CC_OK;
 }
 
-cc_result_t cc_compile_throw(cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_throw(cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 1)
     //     cerr(cc, car->id, ERR_LENGTH, "'throw': expects 1 argument");
@@ -322,11 +320,11 @@ cc_result_t cc_compile_throw(cc_t *cc, rf_object object, u32_t arity)
     return CC_OK;
 }
 
-type_t cc_compile_catch(cc_t *cc, rf_object object, u32_t arity)
+type_t cc_compile_catch(cc_t *cc, object_t object, u32_t arity)
 {
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 0)
     //     cerr(cc, car->id, ERR_LENGTH, "'catch': expects 0 arguments");
@@ -336,10 +334,10 @@ type_t cc_compile_catch(cc_t *cc, rf_object object, u32_t arity)
     return CC_OK;
 }
 
-cc_result_t cc_compile_call(cc_t *cc, rf_object car, u8_t arity)
+cc_result_t cc_compile_call(cc_t *cc, object_t car, u8_t arity)
 {
     // cc_result_t res;
-    // rf_object code = &as_lambda(&cc->lambda)->code, rec;
+    // object_t code = &as_lambda(&cc->lambda)->code, rec;
 
     // rec = dict_get(&runtime_get()->env.functions, car);
 
@@ -385,12 +383,12 @@ cc_result_t cc_compile_call(cc_t *cc, rf_object car, u8_t arity)
     return CC_OK;
 }
 
-cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res = CC_NULL;
-    // rf_object car;
+    // object_t car;
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
     // i64_t i, lbl0, lbl1;
 
     // if (arity < 2)
@@ -418,10 +416,10 @@ cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     // push_u8(code, arity);
 
     // // check if iteration is done
-    // lbl0 = code->adt->len;
+    // lbl0 = code->len;
     // push_opcode(cc, car->id, code, OP_JNE);
     // push_u64(code, 0);
-    // lbl1 = code->adt->len - sizeof(u64_t);
+    // lbl1 = code->len - sizeof(u64_t);
 
     // push_opcode(cc, car->id, code, OP_MAP);
     // push_u8(code, arity);
@@ -437,7 +435,7 @@ cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     // push_opcode(cc, car->id, code, OP_JMP);
     // push_u64(code, lbl0);
 
-    // *(u64_t *)(as_string(code) + lbl1) = code->adt->len;
+    // *(u64_t *)(as_string(code) + lbl1) = code->len;
 
     // // pop arguments
     // for (i = 0; i < arity; i++)
@@ -449,7 +447,7 @@ cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, rf_object object, u32_
     return CC_OK;
 }
 
-null_t find_used_symbols(rf_object lst, rf_object syms)
+null_t find_used_symbols(object_t lst, object_t syms)
 {
     // i64_t i, l;
 
@@ -460,7 +458,7 @@ null_t find_used_symbols(rf_object lst, rf_object syms)
     //         vector_push(syms, *lst);
     //     return;
     // case TYPE_LIST:
-    //     l = lst->adt->len;
+    //     l = lst->len;
     //     if (l == 0)
     //         return;
     //     for (i = 0; i < l; i++)
@@ -469,17 +467,15 @@ null_t find_used_symbols(rf_object lst, rf_object syms)
     // default:
     //     return;
     // }
-
-    return null();
 }
 
-cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
     // i64_t i, l;
-    // rf_object car, *params, key, val, cols, syms, k, v;
+    // object_t car, *params, key, val, cols, syms, k, v;
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
     // bool_t groupby = false, map = false;
 
     // car = &as_list(object)[0];
@@ -492,7 +488,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object object, u
     // if (params->type != TYPE_DICT)
     //     cerr(cc, car->id, ERR_LENGTH, "'select' takes dict of params");
 
-    // l = as_list(params)[0].adt->len;
+    // l = as_list(params)[0]->len;
 
     // // compile table
     // key = symboli64(KW_FROM);
@@ -704,7 +700,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object object, u
     //     }
 
     //     push_opcode(cc, car->id, code, OP_CALLN);
-    //     push_opcode(cc, car->id, code, (u8_t)cols.adt->len);
+    //     push_opcode(cc, car->id, code, (u8_t)cols->len);
     //     push_opcode(cc, car->id, code, 0);
     //     push_u64(code, rf_list);
 
@@ -721,12 +717,12 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, rf_object object, u
     return CC_OK;
 }
 
-cc_result_t cc_compile_eval(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_eval(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 1)
     //     cerr(cc, car->id, ERR_LENGTH, "'eval' takes one argument");
@@ -744,12 +740,12 @@ cc_result_t cc_compile_eval(bool_t has_consumer, cc_t *cc, rf_object object, u32
     return CC_OK;
 }
 
-cc_result_t cc_compile_load(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_load(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
     // cc_result_t res;
-    // rf_object car = &as_list(object)[0];
+    // object_t car = &as_list(object)[0];
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
 
     // if (arity != 1)
     //     cerr(cc, car->id, ERR_LENGTH, "'load' takes one argument");
@@ -773,9 +769,9 @@ cc_result_t cc_compile_load(bool_t has_consumer, cc_t *cc, rf_object object, u32
  * return TYPE_NONE if it is not a special form
  * return type of the special form if it is a special form
  */
-cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object object, u32_t arity)
+cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, object_t object, u32_t arity)
 {
-    rf_object car = &as_list(object)[0];
+    object_t car = &as_list(object)[0];
 
     switch (car->i64)
     {
@@ -808,13 +804,13 @@ cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, rf_object ob
     }
 }
 
-cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object object)
+cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, object_t object)
 {
-    // rf_object car;
+    // object_t car;
     // u32_t i, arity;
     // i64_t id;
     // lambda_t *func = as_lambda(&cc->lambda);
-    // rf_object code = &func->code;
+    // object_t code = &func->code;
     // cc_result_t res = CC_NULL;
 
     // switch (object->type)
@@ -846,10 +842,10 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object object)
     //     // try to search in the lambda args
     //     id = vector_find(&func->args, object);
 
-    //     if (id < (i64_t)func->args.adt->len)
+    //     if (id < (i64_t)func->args->len)
     //     {
     //         push_opcode(cc, object->id, code, OP_LOAD);
-    //         push_u64(code, -(func->args.adt->len - id + 1));
+    //         push_u64(code, -(func->args->len - id + 1));
     //         func->stack_size++;
 
     //         return CC_OK;
@@ -864,11 +860,11 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object object)
     //     return CC_OK;
 
     // case TYPE_LIST:
-    //     if (object->adt->len == 0)
+    //     if (object->len == 0)
     //         goto other;
 
     //     car = &as_list(object)[0];
-    //     arity = object->adt->len - 1;
+    //     arity = object->len - 1;
 
     //     // special forms compilation need to be done before arguments compilation
     //     res = cc_compile_special_forms(has_consumer, cc, object, arity);
@@ -913,8 +909,8 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, rf_object object)
 /*
  * Compile lambda
  */
-rf_object cc_compile_lambda(bool_t top, str_t name, rf_object args,
-                            rf_object *body, u32_t id, i32_t len, debuginfo_t *debuginfo)
+object_t cc_compile_lambda(bool_t top, str_t name, object_t args,
+                           object_t body, u32_t id, i32_t len, debuginfo_t *debuginfo)
 {
     debuginfo_t *pi, di;
 
@@ -938,7 +934,7 @@ rf_object cc_compile_lambda(bool_t top, str_t name, rf_object args,
     //     cc_result_t res;
     //     i32_t i = 0;
     //     lambda_t *func = as_lambda(&cc.lambda);
-    //     rf_object code = &func->code, *b;
+    //     object_t code = &func->code, *b;
 
     //     if (len == 0)
     //     {
@@ -978,10 +974,10 @@ rf_object cc_compile_lambda(bool_t top, str_t name, rf_object args,
 /*
  * Compile top level expression
  */
-rf_object cc_compile(rf_object body, debuginfo_t *debuginfo)
+object_t cc_compile(object_t body, debuginfo_t *debuginfo)
 {
     str_t msg;
-    rf_object err;
+    object_t err;
 
     if (body->type != TYPE_LIST)
     {
@@ -991,7 +987,7 @@ rf_object cc_compile(rf_object body, debuginfo_t *debuginfo)
         return err;
     }
 
-    rf_object b = as_list(body);
+    object_t b = as_list(body);
     i32_t len = body->len;
 
     return cc_compile_lambda(true, "top-level", Symbol(0), b, body->id, len, debuginfo);

@@ -35,10 +35,10 @@
 typedef enum vm_opcode_t
 {
     OP_HALT = 0,  // Halt the VM
-    OP_PUSH,      // Push an rf_object to the stack
-    OP_POP,       // Pop an rf_object from the stack
-    OP_SWAP,      // Swap two rf_objects on the stack
-    OP_DUP,       // Duplicate an rf_object on the stack
+    OP_PUSH,      // Push an object_t to the stack
+    OP_POP,       // Pop an object_t from the stack
+    OP_SWAP,      // Swap two object_ts on the stack
+    OP_DUP,       // Duplicate an object_t on the stack
     OP_JNE,       // Jump if not equal
     OP_JMP,       // Jump
     OP_CALL1,     // Call unary
@@ -58,7 +58,7 @@ typedef enum vm_opcode_t
     OP_CATCH,     // Catch an error from vm register and push it onto the stack
     OP_THROW,     // Throw an error
     OP_TRACE,     // Print stack trace (limit)
-    OP_ALLOC,     // Allocate rf_object
+    OP_ALLOC,     // Allocate object_t
     OP_MAP,       // Map lambda over array
     OP_COLLECT,   // Collect array of results
     OP_EVAL,      // Compile/evaluate list of expressions as a lambda
@@ -69,18 +69,18 @@ typedef enum vm_opcode_t
 
 typedef struct vm_t
 {
-    i8_t halted;      // Halt flag
-    u8_t trace;       // Trace flag (print stack trace on error limited to n frames)
-    i32_t ip;         // Instruction pointer
-    i32_t sp;         // Stack pointer
-    i32_t bp;         // Base pointer (beginning on stack frame)
-    i64_t timer;      // Timer for execution time
-    rf_object *stack; // Stack of arguments
+    i8_t halted;     // Halt flag
+    u8_t trace;      // Trace flag (print stack trace on error limited to n frames)
+    i32_t ip;        // Instruction pointer
+    i32_t sp;        // Stack pointer
+    i32_t bp;        // Base pointer (beginning on stack frame)
+    i64_t timer;     // Timer for execution time
+    object_t *stack; // Stack of arguments
 } vm_t;
 
 vm_t vm_new();
-rf_object vm_exec(vm_t *vm, rf_object fun) __attribute__((__noinline__));
+object_t vm_exec(vm_t *vm, object_t fun) __attribute__((__noinline__));
 null_t vm_free(vm_t *vm);
-str_t vm_code_fmt(rf_object fun);
+str_t vm_code_fmt(object_t fun);
 
 #endif

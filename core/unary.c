@@ -40,10 +40,10 @@
 #include "cc.h"
 
 // Atomic unary functions (iterates through list of argumen items down to atoms)
-rf_object rf_call_unary_atomic(unary_t f, rf_object x)
+object_t rf_call_unary_atomic(unary_t f, object_t x)
 {
     i64_t i, l;
-    rf_object res = NULL, item = NULL;
+    object_t res = NULL, item = NULL;
 
     // argument is a list, so iterate through it
     if (x->type == TYPE_LIST)
@@ -87,7 +87,7 @@ rf_object rf_call_unary_atomic(unary_t f, rf_object x)
     return f(x);
 }
 
-rf_object rf_call_unary(u8_t flags, unary_t f, rf_object x)
+object_t rf_call_unary(u8_t flags, unary_t f, object_t x)
 {
     switch (flags)
     {
@@ -98,22 +98,22 @@ rf_object rf_call_unary(u8_t flags, unary_t f, rf_object x)
     }
 }
 
-rf_object rf_get_variable(rf_object x)
+object_t rf_get_variable(object_t x)
 {
-    rf_object v = dict_get(&runtime_get()->env.variables, x);
+    object_t v = dict_get(&runtime_get()->env.variables, x);
     if (is_null(v))
         return error(ERR_NOT_FOUND, "symbol not found");
 
     return v;
 }
 
-rf_object rf_type(rf_object x)
+object_t rf_type(object_t x)
 {
     i64_t t = env_get_typename_by_type(&runtime_get()->env, x->type);
     return symboli64(t);
 }
 
-rf_object rf_count(rf_object x)
+object_t rf_count(object_t x)
 {
     if (is_vector(x))
         return i64(x->len);
@@ -127,14 +127,14 @@ rf_object rf_count(rf_object x)
     }
 }
 
-rf_object rf_til(rf_object x)
+object_t rf_til(object_t x)
 {
     if (MTYPE(x->type) != MTYPE(-TYPE_I64))
         return error(ERR_TYPE, "til: expected i64");
 
     i32_t i, l = (i32_t)x->i64;
     i64_t *v;
-    rf_object vec = NULL;
+    object_t vec = NULL;
 
     vec = I64(l);
 
@@ -147,9 +147,9 @@ rf_object rf_til(rf_object x)
     return vec;
 }
 
-rf_object rf_distinct(rf_object x)
+object_t rf_distinct(object_t x)
 {
-    rf_object res = NULL;
+    object_t res = NULL;
 
     switch (MTYPE(x->type))
     {
@@ -164,7 +164,7 @@ rf_object rf_distinct(rf_object x)
     }
 }
 
-rf_object rf_group(rf_object x)
+object_t rf_group(object_t x)
 {
     if (MTYPE(x->type) != MTYPE(TYPE_I64))
         return error(ERR_TYPE, "group: expected I64");
@@ -172,7 +172,7 @@ rf_object rf_group(rf_object x)
     return rf_group_I64(x);
 }
 
-rf_object rf_sum(rf_object x)
+object_t rf_sum(object_t x)
 {
     i32_t i;
     i64_t l, isum = 0, *iv;
@@ -216,7 +216,7 @@ rf_object rf_sum(rf_object x)
     }
 }
 
-rf_objectrf_avg(rf_object*x)
+object_t rf_avg(object_t x)
 {
     i32_t i;
     i64_t l, isum, *iv, n = 0;
@@ -225,11 +225,11 @@ rf_objectrf_avg(rf_object*x)
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
         iv = as_I64(x);
         isum = 0;
         // vectorized version when we exactly know that there are no nulls
-        if (x->adt->attrs.flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
         {
             for (i = 0; i < l; i++)
                 isum += iv[i];
@@ -248,7 +248,7 @@ rf_objectrf_avg(rf_object*x)
         return f64((f64_t)isum / (l - n));
 
     case MTYPE(TYPE_F64):
-        l = x->adt->len;
+        l = x->len;
         fv = as_F64(x);
         fsum = 0;
         for (i = 0; i < l; i++)
@@ -261,7 +261,7 @@ rf_objectrf_avg(rf_object*x)
     }
 }
 
-rf_objectrf_min(rf_object*x)
+object_t rf_min(object_t x)
 {
     i32_t i;
     i64_t l, imin, *iv;
@@ -270,7 +270,7 @@ rf_objectrf_min(rf_object*x)
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
 
         if (!l)
             return i64(NULL_I64);
@@ -278,11 +278,11 @@ rf_objectrf_min(rf_object*x)
         iv = as_I64(x);
         imin = iv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->adt->attrs.flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
         {
-            if (x->adt->attrs.flags & VEC_ATTR_ASC)
+            if (x->flags & VEC_ATTR_ASC)
                 return i64(iv[0]);
-            if (x->adt->attrs.flags & VEC_ATTR_DESC)
+            if (x->flags & VEC_ATTR_DESC)
                 return i64(iv[l - 1]);
             imin = iv[0];
             for (i = 1; i < l; i++)
@@ -310,7 +310,7 @@ rf_objectrf_min(rf_object*x)
         return i64(imin);
 
     case MTYPE(TYPE_F64):
-        l = x->adt->len;
+        l = x->len;
 
         if (!l)
             return f64(NULL_F64);
@@ -318,11 +318,11 @@ rf_objectrf_min(rf_object*x)
         fv = as_F64(x);
         fmin = fv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->adt->attrs.flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
         {
-            if (x->adt->attrs.flags & VEC_ATTR_ASC)
+            if (x->flags & VEC_ATTR_ASC)
                 return f64(fv[0]);
-            if (x->adt->attrs.flags & VEC_ATTR_DESC)
+            if (x->flags & VEC_ATTR_DESC)
                 return f64(fv[l - 1]);
             fmin = fv[0];
             for (i = 1; i < l; i++)
@@ -342,7 +342,7 @@ rf_objectrf_min(rf_object*x)
     }
 }
 
-rf_objectrf_max(rf_object*x)
+object_t rf_max(object_t x)
 {
     i32_t i;
     i64_t l, imax, *iv;
@@ -350,7 +350,7 @@ rf_objectrf_max(rf_object*x)
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
 
         if (!l)
             return i64(NULL_I64);
@@ -358,11 +358,11 @@ rf_objectrf_max(rf_object*x)
         iv = as_I64(x);
         imax = iv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->adt->attrs.flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
         {
-            if (x->adt->attrs.flags & VEC_ATTR_ASC)
+            if (x->flags & VEC_ATTR_ASC)
                 return i64(iv[l - 1]);
-            if (x->adt->attrs.flags & VEC_ATTR_DESC)
+            if (x->flags & VEC_ATTR_DESC)
                 return i64(iv[0]);
             imax = iv[0];
             for (i = 1; i < l; i++)
@@ -394,11 +394,11 @@ rf_objectrf_max(rf_object*x)
     }
 }
 
-rf_objectrf_not(rf_object*x)
+object_t rf_not(object_t x)
 {
     i32_t i;
     i64_t l;
-    rf_objectres;
+    object_t res;
 
     switch (MTYPE(x->type))
     {
@@ -406,10 +406,10 @@ rf_objectrf_not(rf_object*x)
         return bool(!x->bool);
 
     case MTYPE(TYPE_BOOL):
-        l = x->adt->len;
+        l = x->len;
         res = Bool(l);
         for (i = 0; i < l; i++)
-            as_Bool(&res)[i] = !as_Bool(x)[i];
+            as_Bool(res)[i] = !as_Bool(x)[i];
 
         return res;
 
@@ -418,7 +418,7 @@ rf_objectrf_not(rf_object*x)
     }
 }
 
-rf_objectrf_iasc(rf_object*x)
+object_t rf_iasc(object_t x)
 {
     switch (MTYPE(x->type))
     {
@@ -430,7 +430,7 @@ rf_objectrf_iasc(rf_object*x)
     }
 }
 
-rf_objectrf_idesc(rf_object*x)
+object_trf_idesc(object_t x)
 {
     switch (MTYPE(x->type))
     {
@@ -442,19 +442,19 @@ rf_objectrf_idesc(rf_object*x)
     }
 }
 
-rf_objectrf_asc(rf_object*x)
+object_t rf_asc(object_t x)
 {
-    rf_objectidx = rf_sort_asc(x);
+    object_t idx = rf_sort_asc(x);
     i64_t l, i;
 
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
         for (i = 0; i < l; i++)
-            as_I64(&idx)[i] = as_I64(x)[as_I64(&idx)[i]];
+            as_I64(idx)[i] = as_I64(x)[as_I64(idx)[i]];
 
-        idx.adt->attrs.flags |= VEC_ATTR_ASC;
+        idx->flags |= VEC_ATTR_ASC;
 
         return idx;
 
@@ -463,19 +463,19 @@ rf_objectrf_asc(rf_object*x)
     }
 }
 
-rf_objectrf_desc(rf_object*x)
+object_t rf_desc(object_t x)
 {
-    rf_objectidx = rf_sort_desc(x);
+    object_t idx = rf_sort_desc(x);
     i64_t l, i;
 
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
         for (i = 0; i < l; i++)
-            as_I64(&idx)[i] = as_I64(x)[as_I64(&idx)[i]];
+            as_I64(idx)[i] = as_I64(x)[as_I64(idx)[i]];
 
-        idx.adt->attrs.flags |= VEC_ATTR_DESC;
+        idx->flags |= VEC_ATTR_DESC;
 
         return idx;
 
@@ -484,10 +484,10 @@ rf_objectrf_desc(rf_object*x)
     }
 }
 
-rf_objectrf_guid_generate(rf_object*x)
+object_t rf_guid_generate(object_t x)
 {
     i64_t i, count;
-    rf_objectvec;
+    object_t vec;
     guid_t *g;
 
     switch (MTYPE(x->type))
@@ -495,7 +495,7 @@ rf_objectrf_guid_generate(rf_object*x)
     case MTYPE(-TYPE_I64):
         count = x->i64;
         vec = Guid(count);
-        g = as_Guid(&vec);
+        g = as_Guid(vec);
 
         for (i = 0; i < count; i++)
             guid_generate(g + i);
@@ -507,9 +507,9 @@ rf_objectrf_guid_generate(rf_object*x)
     }
 }
 
-rf_objectrf_neg(rf_object*x)
+object_t rf_neg(object_t x)
 {
-    rf_objectres;
+    object_t res;
     i64_t i, l;
 
     switch (MTYPE(x->type))
@@ -521,16 +521,16 @@ rf_objectrf_neg(rf_object*x)
     case MTYPE(-TYPE_F64):
         return f64(-x->f64);
     case MTYPE(TYPE_I64):
-        l = x->adt->len;
+        l = x->len;
         res = I64(l);
         for (i = 0; i < l; i++)
-            as_I64(&res)[i] = -as_I64(x)[i];
+            as_I64(res)[i] = -as_I64(x)[i];
         return res;
     case MTYPE(TYPE_F64):
-        l = x->adt->len;
+        l = x->len;
         res = F64(l);
         for (i = 0; i < l; i++)
-            as_F64(&res)[i] = -as_F64(x)[i];
+            as_F64(res)[i] = -as_F64(x)[i];
         return res;
 
     default:
@@ -538,20 +538,20 @@ rf_objectrf_neg(rf_object*x)
     }
 }
 
-rf_objectrf_where(rf_object*x)
+object_trf_where(object_t x)
 {
     i32_t i, j = 0;
     i64_t l, *ov;
     bool_t *iv;
-    rf_objectres;
+    object_t res;
 
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_BOOL):
-        l = x->adt->len;
+        l = x->len;
         iv = as_Bool(x);
         res = I64(l);
-        ov = as_I64(&res);
+        ov = as_I64(res);
         for (i = 0; i < l; i++)
             if (iv[i])
                 ov[j++] = i;
@@ -565,7 +565,7 @@ rf_objectrf_where(rf_object*x)
     }
 }
 
-rf_objectrf_key(rf_object*x)
+object_t rf_key(object_t x)
 {
     switch (MTYPE(x->type))
     {
@@ -577,7 +577,7 @@ rf_objectrf_key(rf_object*x)
     }
 }
 
-rf_objectrf_value(rf_object*x)
+object_trf_value(object_t x)
 {
     switch (MTYPE(x->type))
     {
@@ -589,11 +589,11 @@ rf_objectrf_value(rf_object*x)
     }
 }
 
-rf_objectrf_fread(rf_object*x)
+object_t rf_fread(object_t x)
 {
     i64_t fd, size;
     str_t fmsg;
-    rf_objectres, err;
+    object_t res, err;
 
     switch (MTYPE(x->type))
     {
@@ -606,7 +606,7 @@ rf_objectrf_fread(rf_object*x)
             fmsg = str_fmt(0, "file: '%s' does not exist", as_string(x));
             err = error(ERR_NOT_EXIST, fmsg);
             rf_free(fmsg);
-            err.id = x->id;
+            err->id = x->id;
             return err;
         }
 
@@ -614,13 +614,13 @@ rf_objectrf_fread(rf_object*x)
 
         res = string(size);
 
-        if (read(fd, as_string(&res), size) != size)
+        if (read(fd, as_string(res), size) != size)
         {
             fmsg = str_fmt(0, "file: '%s' read error", as_string(x));
             err = error(ERR_IO, fmsg);
             rf_free(fmsg);
             close(fd);
-            err.id = x->id;
+            err->id = x->id;
             return err;
         }
 
@@ -632,10 +632,10 @@ rf_objectrf_fread(rf_object*x)
     }
 }
 
-rf_objectrf_parse(rf_object*x)
+object_t rf_parse(object_t x)
 {
     parser_t parser;
-    rf_objectres;
+    object_t res;
 
     switch (MTYPE(x->type))
     {
@@ -649,31 +649,31 @@ rf_objectrf_parse(rf_object*x)
     }
 }
 
-rf_objectrf_read_parse_compile(rf_object*x)
+object_t rf_read_parse_compile(object_t x)
 {
     parser_t parser;
-    rf_objectred, par, com;
+    object_t red, par, com;
 
     switch (MTYPE(x->type))
     {
     case MTYPE(TYPE_CHAR):
         red = rf_fread(x);
-        if (red.type == TYPE_ERROR)
+        if (red->type == TYPE_ERROR)
             return red;
 
         parser = parser_new();
-        par = parse(&parser, as_string(x), as_string(&red));
+        par = parse(&parser, as_string(x), as_string(red));
         drop(&red);
 
-        if (par.type == TYPE_ERROR)
+        if (par->type == TYPE_ERROR)
         {
-            print_error(&par, as_string(x), as_string(&red), red.adt->len);
+            print_error(&par, as_string(x), as_string(red), red->len);
             parser_free(&parser);
             return par;
         }
 
         com = cc_compile_lambda(false, as_string(x), Symbol(0),
-                                as_list(&par), par.id, par.adt->len, &parser.debuginfo);
+                                as_list(par), par->id, par->len, &parser.debuginfo);
         drop(&par);
         parser_free(&parser);
 
