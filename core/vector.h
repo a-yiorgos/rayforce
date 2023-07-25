@@ -53,7 +53,7 @@ obj_t rf_enlist(obj_t x, u32_t n);
 
 nil_t vector_reserve(obj_t vec, u32_t len);
 nil_t vector_grow(obj_t vec, u32_t len);
-nil_t shrink(obj_t vec, u32_t len);
+obj_t shrink(obj_t *obj, u32_t len);
 nil_t vector_free(obj_t vec);
 nil_t vector_clear(obj_t vec);
 

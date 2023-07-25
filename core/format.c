@@ -315,9 +315,6 @@ i32_t list_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
 
 i32_t string_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t obj)
 {
-    if (obj->ptr == NULL)
-        return str_fmt_into(dst, len, offset, limit, "\"\"");
-
     i32_t n = str_fmt_into(dst, len, offset, limit, "\"%s\"", as_string(obj));
 
     if (n > limit)

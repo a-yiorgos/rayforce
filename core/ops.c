@@ -148,8 +148,6 @@ bool_t rfi_as_vector_bool(obj_t x)
     case TYPE_F64:
     case TYPE_CHAR:
     case TYPE_LIST:
-        if (x->ptr == NULL)
-            return false;
         return x->len != 0;
     default:
         return false;

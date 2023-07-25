@@ -27,45 +27,6 @@
 #include "format.h"
 #include "env.h"
 
-i32_t size_of(type_t type)
-{
-    switch (type)
-    {
-    case TYPE_BOOL:
-        return sizeof(bool_t);
-    case TYPE_I64:
-    case TYPE_SYMBOL:
-    case TYPE_TIMESTAMP:
-        return sizeof(i64_t);
-    case TYPE_F64:
-        return sizeof(f64_t);
-    case TYPE_GUID:
-        return sizeof(guid_t);
-    case TYPE_CHAR:
-        return sizeof(char_t);
-    case TYPE_LIST:
-        return sizeof(obj_t);
-    default:
-        panic(str_fmt(0, "sizeof: unknown type: %d", type));
-    }
-}
-
-/*
- * Creates new vector of type
- */
-obj_t vector(type_t type, i64_t len)
-{
-    i32_t size = len * size_of(type);
-    obj_t vec = heap_malloc(sizeof(struct obj_t));
-
-    vec->type = type;
-    vec->rc = 1;
-    vec->len = len;
-    vec->ptr = heap_malloc(size);
-
-    return vec;
-}
-
 // obj_t vector_push(obj_t vec, obj_t value)
 // {
 //     u64_t i, l;
@@ -479,35 +440,37 @@ obj_t rf_enlist(obj_t x, u32_t n)
     return l;
 }
 
-nil_t shrink(obj_t obj, u32_t len)
+obj_t shrink(obj_t *obj, u32_t len)
 {
-    debug_assert(is_vector(obj));
+    debug_assert(is_vector(*obj));
 
-    if (obj->len == len)
+    if ((*obj)->len == len)
         return;
 
     // calculate size of vector with new length
-    i64_t new_size = len * size_of(obj->type);
+    i64_t new_size = len * size_of((*obj)->type) + sizeof(struct obj_t);
 
-    heap_realloc(obj->ptr, new_size);
-    obj->len = len;
+    *obj = heap_realloc(*obj, new_size);
+    (*obj)->len = len;
+
+    return *obj;
 }
 
-obj_t join_raw(obj_t obj, nil_t *val)
+obj_t join_raw(obj_t *obj, nil_t *val)
 {
     i64_t occup, req;
-    i32_t size = size_of(obj->type);
+    i32_t size = size_of((*obj)->type);
 
-    occup = obj->len * size;
+    occup = (*obj)->len * size + sizeof(struct obj_t);
     req = occup + size;
-    obj->ptr = heap_realloc(obj->ptr, req);
-    memcpy(obj->ptr + occup, &val, size);
-    obj->len++;
+    *obj = heap_realloc(*obj, req);
+    memcpy((*obj)->arr + occup, &val, size);
+    (*obj)->len++;
 
     return obj;
 }
 
-obj_t join_obj(obj_t obj, obj_t val)
+obj_t join_obj(obj_t *obj, obj_t val)
 {
     obj_t lst = NULL;
     u64_t i, l;
@@ -533,7 +496,7 @@ obj_t join_obj(obj_t obj, obj_t val)
     return join_raw(obj, val);
 }
 
-obj_t join_sym(obj_t obj, str_t str)
+obj_t join_sym(obj_t *obj, str_t str)
 {
     i64_t sym = intern_symbol(str, strlen(str));
     return join_raw(obj, sym);

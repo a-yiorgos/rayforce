@@ -27,8 +27,8 @@
 
 obj_t lambda(obj_t args, obj_t code, debuginfo_t debuginfo)
 {
-    obj_t obj = heap_malloc(sizeof(struct obj_t));
-    lambda_t *f = (lambda_t *)heap_malloc(sizeof(lambda_t));
+    obj_t obj = heap_malloc(sizeof(struct obj_t) + sizeof(lambda_t));
+    lambda_t *f = (lambda_t *)obj->arr;
 
     f->args = args;
     f->locals = list(0);
@@ -39,7 +39,6 @@ obj_t lambda(obj_t args, obj_t code, debuginfo_t debuginfo)
 
     obj->type = TYPE_LAMBDA;
     obj->rc = 1;
-    obj->ptr = f;
 
     return obj;
 }

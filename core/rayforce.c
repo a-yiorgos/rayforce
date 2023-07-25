@@ -33,7 +33,7 @@
 #include "string.h"
 #include "runtime.h"
 
-CASSERT(sizeof(struct obj_t) == 32, rayforce_h)
+CASSERT(sizeof(struct obj_t) == 16, rayforce_h)
 
 obj_t atom(type_t type)
 {
@@ -45,20 +45,30 @@ obj_t atom(type_t type)
     return a;
 }
 
+obj_t vector(type_t type, i64_t len)
+{
+    obj_t vec = (obj_t)heap_malloc(sizeof(struct obj_t) + len * size_of(type));
+
+    vec->type = type;
+    vec->rc = 1;
+    vec->len = len;
+
+    return vec;
+}
+
 obj_t list(i64_t len, ...)
 {
     i32_t i;
-    obj_t l = (obj_t)heap_malloc(sizeof(struct obj_t));
+    obj_t l = (obj_t)heap_malloc(sizeof(obj_t) * len + sizeof(struct obj_t));
+    va_list args;
 
     l->type = TYPE_LIST;
     l->rc = 1;
-    l->ptr = heap_malloc(sizeof(obj_t) * len);
 
-    va_list args;
     va_start(args, len);
 
     for (i = 0; i < len; i++)
-        l->ptr[i] = va_arg(args, obj_t);
+        l->arr[i] = va_arg(args, obj_t);
 
     va_end(args);
 
@@ -67,11 +77,13 @@ obj_t list(i64_t len, ...)
 
 obj_t error(i8_t code, str_t message)
 {
-    obj_t err = heap_malloc(sizeof(struct obj_t));
+    i32_t len = strlen(message);
+    obj_t err = heap_malloc(sizeof(struct obj_t) + len + 1);
 
     err->type = TYPE_ERROR;
-    err->len = strlen(message);
-    err->ptr = message;
+    err->len = len;
+    err->rc = 1;
+    strcpy(err->arr, message);
 
     return err;
 }
@@ -318,30 +330,21 @@ nil_t __attribute__((hot)) drop(obj_t obj)
     case TYPE_TIMESTAMP:
     case TYPE_CHAR:
         if (rc == 0)
-        {
-            heap_free(obj->ptr);
             heap_free(obj);
-        }
         return;
     case TYPE_LIST:
         l = obj->len;
         for (i = 0; i < l; i++)
             drop(as_list(obj)[i]);
         if (rc == 0)
-        {
-            heap_free(obj->ptr);
             heap_free(obj);
-        }
         return;
     case TYPE_TABLE:
     case TYPE_DICT:
         drop(as_list(obj)[0]);
         drop(as_list(obj)[1]);
         if (rc == 0)
-        {
-            heap_free(obj->ptr);
             heap_free(obj);
-        }
         return;
     case TYPE_LAMBDA:
         if (rc == 0)
@@ -351,16 +354,12 @@ nil_t __attribute__((hot)) drop(obj_t obj)
             drop(as_lambda(obj)->locals);
             drop(as_lambda(obj)->code);
             debuginfo_free(&as_lambda(obj)->debuginfo);
-            heap_free(obj->ptr);
             heap_free(obj);
         }
         return;
     case TYPE_ERROR:
         if (rc == 0)
-        {
-            heap_free(obj->ptr);
             heap_free(obj);
-        }
         return;
     default:
         panic(str_fmt(0, "free: invalid type: %d", obj->type));

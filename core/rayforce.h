@@ -98,10 +98,10 @@ typedef struct guid_t
 */ 
 typedef struct obj_t
 {
+    u8_t arch;
+    u8_t code;
     type_t type;
     u8_t flags;
-    u8_t code;
-    u32_t id;
     u32_t rc;
     union
     {
@@ -111,10 +111,11 @@ typedef struct obj_t
         f64_t f64;
         struct {
             u64_t len;
-            str_t ptr;
+            u8_t arr[];
         };
     };
 } *obj_t;
+
 
 // Constructors
 extern obj_t null();                         // create null
@@ -153,7 +154,7 @@ extern obj_t error(i8_t code, str_t msg);
 extern nil_t drop(obj_t obj);
 
 // Accessors
-#define as_string(obj)           ((obj)->ptr)
+#define as_string(obj)           ((obj)->arr)
 #define as_vector_bool(obj)      ((bool_t *)(as_string(obj)))
 #define as_vector_i64(obj)       ((i64_t *)(as_string(obj)))
 #define as_vector_f64(obj)       ((f64_t *)(as_string(obj)))
@@ -169,9 +170,9 @@ extern bool_t is_null(obj_t obj);
 #define is_vector(obj) ((obj)->type > 0 && (obj)->type < TYPE_TABLE)
 
 // Joins
-extern obj_t join_raw(obj_t obj, nil_t *val); // join raw value into a list
-extern obj_t join_obj(obj_t obj, obj_t  val); // join object to a list
-extern obj_t join_sym(obj_t obj, str_t  str); // join interned string to a symbol vector
+extern obj_t join_raw(obj_t *obj, nil_t *val); // join raw value into a list
+extern obj_t join_obj(obj_t *obj, obj_t  val); // join object to a list
+extern obj_t join_sym(obj_t *obj, str_t  str); // join interned string to a symbol vector
 
 #ifdef __cplusplus
 }

@@ -606,7 +606,7 @@ obj_t rf_fread(obj_t x)
             fmsg = str_fmt(0, "file: '%s' does not exist", as_string(x));
             err = error(ERR_NOT_EXIST, fmsg);
             heap_free(fmsg);
-            err->id = x->id;
+            // err->id = x->id;
             return err;
         }
 
@@ -620,7 +620,7 @@ obj_t rf_fread(obj_t x)
             err = error(ERR_IO, fmsg);
             heap_free(fmsg);
             close(fd);
-            err->id = x->id;
+            // err->id = x->id;
             return err;
         }
 
@@ -672,8 +672,11 @@ obj_t rf_read_parse_compile(obj_t x)
             return par;
         }
 
+        // com = cc_compile_lambda(false, as_string(x), vector_symbol(0),
+        //                         as_list(par), par->id, par->len, &parser.debuginfo);
+
         com = cc_compile_lambda(false, as_string(x), vector_symbol(0),
-                                as_list(par), par->id, par->len, &parser.debuginfo);
+                                as_list(par), 0, par->len, &parser.debuginfo);
         drop(par);
         parser_free(&parser);
 

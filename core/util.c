@@ -27,6 +27,29 @@
 #include "heap.h"
 #include "env.h"
 
+i32_t size_of(type_t type)
+{
+    switch (type)
+    {
+    case TYPE_BOOL:
+        return sizeof(bool_t);
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        return sizeof(i64_t);
+    case TYPE_F64:
+        return sizeof(f64_t);
+    case TYPE_GUID:
+        return sizeof(guid_t);
+    case TYPE_CHAR:
+        return sizeof(char_t);
+    case TYPE_LIST:
+        return sizeof(obj_t);
+    default:
+        panic(str_fmt(0, "sizeof: unknown type: %d", type));
+    }
+}
+
 u32_t next_power_of_two_u32(u32_t n)
 {
     if (n == 0)

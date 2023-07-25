@@ -991,5 +991,6 @@ obj_t cc_compile(obj_t body, debuginfo_t *debuginfo)
     obj_t b = as_list(body);
     i32_t len = body->len;
 
-    return cc_compile_lambda(true, "top-level", vector_symbol(0), b, body->id, len, debuginfo);
+    // return cc_compile_lambda(true, "top-level", vector_symbol(0), b, body->id, len, debuginfo);
+    return cc_compile_lambda(true, "top-level", vector_symbol(0), b, 0, len, debuginfo);
 }

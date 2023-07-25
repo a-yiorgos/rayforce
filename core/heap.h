@@ -28,14 +28,13 @@
 #include "symbols.h"
 
 // clang-format off
-#define MIN_ORDER        6                   // 2^6  = 64 bytes
-#define MAX_ORDER        25                  // 2^25 = 32MB
-#define MAX_POOL_ORDER   36                  // 2^36 = 64GB
+#define MIN_ORDER       6                   // 2^6  = 64 bytes
+#define MAX_ORDER       25                  // 2^25 = 32MB
+#define MAX_POOL_ORDER  36                  // 2^36 = 64GB
 #define MIN_HEAP        (1ull << MIN_ORDER) // 64 bytes
 #define MAX_HEAP        (1ull << MAX_ORDER) // 32MB
-#define POOL_SIZE        (1ull << MAX_ORDER) // 32MB
-#define NUM_32_BLOCKS    1024 * 1024 * 8     // 8M blocks
-#define NUM_64_BLOCKS    1024 * 1024 * 8     // 8M blocks
+#define POOL_SIZE       (1ull << MAX_ORDER) // 32MB
+#define NUM_16_BLOCKS   1024 * 1024 * 32    // 32M blocks
 
 typedef struct node_t
 {
@@ -56,10 +55,8 @@ typedef struct memstat_t
 
 typedef struct heap_t
 {
-    nil_t *blocks32;                      // pool of 32 bytes blocks
-    nil_t *freelist32;                    // blocks of 32 bytes
-    nil_t *blocks64;                      // pool of 64 bytes blocks
-    nil_t *freelist64;                    // blocks of 64 bytes
+    nil_t *blocks16;                      // pool of 16 bytes blocks
+    nil_t *freelist16;                    // blocks of 16 bytes
     node_t *freelist[MAX_POOL_ORDER + 2]; // free list of blocks by order
     u64_t   avail;                        // mask of available blocks by order
 } __attribute__((aligned(PAGE_SIZE))) *heap_t;
@@ -67,7 +64,6 @@ typedef struct heap_t
 extern nil_t    *heap_malloc(u64_t size);
 extern nil_t    *heap_realloc(nil_t *block, u64_t size);
 extern nil_t     heap_free(nil_t *block);
-extern nil_t     heap_mrequest(u64_t size);
 extern heap_t    heap_init();
 extern heap_t    heap_get();
 extern i64_t     heap_gc();

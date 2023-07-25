@@ -51,11 +51,11 @@
 
 #define debug_assert(x) (assert(x))
 
-#define debug_obj(o)                \
-    {                                  \
+#define debug_obj(o)             \
+    {                            \
         str_t _f = obj_fmt((o)); \
-        debug("%s", _f);               \
-        heap_free(_f);                   \
+        debug("%s", _f);         \
+        heap_free(_f);           \
     }
 
 #else
@@ -84,6 +84,7 @@
         printf("%f\n", ((f64_t)(clock() - timer)) / CLOCKS_PER_SEC * 1000); \
     }
 
+i32_t size_of(type_t type);
 u32_t next_power_of_two_u32(u32_t n);
 u64_t next_power_of_two_u64(u64_t n);
 
