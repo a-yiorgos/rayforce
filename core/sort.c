@@ -23,6 +23,7 @@
 
 #include "sort.h"
 #include "util.h"
+#include "string.h"
 
 #define COUNTING_SORT_LIMIT 1024 * 1024
 

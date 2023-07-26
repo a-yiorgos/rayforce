@@ -842,6 +842,9 @@ obj_t parse_program(parser_t *parser)
 {
     obj_t tok, lst = list(0), err;
     str_t msg;
+    span_t span;
+
+    span = span_start(parser);
 
     while (!at_eof(*parser->current))
     {
@@ -867,16 +870,17 @@ obj_t parse_program(parser_t *parser)
             break;
         }
 
+        span_extend(parser, &span);
         join_obj(&lst, tok);
     }
+
+    nfo_insert(&parser->nfo, lst, span);
 
     return lst;
 }
 
 obj_t parse(parser_t *parser, str_t filename, str_t input)
 {
-    obj_t prg;
-
     parser->nfo.lambda = "";
     parser->nfo.filename = filename;
     parser->input = input;
@@ -884,9 +888,7 @@ obj_t parse(parser_t *parser, str_t filename, str_t input)
     parser->line = 0;
     parser->column = 0;
 
-    prg = parse_program(parser);
-
-    return prg;
+    return parse_program(parser);
 }
 
 parser_t parser_new()

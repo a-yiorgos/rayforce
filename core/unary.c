@@ -22,7 +22,6 @@
  */
 
 #include "unary.h"
-
 #include "runtime.h"
 #include "heap.h"
 #include "vm.h"
@@ -30,7 +29,6 @@
 #include "util.h"
 #include "format.h"
 #include "sort.h"
-
 #include "guid.h"
 #include "set.h"
 #include "env.h"
@@ -134,17 +132,15 @@ obj_t rf_til(obj_t x)
         return error(ERR_TYPE, "til: expected i64");
 
     i32_t i, l = (i32_t)x->i64;
-    i64_t *v;
     obj_t vec = NULL;
 
     vec = vector_i64(l);
 
-    v = as_vector_i64(vec);
-
     for (i = 0; i < l; i++)
-        v[i] = i;
+        as_vector_i64(vec)[i] = i;
 
     vec->flags = VEC_ATTR_ASC | VEC_ATTR_WITHOUT_NULLS | VEC_ATTR_DISTINCT;
+
     return vec;
 }
 
@@ -557,7 +553,7 @@ obj_trf_where(obj_t x)
             if (iv[i])
                 ov[j++] = i;
 
-        shrink(&res, j);
+        resize(&res, j);
 
         return res;
 
@@ -668,16 +664,12 @@ obj_t rf_read_parse_compile(obj_t x)
 
         if (par->type == TYPE_ERROR)
         {
-            print_error(&par, as_string(x), as_string(red), red->len);
+            print_error(par, as_string(x), as_string(red), red->len);
             parser_free(&parser);
             return par;
         }
 
-        // com = cc_compile_lambda(false, as_string(x), vector_symbol(0),
-        //                         as_list(par), par->id, par->len, &parser.nfo);
-
-        com = cc_compile_lambda(false, as_string(x), vector_symbol(0),
-                                as_list(par), 0, par->len, &parser.nfo);
+        com = cc_compile_lambda(false, as_string(x), vector_symbol(0), par, &parser.nfo);
         drop(par);
         parser_free(&parser);
 

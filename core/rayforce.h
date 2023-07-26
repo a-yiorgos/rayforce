@@ -173,8 +173,8 @@ extern obj_t join_raw(obj_t *obj, nil_t *val); // join raw value into a list
 extern obj_t join_obj(obj_t *obj, obj_t  val); // join object to a list
 extern obj_t join_sym(obj_t *obj, str_t  str); // join interned string to a symbol vector
 
-// Reductions
-extern obj_t shrink(obj_t *obj, u64_t len);
+// Resize
+extern obj_t resize(obj_t *obj, u64_t len);
 
 // Search
 extern i64_t find_raw(obj_t obj, nil_t *val); // find raw value in a list, return index (obj->len if not found)

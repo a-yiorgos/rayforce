@@ -349,7 +349,7 @@ nil_t *heap_realloc(nil_t *block, u64_t new_size)
         return new_block;
     }
 
-    // shrink
+    // resize
     i = orderof(capacity);
     order = orderof(new_size + sizeof(struct node_t));
 

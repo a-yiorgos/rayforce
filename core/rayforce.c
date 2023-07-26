@@ -188,7 +188,7 @@ obj_t error(i8_t code, str_t msg)
     return obj;
 }
 
-obj_t shrink(obj_t *obj, u64_t len)
+obj_t resize(obj_t *obj, u64_t len)
 {
     debug_assert(is_vector(*obj));
 
@@ -313,17 +313,11 @@ i64_t find_raw(obj_t obj, nil_t *val)
 {
     i64_t i, l;
 
-    if (obj == NULL)
+    if (obj == NULL || !is_vector(obj))
         return NULL_I64;
 
     switch (obj->type)
     {
-    case -TYPE_I64:
-    case -TYPE_SYMBOL:
-    case -TYPE_F64:
-    case -TYPE_TIMESTAMP:
-    case -TYPE_CHAR:
-        return NULL_I64;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
@@ -331,25 +325,25 @@ i64_t find_raw(obj_t obj, nil_t *val)
         for (i = 0; i < l; i++)
             if (as_vector_i64(obj)[i] == val)
                 return i;
-        return NULL_I64;
+        return l;
     case TYPE_F64:
         l = obj->len;
         for (i = 0; i < l; i++)
             if (as_vector_f64(obj)[i] == *(f64_t *)&val)
                 return i;
-        return NULL_I64;
+        return l;
     case TYPE_CHAR:
         l = obj->len;
         for (i = 0; i < l; i++)
             if (as_string(obj)[i] == *(char_t *)&val)
                 return i;
-        return NULL_I64;
+        return l;
     case TYPE_LIST:
         l = obj->len;
         for (i = 0; i < l; i++)
             if (equal(as_list(obj)[i], val))
                 return i;
-        return NULL_I64;
+        return l;
     default:
         panic(str_fmt(0, "find: invalid type: %d", obj->type));
     }
@@ -359,17 +353,11 @@ i64_t find_obj(obj_t obj, obj_t val)
 {
     i64_t i, l;
 
-    if (obj == NULL)
+    if (obj == NULL || !is_vector(obj))
         return NULL_I64;
 
     switch (obj->type)
     {
-    case -TYPE_I64:
-    case -TYPE_SYMBOL:
-    case -TYPE_F64:
-    case -TYPE_TIMESTAMP:
-    case -TYPE_CHAR:
-        return NULL_I64;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:

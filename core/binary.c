@@ -1513,7 +1513,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_bool(&res)[j++] = as_vector_bool(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1527,7 +1527,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_i64(&res)[j++] = as_vector_i64(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1541,7 +1541,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_symbol(&res)[j++] = as_vector_symbol(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1555,7 +1555,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_f64(&res)[j++] = as_vector_f64(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1569,7 +1569,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_timestamp(&res)[j++] = as_vector_timestamp(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1583,7 +1583,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_vector_guid(&res)[j++] = as_vector_guid(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1597,7 +1597,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_string(&res)[j++] = as_string(x)[i];
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1611,7 +1611,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //         if (as_vector_bool(y)[i])
     //             as_list(&res)[j++] = clone(&as_list(x)[i]);
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
 
@@ -1854,7 +1854,7 @@ obj_t rf_except(obj_t x, obj_t y)
     //             as_vector_i64(&res)[j++] = as_vector_i64(x)[i];
     //     }
 
-    //     shrink(&res, j);
+    //     resize(&res, j);
 
     //     return res;
     // case MTYPE2(TYPE_I64, TYPE_I64):

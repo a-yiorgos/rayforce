@@ -132,8 +132,8 @@ op_halt:
         return null();
 op_push:
     vm->ip++;
-    load_u64(l, vm);
-    x1 = clone(as_list(f->constants)[l]);
+    n = code[vm->ip++];
+    x1 = clone(as_list(f->constants)[n]);
     stack_push(vm, x1);
     dispatch();
 op_pop:
@@ -156,7 +156,7 @@ op_jne:
     vm->ip++;
     x2 = stack_pop(vm);
     load_u64(l, vm);
-    if (!rfi_as_vector_bool(&x2))
+    if (!rfi_as_vector_bool(x2))
         vm->ip = l;
     dispatch();
 op_jmp:
@@ -170,7 +170,7 @@ op_call1:
     load_u64(l, vm);
 made_call1:
     x2 = stack_pop(vm);
-    x1 = rf_call_unary(flags, (unary_t)l, &x2);
+    x1 = rf_call_unary(flags, (unary_t)l, x2);
     drop(x2);
     unwrap(x1, b);
     stack_push(vm, x1);
@@ -444,11 +444,21 @@ nil_t vm_free(vm_t *vm)
  */
 str_t vm_code_fmt(obj_t fun)
 {
+#define load_u64(x, c, v)                        \
+    {                                            \
+        str_t _p = align8(c + v);                \
+        u64_t _o = _p - (c + v) + sizeof(u64_t); \
+        v += _o;                                 \
+        x = *(u64_t *)_p;                        \
+    }
+
     lambda_t *f = as_lambda(fun);
     str_t code = as_string(f->code);
     i32_t c = 0, l = 0, o = 0;
-    u32_t ip = 0, len = (u32_t)f->code->len;
+    u32_t b, ip = 0, len = (u32_t)f->code->len;
+    u64_t p;
     str_t s = NULL;
+    u8_t n;
 
     while (ip < len)
     {
@@ -462,10 +472,9 @@ str_t vm_code_fmt(obj_t fun)
             ip += 3;
             break;
         case OP_PUSH:
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] push ", c++, ip++);
-            obj_fmt_into(&s, &l, &o, 0, 0, (obj_t)(code + ip));
-            str_fmt_into(&s, &l, &o, 0, "\n");
-            ip += sizeof(obj_t);
+            b = ip++;
+            n = code[ip++];
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] push <const id: %d>\n", c++, b, n);
             break;
         case OP_POP:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] pop\n", c++, ip++);
@@ -483,7 +492,10 @@ str_t vm_code_fmt(obj_t fun)
             ip += sizeof(obj_t);
             break;
         case OP_CALL1:
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call1 ", c++, ip++);
+            b = ip++;
+            n = code[ip++];
+            load_u64(p, code, ip);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call1 <flags: %d fn: %p>\n", c++, b, n, p);
             break;
         case OP_TIMER_SET:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] timer_set\n", c++, ip++);

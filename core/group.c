@@ -122,7 +122,7 @@ obj_t rf_distinct_vector_i64(obj_t x)
         }
 
         drop(mask);
-        shrink(&vec, j);
+        resize(&vec, j);
 
         vec->flags |= VEC_ATTR_DISTINCT;
 
@@ -164,7 +164,7 @@ obj_t rf_distinct_vector_i64(obj_t x)
         }
 
         vec->flags |= VEC_ATTR_DISTINCT;
-        shrink(&vec, j);
+        resize(&vec, j);
         drop(mask);
         set_free(set);
 
@@ -180,7 +180,7 @@ set:
             ov[j++] = iv1[i];
 
     vec->flags |= VEC_ATTR_DISTINCT;
-    shrink(&vec, j);
+    resize(&vec, j);
     set_free(set);
 
     return vec;
@@ -188,7 +188,9 @@ set:
 
 obj_t rf_group_vector_i64(obj_t x)
 {
-    i64_t i, j = 0, xl = x->len, *iv1 = as_vector_i64(x), *kv, range, inrange = 0, min, max, *m, n;
+    i64_t i, j = 0, xl = x->len,
+             *iv1 = as_vector_i64(x), *kv,
+             range, inrange = 0, min, max, *m, n;
     obj_t keys, vals, mask, *vv;
     ht_t *ht;
 
@@ -258,8 +260,8 @@ obj_t rf_group_vector_i64(obj_t x)
 
         drop(mask);
 
-        shrink(&keys, j);
-        shrink(&vals, j);
+        resize(&keys, j);
+        resize(&vals, j);
 
         return dict(keys, vals);
     }
@@ -330,8 +332,8 @@ obj_t rf_group_vector_i64(obj_t x)
         drop(mask);
         ht_free(ht);
 
-        shrink(keys, j);
-        shrink(vals, j);
+        resize(keys, j);
+        resize(vals, j);
 
         return dict(keys, vals);
     }

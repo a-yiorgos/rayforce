@@ -77,9 +77,9 @@ nil_t init_functions(obj_t functions)
 {
     // Unary
     regf(functions,  "type",      TYPE_UNARY,    FLAG_NONE,         rf_type);
-    // regf(functions,  "til",       TYPE_UNARY,    FLAG_NONE,         rf_til);
-    // regf(functions,  "distinct",  TYPE_UNARY,    FLAG_ATOMIC,       rf_distinct);
-    // regf(functions,  "group",     TYPE_UNARY,    FLAG_ATOMIC,       rf_group);
+    regf(functions,  "til",       TYPE_UNARY,    FLAG_NONE,         rf_til);
+    regf(functions,  "distinct",  TYPE_UNARY,    FLAG_ATOMIC,       rf_distinct);
+    regf(functions,  "group",     TYPE_UNARY,    FLAG_ATOMIC,       rf_group);
     // regf(functions,  "sum",       TYPE_UNARY,    FLAG_ATOMIC,       rf_sum);
     // regf(functions,  "avg",       TYPE_UNARY,    FLAG_ATOMIC,       rf_avg);
     // regf(functions,  "min",       TYPE_UNARY,    FLAG_ATOMIC,       rf_min);

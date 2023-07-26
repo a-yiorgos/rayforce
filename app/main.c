@@ -108,12 +108,6 @@ nil_t repl(str_t name, parser_t *parser, str_t buf, i32_t len)
         return;
     }
 
-    formatted = obj_fmt(parsed);
-    printf("%s\n", formatted);
-    drop(parsed);
-    heap_free(formatted);
-    return;
-
     compiled = cc_compile(parsed, &parser->nfo);
     if (is_error(compiled))
     {
@@ -123,7 +117,7 @@ nil_t repl(str_t name, parser_t *parser, str_t buf, i32_t len)
         return;
     }
 
-    // printf("%s\n", vm_code_fmt(&compiled));
+    // printf("%s\n", vm_code_fmt(compiled));
 
     // release rc's of parsed asap
     drop(parsed);

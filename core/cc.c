@@ -43,87 +43,82 @@
 #define stack_malloc(size) alloca(size)
 #endif
 
-#define push_u8(c, x)                       \
-    {                                       \
-        vector_reserve((c), 1);             \
-        as_string(c)[(c)->len++] = (u8_t)x; \
+#define push_u8(c, x) join_raw((c), x);
+
+#define push_const(c, k)                        \
+    {                                           \
+        lambda_t *_f = as_lambda((c)->lambda);  \
+        push_u8(&_f->code, _f->constants->len); \
+        join_raw(&_f->constants, k);            \
     }
 
-#define push_opcode(c, k, v, x)                   \
-    {                                             \
-        nfo_t *d = (c)->nfo;                      \
-        nfo_t *p = &as_lambda(&(c)->lambda)->nfo; \
-        span_t u = nfo_get(d, k);                 \
-        nfo_insert(p, (u32_t)(v)->len, u);        \
-        push_u8(v, x);                            \
-    }
-
-#define push_u64(c, x)                                             \
-    {                                                              \
-        str_t _p = align8(as_string(c) + (c)->len);                \
-        u64_t _o = _p - (as_string(c) + (c)->len) + sizeof(u64_t); \
-        vector_reserve((c), _o);                                   \
-        _p = align8(as_string(c) + (c)->len);                      \
-        *(u64_t *)_p = (u64_t)x;                                   \
-        (c)->len += _o;                                            \
-    }
-
-#define push_const(c, k)                         \
+#define push_opcode(c, k, v, x)                  \
     {                                            \
-        lambda_t *_f = as_lambda(&(c)->lambda);  \
-        push_u64(&_f->code, _f->constants->len); \
-        join_obj(_f->constants, k);              \
-        drop(k);                                 \
+        nfo_t *d = (c)->nfo;                     \
+        nfo_t *p = &as_lambda((c)->lambda)->nfo; \
+        span_t u = nfo_get(d, k);                \
+        nfo_insert(p, (u32_t)((*v))->len, u);    \
+        push_u8(v, x);                           \
     }
 
-#define cerr(c, i, t, e)           \
-    {                              \
-        drop((c)->lambda);         \
-        (c)->lambda = error(t, e); \
-        return CC_ERROR;           \
+#define push_un(c, x, n)                              \
+    {                                                 \
+        u64_t _l = (*c)->len;                         \
+        str_t _p = align8(as_string(*c) + _l);        \
+        n _o = _p - (as_string(*c) + _l) + sizeof(n); \
+        resize((c), _l + _o);                         \
+        _p = align8(as_string(*c) + _l);              \
+        *(n *)_p = (n)x;                              \
     }
 
-#define ccerr(c, i, t, e)          \
-    {                              \
-        str_t m = e;               \
-        drop((c)->lambda);         \
-        (c)->lambda = error(t, m); \
-        heap_free(m);              \
-        return CC_ERROR;           \
+#define push_u32(c, x) psuh_un(c, x, u32_t)
+
+#define push_u64(c, x) push_un(c, x, u64_t)
+
+#define cerr(c, i, t, ...)                        \
+    {                                             \
+        str_t _m = str_fmt(0, __VA_ARGS__);       \
+        nfo_t *_d = (c)->nfo;                     \
+        span_t _u = nfo_get(_d, i);               \
+        drop((c)->lambda);                        \
+        (c)->lambda = error(t, _m);               \
+        heap_free(_m);                            \
+        *(span_t *)&as_list((c)->lambda)[2] = _u; \
+        return CC_ERROR;                          \
     }
 
 cc_result_t cc_compile_quote(bool_t has_consumer, cc_t *cc, obj_t obj)
 {
-    // obj_t car = &as_list(obj)[0];
-    // lambda_t *func = as_lambda(&cc->lambda);
-    // obj_t code = &func->code;
+    obj_t car = as_list(obj)[0];
+    lambda_t *func = as_lambda(cc->lambda);
+    obj_t *code = &func->code;
 
-    // if (!has_consumer)
-    //     return CC_NULL;
+    if (!has_consumer)
+        return CC_NULL;
 
-    // push_opcode(cc, car->id, code, OP_PUSH);
-    // push_const(cc, clone(&as_list(obj)[1]));
+    push_opcode(cc, car, code, OP_PUSH);
+    push_const(cc, clone(as_list(obj)[1]));
 
     return CC_OK;
 }
 
 cc_result_t cc_compile_time(cc_t *cc, obj_t obj, u32_t arity)
 {
-    // cc_result_t res;
-    // obj_t car = &as_list(obj)[0];
-    // lambda_t *func = as_lambda(&cc->lambda);
-    // obj_t code = &func->code;
+    cc_result_t res;
+    obj_t car = &as_list(obj)[0];
+    lambda_t *func = as_lambda(cc->lambda);
+    obj_t *code = &func->code;
 
-    // if (arity != 1)
-    //     cerr(cc, car->id, ERR_LENGTH, "'time' takes one argument");
+    if (arity != 1)
+        cerr(cc, car, ERR_LENGTH, "'time' takes one argument");
 
-    // push_opcode(cc, car->id, code, OP_TIMER_SET);
-    // res = cc_compile_expr(false, cc, &as_list(obj)[1]);
+    push_opcode(cc, car, code, OP_TIMER_SET);
+    res = cc_compile_expr(false, cc, as_list(obj)[1]);
 
-    // if (res == CC_ERROR)
-    //     return CC_ERROR;
+    if (res == CC_ERROR)
+        return CC_ERROR;
 
-    // push_opcode(cc, car->id, code, OP_TIMER_GET);
+    push_opcode(cc, car, code, OP_TIMER_GET);
 
     return CC_OK;
 }
@@ -337,51 +332,57 @@ type_t cc_compile_catch(cc_t *cc, obj_t obj, u32_t arity)
 
 cc_result_t cc_compile_call(cc_t *cc, obj_t car, u8_t arity)
 {
-    // cc_result_t res;
-    // obj_t code = &as_lambda(&cc->lambda)->code, rec;
+    cc_result_t res;
+    obj_t *code = &as_lambda(cc->lambda)->code, prim;
+    i64_t i;
 
-    // rec = dict_get(&runtime_get()->env.functions, car);
+    i = find_obj(as_list(runtime_get()->env.functions)[0], car);
 
-    // switch (rec.type)
-    // {
-    // case TYPE_UNARY:
-    //     if (arity != 1)
-    //         cerr(cc, car->id, ERR_LENGTH, "unary function expects 1 argument");
+    if (i == as_list(runtime_get()->env.functions)[0]->len)
+    {
+        res = cc_compile_expr(true, cc, car);
 
-    //     push_opcode(cc, car->id, code, OP_CALL1);
-    //     push_opcode(cc, car->id, code, rec.flags);
-    //     push_u64(code, rec.i64);
+        if (res == CC_ERROR)
+            return CC_ERROR;
 
-    //     return CC_OK;
-    // case TYPE_BINARY:
-    //     if (arity != 2)
-    //         cerr(cc, car->id, ERR_LENGTH, "binary function expects 2 arguments");
+        push_opcode(cc, car, code, OP_CALLD);
+        push_u8(code, arity);
 
-    //     push_opcode(cc, car->id, code, OP_CALL2);
-    //     push_opcode(cc, car->id, code, rec.flags);
-    //     push_u64(code, rec.i64);
+        return CC_OK;
+    }
 
-    //     return CC_OK;
-    // case TYPE_VARY:
-    //     push_opcode(cc, car->id, code, OP_CALLN);
-    //     push_opcode(cc, car->id, code, arity);
-    //     push_opcode(cc, car->id, code, rec.flags);
-    //     push_u64(code, rec.i64);
+    prim = as_list(as_list(runtime_get()->env.functions)[1])[i];
 
-    //     return CC_OK;
-    // default:
-    //     res = cc_compile_expr(true, cc, car);
+    switch (prim->type)
+    {
+    case TYPE_UNARY:
+        if (arity != 1)
+            cerr(cc, car, ERR_LENGTH, "unary function expects 1 argument");
 
-    //     if (res == CC_ERROR)
-    //         return CC_ERROR;
+        push_opcode(cc, car, code, OP_CALL1);
+        push_u8(code, prim->flags);
+        push_u64(code, prim->i64);
 
-    //     push_opcode(cc, car->id, code, OP_CALLD);
-    //     push_opcode(cc, car->id, code, arity);
+        return CC_OK;
+    case TYPE_BINARY:
+        if (arity != 2)
+            cerr(cc, car, ERR_LENGTH, "binary function expects 2 arguments");
 
-    //     return CC_OK;
-    // }
+        push_opcode(cc, car, code, OP_CALL2);
+        push_u8(code, prim->flags);
+        push_u64(code, prim->i64);
 
-    return CC_OK;
+        return CC_OK;
+    case TYPE_VARY:
+        push_opcode(cc, car, code, OP_CALLN);
+        push_u8(code, arity);
+        push_u8(code, prim->flags);
+        push_u64(code, prim->i64);
+
+        return CC_OK;
+    default:
+        cerr(cc, car, ERR_NOT_FOUND, "function not found");
+    }
 }
 
 cc_result_t cc_compile_map(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t arity)
@@ -772,9 +773,7 @@ cc_result_t cc_compile_load(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t arit
  */
 cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t arity)
 {
-    obj_t car = &as_list(obj)[0];
-
-    switch (car->i64)
+    switch (as_list(obj)[0]->i64)
     {
     case KW_QUOTE:
         return cc_compile_quote(has_consumer, cc, obj);
@@ -807,113 +806,134 @@ cc_result_t cc_compile_special_forms(bool_t has_consumer, cc_t *cc, obj_t obj, u
 
 cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, obj_t obj)
 {
-    // obj_t car;
-    // u32_t i, arity;
-    // i64_t id;
-    // lambda_t *func = as_lambda(&cc->lambda);
-    // obj_t code = &func->code;
-    // cc_result_t res = CC_NULL;
+    u32_t i, arity;
+    i64_t id;
+    lambda_t *func = as_lambda(cc->lambda);
+    obj_t *code = &func->code;
+    cc_result_t res = CC_NULL;
 
-    // switch (obj->type)
-    // {
-    // case -TYPE_SYMBOL:
-    //     if (!has_consumer)
-    //         return CC_NULL;
+    switch (obj->type)
+    {
+    case -TYPE_SYMBOL:
+        if (!has_consumer)
+            return CC_NULL;
 
-    //     // self is a special case
-    //     if (obj->i64 == KW_SELF)
-    //     {
-    //         push_opcode(cc, obj->id, code, OP_LOAD);
-    //         push_u64(code, -1);
-    //         func->stack_size++;
+        // self is a special case
+        if (obj->i64 == KW_SELF)
+        {
+            push_opcode(cc, obj, code, OP_LOAD);
+            push_u64(code, -1);
+            func->stack_size++;
 
-    //         return CC_OK;
-    //     }
+            return CC_OK;
+        }
 
-    //     // internal function
-    //     if (obj->i64 < 0)
-    //     {
-    //         push_opcode(cc, obj->id, code, OP_PUSH);
-    //         push_const(cc, dict_get(&runtime_get()->env.functions, obj));
-    //         func->stack_size++;
+        // internal function
+        if (obj->i64 < 0)
+        {
+            push_opcode(cc, obj, code, OP_PUSH);
 
-    //         return CC_OK;
-    //     }
+            id = find_obj(as_list(runtime_get()->env.functions)[0], obj);
 
-    //     // try to search in the lambda args
-    //     id = vector_find(&func->args, obj);
+            if (id == as_list(runtime_get()->env.functions)[0]->len)
+                cerr(cc, obj, ERR_LENGTH, "function not found");
 
-    //     if (id < (i64_t)func->args->len)
-    //     {
-    //         push_opcode(cc, obj->id, code, OP_LOAD);
-    //         push_u64(code, -(func->args->len - id + 1));
-    //         func->stack_size++;
+            push_const(cc, clone(as_list(as_list(runtime_get()->env.functions)[1])[id]));
+            func->stack_size++;
 
-    //         return CC_OK;
-    //     }
+            return CC_OK;
+        }
 
-    //     // then in a local or global env
-    //     push_opcode(cc, obj->id, code, OP_PUSH);
-    //     push_const(cc, *obj);
-    //     push_opcode(cc, obj->id, code, OP_LGET);
-    //     func->stack_size++;
+        // try to search in the lambda args
+        id = find_obj(func->args, obj);
 
-    //     return CC_OK;
+        if (id < (i64_t)func->args->len)
+        {
+            push_opcode(cc, obj, code, OP_LOAD);
+            push_u64(code, -(func->args->len - id + 1));
+            func->stack_size++;
 
-    // case TYPE_LIST:
-    //     if (obj->len == 0)
-    //         goto other;
+            return CC_OK;
+        }
 
-    //     car = &as_list(obj)[0];
-    //     arity = obj->len - 1;
+        // then in a local or global env
+        push_opcode(cc, obj, code, OP_PUSH);
+        push_const(cc, clone(obj));
+        push_opcode(cc, obj, code, OP_LGET);
+        func->stack_size++;
 
-    //     // special forms compilation need to be done before arguments compilation
-    //     res = cc_compile_special_forms(has_consumer, cc, obj, arity);
+        return CC_OK;
 
-    //     if (res == CC_ERROR || res != CC_NULL)
-    //         return res;
+    case TYPE_LIST:
+        if (obj->len == 0)
+            goto other;
 
-    //     // compile arguments
-    //     for (i = 0; i < arity; i++)
-    //     {
-    //         res = cc_compile_expr(true, cc, &as_list(obj)[i + 1]);
+        arity = obj->len - 1;
 
-    //         if (res == CC_ERROR)
-    //             return CC_ERROR;
-    //     }
+        // special forms compilation need to be done before arguments compilation
+        res = cc_compile_special_forms(has_consumer, cc, obj, arity);
 
-    //     res = cc_compile_call(cc, car, arity);
+        if (res == CC_ERROR || res != CC_NULL)
+            return res;
 
-    //     if (res == CC_ERROR)
-    //         return CC_ERROR;
+        // compile arguments
+        for (i = 0; i < arity; i++)
+        {
+            res = cc_compile_expr(true, cc, as_list(obj)[i + 1]);
+            if (res == CC_ERROR)
+                return CC_ERROR;
+        }
 
-    //     if (!has_consumer)
-    //         push_opcode(cc, obj->id, code, OP_POP);
+        res = cc_compile_call(cc, as_list(obj)[0], arity);
 
-    //     return res;
+        if (res == CC_ERROR)
+            return CC_ERROR;
 
-    // default:
-    // other:
-    //     if (!has_consumer)
-    //         return CC_NULL;
+        if (!has_consumer)
+            push_opcode(cc, obj, code, OP_POP);
 
-    //     push_opcode(cc, obj->id, code, OP_PUSH);
-    //     push_const(cc, clone(obj));
-    //     func->stack_size++;
+        return res;
 
-    //     return CC_OK;
-    // }
+    default:
+    other:
+        if (!has_consumer)
+            return CC_NULL;
+
+        push_opcode(cc, obj, code, OP_PUSH);
+        push_const(cc, clone(obj));
+        func->stack_size++;
+
+        return CC_OK;
+    }
 
     return CC_OK;
 }
 
-/*
- * Compile lambda
- */
-obj_t cc_compile_lambda(bool_t top, str_t name, obj_t args,
-                        obj_t body, u32_t id, i32_t len, nfo_t *nfo)
+obj_t cc_compile_lambda(bool_t top, str_t name, obj_t args, obj_t body, nfo_t *nfo)
 {
+    obj_t err;
     nfo_t *pi, di;
+    u64_t len;
+    cc_result_t res;
+    i32_t i = 0;
+    lambda_t *func;
+    obj_t *code, *b;
+    span_t span;
+    str_t msg;
+
+    if (body->type != TYPE_LIST)
+    {
+        span = nfo_get(nfo, body);
+        msg = str_fmt(0, "compile '%s': expected list", name);
+        err = error(ERR_TYPE, msg);
+        heap_free(msg);
+        *(span_t *)&as_list(err)[2] = span;
+
+        return err;
+    }
+
+    len = body->len;
+    b = as_list(body);
 
     if (nfo == NULL)
     {
@@ -932,65 +952,48 @@ obj_t cc_compile_lambda(bool_t top, str_t name, obj_t args,
         .lambda = lambda(args, string(0), di),
     };
 
-    //     cc_result_t res;
-    //     i32_t i = 0;
-    //     lambda_t *func = as_lambda(&cc.lambda);
-    //     obj_t code = &func->code, *b;
+    func = as_lambda(cc.lambda);
+    code = &func->code;
 
-    //     if (len == 0)
-    //     {
-    //         push_opcode(&cc, id, code, OP_PUSH);
-    //         push_const(&cc, null());
-    //         goto epilogue;
-    //     }
+    if (len == 0)
+    {
+        push_opcode(&cc, body, code, OP_PUSH);
+        push_const(&cc, null());
+        goto epilogue;
+    }
 
-    //     // Compile all arguments but the last one
-    //     for (i = 0; i < len - 1; i++)
-    //     {
-    //         b = body + i;
-    //         // skip const expressions
-    //         if (b->type != TYPE_LIST)
-    //             continue;
+    // Compile all arguments but the last one
+    for (i = 0; i < len - 1; i++)
+    {
+        // skip const expressions
+        if ((*b)->type != TYPE_LIST)
+            continue;
 
-    //         res = cc_compile_expr(false, &cc, b);
+        res = cc_compile_expr(false, &cc, *b);
 
-    //         if (res == CC_ERROR)
-    //             return cc.lambda;
-    //     }
+        if (res == CC_ERROR)
+            return cc.lambda;
 
-    //     // Compile last argument
-    //     b = body + i;
-    //     res = cc_compile_expr(true, &cc, b);
+        b++;
+    }
 
-    //     if (res == CC_ERROR)
-    //         return cc.lambda;
-    //     // --
+    // Compile last argument
+    res = cc_compile_expr(true, &cc, *b);
 
-    // epilogue:
-    //     push_opcode(&cc, id, code, top ? OP_HALT : OP_RET);
+    if (res == CC_ERROR)
+        return cc.lambda;
+    // --
+
+epilogue:
+    push_opcode(&cc, body, code, top ? OP_HALT : OP_RET);
 
     return cc.lambda;
 }
 
 /*
- * Compile top level expression
+ * Compile top level expression as an anonymous lambda
  */
 obj_t cc_compile(obj_t body, nfo_t *nfo)
 {
-    str_t msg;
-    obj_t err;
-
-    if (body->type != TYPE_LIST)
-    {
-        msg = str_fmt(0, "compile '%s': expected list", "top-level");
-        err = error(ERR_TYPE, msg);
-        heap_free(msg);
-        return err;
-    }
-
-    obj_t b = as_list(body);
-    i32_t len = body->len;
-
-    // return cc_compile_lambda(true, "top-level", vector_symbol(0), b, body->id, len, nfo);
-    return cc_compile_lambda(true, "top-level", vector_symbol(0), b, 0, len, nfo);
+    return cc_compile_lambda(true, "top-level", vector_symbol(0), body, nfo);
 }
