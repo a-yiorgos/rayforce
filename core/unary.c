@@ -37,7 +37,7 @@
 #include "util.h"
 
 // Atomic unary functions (iterates through list of argumen items down to atoms)
-obj_t rf_call_unary_atomic(unary_t f, obj_t x)
+obj_t rf_call_unary_atomic(unary_f f, obj_t x)
 {
     u64_t i, l;
     obj_t res = NULL, item = NULL;
@@ -83,7 +83,7 @@ obj_t rf_call_unary_atomic(unary_t f, obj_t x)
     return f(x);
 }
 
-obj_t rf_call_unary(u8_t attrs, unary_t f, obj_t x)
+obj_t rf_call_unary(u8_t attrs, unary_f f, obj_t x)
 {
     switch (attrs)
     {

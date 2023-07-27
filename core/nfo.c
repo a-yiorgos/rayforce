@@ -40,20 +40,20 @@ nfo_t nfo_new(str_t filename, str_t lambda)
 
 nil_t nfo_insert(nfo_t *nfo, i64_t index, span_t span)
 {
-    i64_t s;
-    memcpy(&s, &span, sizeof(span_t));
-    ht_upsert(nfo->spans, index, s);
+    bucket_t *b = ht_get(&nfo->spans, index);
+    b->key = index;
+    memcpy(&b->val, &span, sizeof(span_t));
 }
 
 span_t nfo_get(nfo_t *nfo, i64_t index)
 {
-    i64_t s = ht_get(nfo->spans, index);
+    bucket_t *b = ht_get(&nfo->spans, index);
 
-    if (s == NULL_I64)
+    if (b->key == NULL_I64)
         return (span_t){0};
 
     span_t span;
-    memcpy(&span, &s, sizeof(span_t));
+    memcpy(&span, &b->val, sizeof(span_t));
 
     return span;
 }

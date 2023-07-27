@@ -28,7 +28,7 @@
 #include "format.h"
 #include "util.h"
 
-obj_t rf_call_vary_atomic(vary_t f, obj_t *x, i64_t n)
+obj_t rf_call_vary_atomic(vary_f f, obj_t *x, i64_t n)
 {
     i64_t i, lists = 0;
 
@@ -42,7 +42,7 @@ obj_t rf_call_vary_atomic(vary_t f, obj_t *x, i64_t n)
         return f(x, n);
 }
 
-obj_t rf_call_vary(u8_t attrs, vary_t f, obj_t *x, i64_t n)
+obj_t rf_call_vary(u8_t attrs, vary_f f, obj_t *x, i64_t n)
 {
     switch (attrs)
     {

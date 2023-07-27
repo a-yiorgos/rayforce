@@ -31,7 +31,7 @@
 #include "hash.h"
 #include "set.h"
 
-obj_t call_binary(binary_t f, obj_t x, obj_t y)
+obj_t call_binary(binary_f f, obj_t x, obj_t y)
 {
     obj_t cst, res;
 
@@ -86,7 +86,7 @@ obj_t call_binary(binary_t f, obj_t x, obj_t y)
     }
 }
 
-obj_t rf_call_binary_left_atomic(binary_t f, obj_t x, obj_t y)
+obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
 {
     u64_t i, l;
     obj_t res, item, a;
@@ -127,7 +127,7 @@ obj_t rf_call_binary_left_atomic(binary_t f, obj_t x, obj_t y)
     return f(x, y);
 }
 
-obj_t rf_call_binary_right_atomic(binary_t f, obj_t x, obj_t y)
+obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
 {
     u64_t i, l;
     obj_t res, item, b;
@@ -169,7 +169,7 @@ obj_t rf_call_binary_right_atomic(binary_t f, obj_t x, obj_t y)
 }
 
 // Atomic binary functions (iterates through list of arguments down to atoms)
-obj_t rf_call_binary_atomic(binary_t f, obj_t x, obj_t y)
+obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 {
     u64_t i, l;
     obj_t res, item, a, b;
@@ -283,7 +283,7 @@ obj_t rf_call_binary_atomic(binary_t f, obj_t x, obj_t y)
     return call_binary(f, x, y);
 }
 
-obj_t rf_call_binary(u8_t attrs, binary_t f, obj_t x, obj_t y)
+obj_t rf_call_binary(u8_t attrs, binary_f f, obj_t x, obj_t y)
 {
     switch (attrs)
     {
@@ -1216,65 +1216,67 @@ obj_t rf_at(obj_t x, obj_t y)
 
 obj_t rf_find_vector_i64_vector_i64(obj_t x, obj_t y)
 {
-    u64_t i, n, range, xl = x->len, yl = y->len;
-    i64_t max = 0, min = 0;
-    obj_t vec = vector_i64(yl), found;
-    i64_t *iv1 = as_i64(x), *iv2 = as_i64(y),
-          *ov = as_i64(vec), *fv;
-    ht_t *ht;
+    //     u64_t i, n, range, xl = x->len, yl = y->len;
+    //     i64_t max = 0, min = 0;
+    //     obj_t vec = vector_i64(yl), found;
+    //     i64_t *iv1 = as_i64(x), *iv2 = as_i64(y),
+    //           *ov = as_i64(vec), *fv;
+    //     ht_t *ht;
 
-    for (i = 0; i < xl; i++)
-    {
-        if (iv1[i] > max)
-            max = iv1[i];
-        else if (iv1[i] < min)
-            min = iv1[i];
-    }
+    //     for (i = 0; i < xl; i++)
+    //     {
+    //         if (iv1[i] > max)
+    //             max = iv1[i];
+    //         else if (iv1[i] < min)
+    //             min = iv1[i];
+    //     }
 
-#define normalize(k) ((u64_t)(k - min))
-    // if range fits in 64 mb, use vector positions instead of hash table
-    range = max - min + 1;
-    if (range < 1024 * 1024 * 64)
-    {
-        found = vector_i64(range);
-        fv = as_i64(found);
+    // #define normalize(k) ((u64_t)(k - min))
+    //     // if range fits in 64 mb, use vector positions instead of hash table
+    //     range = max - min + 1;
+    //     if (range < 1024 * 1024 * 64)
+    //     {
+    //         found = vector_i64(range);
+    //         fv = as_i64(found);
 
-        for (i = 0; i < xl; i++)
-            fv[i] = NULL_I64;
+    //         for (i = 0; i < xl; i++)
+    //             fv[i] = NULL_I64;
 
-        for (i = 0; i < xl; i++)
-        {
-            n = normalize(iv1[i]);
-            if (fv[n] == NULL_I64)
-                fv[n] = i;
-        }
+    //         for (i = 0; i < xl; i++)
+    //         {
+    //             n = normalize(iv1[i]);
+    //             if (fv[n] == NULL_I64)
+    //                 fv[n] = i;
+    //         }
 
-        for (i = 0; i < yl; i++)
-        {
-            n = normalize(iv2[i]);
-            if (iv2[i] < min || iv2[i] > max)
-                ov[i] = NULL_I64;
-            else
-                ov[i] = fv[n];
-        }
+    //         for (i = 0; i < yl; i++)
+    //         {
+    //             n = normalize(iv2[i]);
+    //             if (iv2[i] < min || iv2[i] > max)
+    //                 ov[i] = NULL_I64;
+    //             else
+    //                 ov[i] = fv[n];
+    //         }
 
-        drop(found);
+    //         drop(found);
 
-        return vec;
-    }
+    //         return vec;
+    //     }
 
-    // otherwise, use a hash table
-    ht = ht_new(xl, &rfi_kmh_hash, &i64_cmp);
+    //     // otherwise, use a hash table
+    //     ht = ht_new(xl, &rfi_kmh_hash);
 
-    for (i = 0; i < xl; i++)
-        ht_insert(ht, iv1[i], i);
+    //     for (i = 0; i < xl; i++)
+    //         ht_insert(ht, iv1[i], i);
 
-    for (i = 0; i < yl; i++)
-        ov[i] = ht_get(ht, iv2[i]);
+    //     for (i = 0; i < yl; i++)
+    //         ov[i] = ht_get(ht, iv2[i]);
 
-    ht_free(ht);
+    //     ht_free(ht);
 
-    return vec;
+    //     return vec;
+
+    raise(ERR_NOT_IMPLEMENTED, "find: unsupported types");
 }
 
 obj_t rf_find(obj_t x, obj_t y)

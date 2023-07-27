@@ -94,18 +94,9 @@ nil_t pool_node_free(pool_node_t *node)
     mmap_free(node, STRINGS_POOL_SIZE);
 }
 
-/*
- * This callback will be called on new buckets being added to a hash table.
- * In case of symbols this avoids having to copy the string every time.
- * Stores string in the strings pool and returns the pointer to the string.
- */
-i64_t str_dup(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval)
+str_t str_intern(symbols_t *symbols, str_t str, i64_t len)
 {
-    symbols_t *symbols = (symbols_t *)seed;
-
-    str_slice_t *string = (str_slice_t *)key;
-    str_t str = string->str;
-    i64_t len = string->len;
+    str_t p = symbols->strings_pool;
 
     // Allocate new pool node
     if ((i64_t)symbols->strings_pool + len - (i64_t)symbols->pool_node + 1 >= STRINGS_POOL_SIZE)
@@ -114,12 +105,12 @@ i64_t str_dup(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval)
         symbols->pool_node->next = node;
         symbols->pool_node = node;
         symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr
+        p = symbols->strings_pool;
     }
+
     strncpy(symbols->strings_pool, str, len);
-    *tkey = (i64_t)symbols->strings_pool;
-    *tval = val;
     symbols->strings_pool += len + 1; // +1 for null terminator (buffer is zeroed)
-    return *tkey;
+    return p;
 }
 
 symbols_t *symbols_new()
@@ -132,7 +123,7 @@ symbols_t *symbols_new()
     symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr
 
     symbols->str_to_id = ht_new(SYMBOLS_POOL_SIZE, &string_hash, &string_str_cmp);
-    symbols->id_to_str = ht_new(SYMBOLS_POOL_SIZE, &rfi_kmh_hash, &i64_cmp);
+    symbols->id_to_str = ht_new(SYMBOLS_POOL_SIZE, &rfi_i64_hash, &i64_cmp);
     symbols->next_sym_id = 0;
     symbols->next_kw_id = -1;
 
@@ -158,38 +149,60 @@ i64_t intern_symbol(str_t s, i64_t len)
 {
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    str_t p = symbols->strings_pool;
-    i64_t id = symbols->next_sym_id,
-          id_or_str = ht_insert_with(symbols->str_to_id, (i64_t)&str_slice, id, symbols, &str_dup);
+    bucket_t *b = ht_get(&symbols->str_to_id, (i64_t)&str_slice);
+    str_t p;
 
-    // symbol is already interned (strings pool pointer is not moved)
-    if (p == symbols->strings_pool)
-        return id_or_str;
+    // insert new symbol
+    if (b->key == NULL_I64)
+    {
+        p = str_intern(symbols, s, len);
+        b->key = p;
+        b->val = symbols->next_sym_id;
 
-    ht_insert(symbols->id_to_str, id, id_or_str);
-    symbols->next_sym_id++;
-    return id;
+        // insert id into id_to_str
+        b = ht_get(&symbols->id_to_str, symbols->next_sym_id);
+        b->key = symbols->next_sym_id;
+        b->val = p;
+
+        return symbols->next_sym_id++;
+    }
+    // symbol is already interned
+    else
+        return b->val;
 }
 
 i64_t intern_keyword(str_t s, i64_t len)
 {
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    str_t p = symbols->strings_pool;
-    i64_t id = symbols->next_kw_id,
-          id_or_str = ht_insert_with(symbols->str_to_id, (i64_t)&str_slice, id, symbols, &str_dup);
+    bucket_t *b = ht_get(&symbols->str_to_id, (i64_t)&str_slice);
+    str_t p;
 
-    // symbol is already interned (strings pool pointer is not moved)
-    if (p == symbols->strings_pool)
-        return id_or_str;
+    // insert new symbol
+    if (b->key == NULL_I64)
+    {
+        p = str_intern(symbols, s, len);
+        b->key = p;
+        b->val = symbols->next_kw_id;
 
-    ht_insert(symbols->id_to_str, id, id_or_str);
-    symbols->next_kw_id--;
-    return id;
+        // insert id into id_to_str
+        b = ht_get(&symbols->id_to_str, symbols->next_kw_id);
+        b->key = symbols->next_kw_id;
+        b->val = p;
+
+        return symbols->next_kw_id--;
+    }
+    // symbol is already interned
+    else
+        return b->val;
 }
 
 str_t symbols_get(i64_t key)
 {
     symbols_t *symbols = runtime_get()->symbols;
-    return (str_t)ht_get(symbols->id_to_str, key);
+    bucket_t *b = ht_get(&symbols->id_to_str, key);
+    if (b->key == NULL_I64)
+        return "";
+
+    return (str_t)b->val;
 }

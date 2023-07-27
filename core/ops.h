@@ -78,11 +78,12 @@
  */
 #define ALIGNUP(x, a) (((x) + (a)-1) & ~((a)-1))
 
-typedef u64_t (*hash_t)(i64_t);
-typedef i32_t (*cmp_t)(i64_t, i64_t);
-typedef obj_t (*unary_t)(obj_t);
-typedef obj_t (*binary_t)(obj_t, obj_t);
-typedef obj_t (*vary_t)(obj_t *, i64_t n);
+// Function types
+typedef u64_t (*hash_f)(i64_t);
+typedef i32_t (*cmp_f)(i64_t, i64_t);
+typedef obj_t (*unary_f)(obj_t);
+typedef obj_t (*binary_f)(obj_t, obj_t);
+typedef obj_t (*vary_f)(obj_t *, i64_t n);
 
 i32_t i64_cmp(i64_t a, i64_t b);
 

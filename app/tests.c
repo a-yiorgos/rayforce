@@ -34,14 +34,13 @@
 #include "../core/hash.h"
 #include "../core/symbols.h"
 #include "../core/string.h"
-#include "../core/vector.h"
 #include "../core/util.h"
 #include "../core/parse.h"
 #include "../core/runtime.h"
 
 // int test_hash()
 // {
-//     ht_t *table = ht_new();
+//     ht_t table = ht_new();
 //     clock_t start, end;
 //     f64_t cpu_time_used;
 

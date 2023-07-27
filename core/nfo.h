@@ -50,7 +50,7 @@ typedef struct nfo_t
 {
     str_t filename;
     str_t lambda;
-    ht_t *spans;
+    ht_t spans;
 } nfo_t;
 
 nfo_t  nfo_new(str_t filename, str_t lambda);

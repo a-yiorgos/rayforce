@@ -27,7 +27,7 @@
 #include "rayforce.h"
 #include "ops.h"
 
-obj_t rf_call_unary(u8_t attrs, unary_t f, obj_t x);
+obj_t rf_call_unary(u8_t attrs, unary_f f, obj_t x);
 obj_t rf_get(obj_t x);
 obj_t rf_type(obj_t x);
 obj_t rf_count(obj_t x);

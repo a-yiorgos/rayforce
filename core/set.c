@@ -24,7 +24,7 @@
 #include "set.h"
 #include "heap.h"
 
-set_t set_new(u64_t size, hash_t hash)
+set_t set_new(u64_t size, hash_f hash)
 {
     size = next_power_of_two_u64(size);
     i64_t i, *kv;
@@ -51,7 +51,7 @@ nil_t set_rehash(set_t *set)
     i64_t i, old_size = (*set)->size, key, new_size = old_size * 2,
              *old_keys = (*set)->keys, *new_keys;
     u64_t index, factor;
-    hash_t hash = (*set)->hash;
+    hash_f hash = (*set)->hash;
     set_t new_set = set_new(new_size, hash);
 
     new_keys = new_set->keys;

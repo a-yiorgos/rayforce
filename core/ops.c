@@ -232,30 +232,35 @@ obj_t distinct(obj_t x)
 
 obj_t group(obj_t x)
 {
-    i64_t i, j = 0, xl = x->len, range, inrange = 0, min, max, *m, n;
-    obj_t keys, vals, mask, v;
-    ht_t *ht;
+    // i64_t i, j = 0, xl = x->len, range, inrange = 0, min, max, *m, n;
+    // obj_t keys, vals, mask, v;
+    // ht_t *ht;
 
-    if (xl == 0)
-        return dict(vector_i64(0), list(0));
+    // if (xl == 0)
+    //     return dict(vector_i64(0), list(0));
 
-    ht = ht_new(xl, &rfi_i64_hash, &i64_cmp);
+    // ht = ht_new(xl, &rfi_i64_hash);
 
-    // calculate counts for each key
-    for (i = 0; i < xl; i++)
-        ht_upsert_with(ht, as_i64(x)[i], 1, NULL, &cnt_update);
+    // // calculate counts for each key
+    // for (i = 0; i < xl; i++)
+    //     ht_upsert_with(ht, as_i64(x)[i], 1, NULL, &cnt_update);
 
-    keys = vector_i64(ht->count);
-    vals = vector(TYPE_LIST, ht->count);
+    // keys = vector_i64(xl);
+    // vals = vector(TYPE_LIST, xl);
 
-    // finally, fill vectors with positions
-    for (i = 0; i < xl; i++)
-    {
-        if (!ht_upsert_with(ht, as_i64(x)[i], i, as_list(vals) + j, &pos_update))
-            as_i64(keys)[j++] = as_i64(x)[i];
-    }
+    // // finally, fill vectors with positions
+    // for (i = 0; i < xl; i++)
+    // {
+    //     if (!ht_upsert_with(ht, as_i64(x)[i], i, as_list(vals) + j, &pos_update))
+    //         as_i64(keys)[j++] = as_i64(x)[i];
+    // }
 
-    ht_free(ht);
+    // ht_free(ht);
 
-    return dict(keys, vals);
+    // resize(&keys, j);
+    // resize(&vals, j);
+
+    // return dict(keys, vals);
+
+    raise(ERR_NOT_IMPLEMENTED, "not implemented");
 }

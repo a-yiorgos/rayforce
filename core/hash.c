@@ -31,242 +31,91 @@
 #include "heap.h"
 #include "util.h"
 
-CASSERT(sizeof(bucket_t) == 16, hash_h)
+CASSERT(sizeof(struct bucket_t) == 16, hash_h)
+CASSERT(sizeof(struct ht_t) == 24, hash_h)
 
-ht_t *ht_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b))
+ht_t ht_new(u64_t size, hash_f hash, cmp_f cmp)
 {
     size = next_power_of_two_u64(size);
-    i64_t i;
-    ht_t *table = (ht_t *)heap_malloc(sizeof(struct ht_t));
-    bucket_t *buckets = (bucket_t *)heap_malloc(size * sizeof(bucket_t));
 
-    table->buckets = buckets;
-    table->size = size;
-    table->count = 0;
-    table->hasher = hasher;
-    table->compare = compare;
+    i64_t i;
+    bucket_t *buckets;
+    ht_t ht = (ht_t)heap_malloc(sizeof(struct ht_t) + size * sizeof(struct bucket_t));
+
+    ht->size = size;
+    ht->hash = hash;
+    ht->cmp = cmp;
+
+    buckets = ht->buckets;
 
     for (i = 0; i < size; i++)
         buckets[i].key = NULL_I64;
 
-    return table;
+    return ht;
 }
 
-nil_t ht_free(ht_t *table)
+nil_t ht_free(ht_t ht)
 {
-    heap_free(table->buckets);
-    heap_free(table);
+    heap_free(ht);
 }
 
 nil_t ht_rehash(ht_t *table)
 {
-    i64_t i, old_size = table->size, key, val, factor, index;
-    bucket_t *old_buckets = table->buckets, *new_buckets;
+    // i64_t i, old_size = table->size, key, val, factor, index;
+    // bucket_t *old_buckets = table->buckets, *new_buckets;
 
-    // Double the table size.
-    table->size *= 2;
-    table->buckets = (bucket_t *)heap_malloc(table->size * sizeof(bucket_t));
-    factor = table->size - 1;
+    // // Double the table size.
+    // table->size *= 2;
+    // table->buckets = (bucket_t *)heap_malloc(table->size * sizeof(bucket_t));
+    // factor = table->size - 1;
 
-    new_buckets = table->buckets;
+    // new_buckets = table->buckets;
 
-    for (i = 0; i < table->size; i++)
-        new_buckets[i].key = NULL_I64;
+    // for (i = 0; i < table->size; i++)
+    //     new_buckets[i].key = NULL_I64;
 
-    for (i = 0; i < old_size; i++)
-    {
-        if (old_buckets[i].key != NULL_I64)
-        {
-            key = old_buckets[i].key;
-            val = old_buckets[i].val;
-            index = table->hasher(key) & factor;
+    // for (i = 0; i < old_size; i++)
+    // {
+    //     if (old_buckets[i].key != NULL_I64)
+    //     {
+    //         key = old_buckets[i].key;
+    //         val = old_buckets[i].val;
+    //         index = table->hasher(key) & factor;
 
-            // Linear probing.
-            while (new_buckets[index].key != NULL_I64)
-            {
-                if (index == table->size)
-                    panic("ht is full!!");
+    //         // Linear probing.
+    //         while (new_buckets[index].key != NULL_I64)
+    //         {
+    //             if (index == table->size)
+    //                 panic("ht is full!!");
 
-                index = index + 1;
-            }
+    //             index = index + 1;
+    //         }
 
-            new_buckets[index].key = key;
-            new_buckets[index].val = val;
-        }
-    }
+    //         new_buckets[index].key = key;
+    //         new_buckets[index].val = val;
+    //     }
+    // }
 
-    heap_free(old_buckets);
+    // heap_free(old_buckets);
 }
 
-/*
- * Inserts new node or returns existing node.
- * Does not update existing node.
- */
-i64_t ht_insert(ht_t *table, i64_t key, i64_t val)
+bucket_t *ht_get(ht_t *ht, i64_t key)
 {
     while (true)
     {
-        i64_t i = 0, size = table->size, factor = table->size - 1,
-              index = table->hasher(key) & factor;
-        bucket_t *buckets = table->buckets;
+        bucket_t *buckets = (*ht)->buckets;
+        u64_t i = 0, size = (*ht)->size, factor = size - 1,
+              index = (*ht)->hash(key) & factor;
+        cmp_f cmp = (*ht)->cmp;
 
         for (i = index; i < size; i++)
         {
-            if (buckets[i].key != NULL_I64)
-            {
-                if (table->compare(buckets[i].key, key) == 0)
-                    return buckets[i].val;
-            }
-            else
-            {
-                buckets[i].key = key;
-                buckets[i].val = val;
-                table->count++;
-
-                // Check if ht_rehash is necessary.
-                if ((f64_t)table->count / table->size > 0.7)
-                    ht_rehash(table);
-
-                return val;
-            }
+            if (buckets[i].key == NULL_I64)
+                return buckets + i;
+            if (cmp(buckets[i].key, key) == 0)
+                return buckets + i;
         }
 
-        ht_rehash(table);
+        ht_rehash(ht);
     }
-}
-
-/*
- * Does the same as ht_insert, but uses a lambda to set the obj_t of the bucket.
- */
-i64_t ht_insert_with(ht_t *table, i64_t key, i64_t val, nil_t *seed,
-                     i64_t (*func)(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval))
-{
-    while (true)
-    {
-        i64_t i = 0, size = table->size, factor = table->size - 1,
-              index = table->hasher(key) & factor;
-        bucket_t *buckets = table->buckets;
-
-        for (i = index; i < size; i++)
-        {
-            if (buckets[i].key != NULL_I64)
-            {
-                if (table->compare(buckets[i].key, key) == 0)
-                    return buckets[i].val;
-            }
-            else
-            {
-                table->count++;
-
-                // Check if ht_rehash is necessary.
-                if ((f64_t)table->count / table->size > 0.7)
-                    ht_rehash(table);
-
-                return func(key, val, seed, &buckets[i].key, &buckets[i].val);
-            }
-        }
-
-        ht_rehash(table);
-    }
-}
-
-/*
- * Inserts new node or updates existing one.
- * Returns true if the node was updated, false if it was inserted.
- */
-bool_t ht_upsert(ht_t *table, i64_t key, i64_t val)
-{
-    while (true)
-    {
-        i64_t i = 0, size = table->size, factor = table->size - 1,
-              index = table->hasher(key) & factor;
-        bucket_t *buckets = table->buckets;
-
-        for (i = index; i < size; i++)
-        {
-            if (buckets[i].key != NULL_I64)
-            {
-                if (table->compare(buckets[i].key, key) == 0)
-                {
-                    buckets[i].val = val;
-                    return true;
-                }
-            }
-            else
-            {
-                buckets[i].key = key;
-                buckets[i].val = val;
-                table->count++;
-
-                // Check if ht_rehash is necessary.
-                if ((f64_t)table->count / table->size > 0.7)
-                    ht_rehash(table);
-
-                return false;
-            }
-        }
-
-        ht_rehash(table);
-    }
-}
-
-/*
- * Does the same as ht_upsert, but uses a lambda to set the val of the bucket.
- */
-bool_t ht_upsert_with(ht_t *table, i64_t key, i64_t val, nil_t *seed,
-                      bool_t (*func)(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval))
-{
-    while (true)
-    {
-        i64_t i = 0, size = table->size, factor = table->size - 1,
-              index = table->hasher(key) & factor;
-        bucket_t *buckets = table->buckets;
-
-        for (i = index; i < size; i++)
-        {
-            if (buckets[i].key != NULL_I64)
-            {
-                if (table->compare(buckets[i].key, key) == 0)
-                    return func(key, val, seed, &buckets[i].key, &buckets[i].val);
-            }
-            else
-            {
-                buckets[i].key = key;
-                buckets[i].val = val;
-                table->count++;
-
-                // Check if ht_rehash is necessary.
-                if ((f64_t)table->count / table->size > 0.7)
-                    ht_rehash(table);
-
-                return false;
-            }
-        }
-
-        ht_rehash(table);
-    }
-}
-
-/*
- * Returns the obj_t of the node with the given key.
- * Returns -1 if the key does not exist.
- */
-i64_t ht_get(ht_t *table, i64_t key)
-{
-    i64_t i = 0, size = table->size, factor = table->size - 1,
-          index = table->hasher(key) & factor;
-    bucket_t *buckets = table->buckets;
-
-    for (i = index; i < size; i++)
-    {
-        if (buckets[i].key != NULL_I64)
-        {
-            if (table->compare(buckets[i].key, key) == 0)
-                return buckets[i].val;
-        }
-        else
-            return NULL_I64;
-    }
-
-    return NULL_I64;
 }

@@ -25,6 +25,7 @@
 #define HASH_H
 
 #include "rayforce.h"
+#include "ops.h"
 
 typedef struct bucket_t
 {
@@ -34,23 +35,16 @@ typedef struct bucket_t
 
 typedef struct ht_t
 {
-    u64_t (*hasher)(i64_t a);
-    i32_t (*compare)(i64_t a, i64_t b);
-    i64_t size;
-    i64_t count;
-    bucket_t *buckets;
-} ht_t;
+    hash_f hash;
+    cmp_f cmp;
+    u64_t size;
+    bucket_t buckets[];
+} *ht_t;
 
 // clang-format off
-ht_t   *ht_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b));
-nil_t  ht_free(ht_t *table);
-i64_t   ht_insert(ht_t *table, i64_t key, i64_t val);
-i64_t   ht_insert_with(ht_t *table, i64_t key, i64_t val, nil_t *seed,
-                  i64_t (*func)(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval));
-bool_t  ht_upsert(ht_t *table, i64_t key, i64_t val);
-bool_t  ht_upsert_with(ht_t *table, i64_t key, i64_t val, nil_t *seed,
-                  bool_t (*func)(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval));
-i64_t   ht_get(ht_t *table, i64_t key);
+ht_t       ht_new(u64_t size, hash_f hash, cmp_f cmp);
+nil_t      ht_free(ht_t ht);
+bucket_t  *ht_get(ht_t *ht, i64_t key);
 // clang-format on
 
 #endif

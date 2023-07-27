@@ -30,7 +30,7 @@
 
 typedef struct set_t
 {
-    hash_t hash;
+    hash_f hash;
     u64_t size;
     i64_t keys[];
 } *set_t;
@@ -38,7 +38,7 @@ typedef struct set_t
 CASSERT(sizeof(struct set_t) == 16, set_h)
 
 // clang-format off
-set_t  set_new(u64_t size, hash_t hash);
+set_t  set_new(u64_t size, hash_f hash);
 nil_t  set_free(set_t set);
 bool_t set_insert(set_t *set, i64_t key);
 bool_t set_contains(set_t set, i64_t key);

@@ -171,7 +171,7 @@ op_call1:
     load_u64(l, vm);
 made_call1:
     x2 = stack_pop(vm);
-    x1 = rf_call_unary(attrs, (unary_t)l, x2);
+    x1 = rf_call_unary(attrs, (unary_f)l, x2);
     drop(x2);
     unwrap(x1, b);
     stack_push(vm, x1);
@@ -183,7 +183,7 @@ op_call2:
 made_call2:
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
-    x1 = rf_call_binary(attrs, (binary_t)l, x2, x3);
+    x1 = rf_call_binary(attrs, (binary_f)l, x2, x3);
     drop(x2);
     drop(x3);
     unwrap(x1, b);
@@ -196,7 +196,7 @@ op_calln:
     load_u64(l, vm);
 made_calln:
     addr = (obj_t *)(&vm->stack[vm->sp - n]);
-    x1 = rf_call_vary(attrs, (vary_t)l, addr, n);
+    x1 = rf_call_vary(attrs, (vary_f)l, addr, n);
     for (i = 0; i < n; i++)
         drop(stack_pop(vm)); // pop args
     unwrap(x1, b);
