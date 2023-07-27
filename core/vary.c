@@ -26,7 +26,6 @@
 #include "heap.h"
 #include "string.h"
 #include "format.h"
-#include "ops.h"
 #include "util.h"
 
 obj_t rf_call_vary_atomic(vary_t f, obj_t *x, i64_t n)

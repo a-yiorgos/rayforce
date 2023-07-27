@@ -58,11 +58,6 @@ u64_t string_hash(i64_t val)
     return hash;
 }
 
-i32_t i64_cmp(i64_t a, i64_t b)
-{
-    return a != b;
-}
-
 /*
  * Compares str_slice_t with null terminated string.
  * Returns 0 if equal, 1 if not equal.

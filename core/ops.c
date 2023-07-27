@@ -22,10 +22,16 @@
  */
 
 #include <time.h>
-#include "string.h"
 #include "ops.h"
+#include "string.h"
+#include "util.h"
+#include "set.h"
+#include "hash.h"
 
 static u64_t __RND_SEED__ = 0;
+
+#define MAX_LINEAR_VALUE 1024 * 1024 * 64
+#define normalize(k) ((u64_t)(k - min))
 
 /*
  * Incase of using -Ofast compiler flag, we can not just use x != x due to
@@ -77,6 +83,11 @@ bool_t rfi_lt(obj_t x, obj_t y)
     default:
         return 0;
     }
+}
+
+i32_t i64_cmp(i64_t a, i64_t b)
+{
+    return a != b;
 }
 
 i64_t rfi_round_f64(f64_t x)
@@ -131,7 +142,7 @@ u64_t rfi_i64_hash(i64_t key)
     return (u64_t)key;
 }
 
-bool_t rfi_as_vector_bool(obj_t x)
+bool_t rfi_as_bool(obj_t x)
 {
     switch (x->type)
     {
@@ -152,4 +163,99 @@ bool_t rfi_as_vector_bool(obj_t x)
     default:
         return false;
     }
+}
+
+bool_t cnt_update(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval)
+{
+    unused(key);
+    unused(*tkey);
+    unused(seed);
+    unused(val);
+
+    *tval += 1;
+    return true;
+}
+
+bool_t pos_update(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval)
+{
+    unused(key);
+    unused(*tkey);
+
+    // contains count of elements (replace with vector)
+    if ((*tval & (1ll << 62)) == 0)
+    {
+        obj_t *vv = (obj_t *)seed;
+        obj_t v = vector_i64(*tval);
+        as_i64(v)[0] = val;
+        v->len = 1;
+        *vv = v;
+        *tval = (i64_t)seed | 1ll << 62;
+
+        return false;
+    }
+
+    // contains vector
+    obj_t *vv = (obj_t *)(*tval & ~(1ll << 62));
+    i64_t *v = as_i64(*vv);
+    v[(*vv)->len++] = val;
+    return true;
+}
+
+obj_t distinct(obj_t x)
+{
+    i64_t i, j = 0, l;
+    obj_t mask, vec;
+    set_t set;
+
+    if (!x || x->len == 0)
+        return vector_i64(0);
+
+    if (x->attrs & ATTR_DISTINCT)
+        return clone(x);
+
+    l = x->len;
+
+    set = set_new(l, &rfi_i64_hash);
+    vec = vector_i64(l);
+
+    for (i = 0; i < l; i++)
+        if (set_insert(&set, as_i64(x)[i]))
+            as_i64(vec)[j++] = as_i64(x)[i];
+
+    vec->attrs |= ATTR_DISTINCT;
+
+    set_free(set);
+    resize(&vec, j);
+
+    return vec;
+}
+
+obj_t group(obj_t x)
+{
+    i64_t i, j = 0, xl = x->len, range, inrange = 0, min, max, *m, n;
+    obj_t keys, vals, mask, v;
+    ht_t *ht;
+
+    if (xl == 0)
+        return dict(vector_i64(0), list(0));
+
+    ht = ht_new(xl, &rfi_i64_hash, &i64_cmp);
+
+    // calculate counts for each key
+    for (i = 0; i < xl; i++)
+        ht_upsert_with(ht, as_i64(x)[i], 1, NULL, &cnt_update);
+
+    keys = vector_i64(ht->count);
+    vals = vector(TYPE_LIST, ht->count);
+
+    // finally, fill vectors with positions
+    for (i = 0; i < xl; i++)
+    {
+        if (!ht_upsert_with(ht, as_i64(x)[i], i, as_list(vals) + j, &pos_update))
+            as_i64(keys)[j++] = as_i64(x)[i];
+    }
+
+    ht_free(ht);
+
+    return dict(keys, vals);
 }

@@ -23,19 +23,15 @@
 
 #include "set.h"
 #include "heap.h"
-#include "util.h"
 
-set_t *set_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b))
+set_t set_new(u64_t size, hash_t hash)
 {
     size = next_power_of_two_u64(size);
     i64_t i, *kv;
-    set_t *set = (set_t *)heap_malloc(sizeof(struct set_t));
+    set_t set = (set_t)heap_malloc(sizeof(struct set_t) + size * sizeof(i64_t));
 
-    set->keys = (i64_t *)heap_malloc(size * sizeof(i64_t));
     set->size = size;
-    set->count = 0;
-    set->hasher = hasher;
-    set->compare = compare;
+    set->hash = hash;
 
     kv = set->keys;
 
@@ -45,25 +41,22 @@ set_t *set_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i
     return set;
 }
 
-nil_t set_free(set_t *set)
+nil_t set_free(set_t set)
 {
-    heap_free(set->keys);
     heap_free(set);
 }
 
 nil_t set_rehash(set_t *set)
 {
-    i64_t i, old_size = set->size, key,
-             *old_keys = set->keys, *new_keys;
+    i64_t i, old_size = (*set)->size, key, new_size = old_size * 2,
+             *old_keys = (*set)->keys, *new_keys;
     u64_t index, factor;
+    hash_t hash = (*set)->hash;
+    set_t new_set = set_new(new_size, hash);
 
-    // Double the table size.
-    set->size *= 2;
-    set->keys = (i64_t *)heap_malloc(set->size * sizeof(i64_t));
+    new_keys = new_set->keys;
 
-    new_keys = set->keys;
-
-    for (i = 0; i < set->size; i++)
+    for (i = 0; i < new_size; i++)
         new_keys[i] = NULL_I64;
 
     for (i = 0; i < old_size; i++)
@@ -71,10 +64,9 @@ nil_t set_rehash(set_t *set)
         if (old_keys[i] != NULL_I64)
         {
             key = old_keys[i];
-            factor = set->size - 1,
-            index = set->hasher(key) & factor;
+            factor = new_size - 1,
+            index = hash(key) & factor;
 
-            // Linear probing.
             while (new_keys[index] != NULL_I64)
                 index = (index + 1) & factor;
 
@@ -82,68 +74,51 @@ nil_t set_rehash(set_t *set)
         }
     }
 
-    heap_free(old_keys);
+    heap_free(*set);
+
+    *set = new_set;
 }
 
 bool_t set_insert(set_t *set, i64_t key)
 {
     while (true)
     {
-        i32_t i, size = set->size;
-        u64_t factor = set->size - 1, index = set->hasher(key) & factor;
-        i64_t *keys = set->keys;
+        i32_t i, size = (*set)->size;
+        u64_t factor = size - 1, index = (*set)->hash(key) & factor;
+        i64_t *keys = (*set)->keys;
 
         for (i = index; i < size; i++)
         {
+            if (keys[i] == key)
+                return false;
+
             if (keys[i] == NULL_I64)
             {
                 keys[i] = key;
-                set->count++;
-
-                // Check if rehash is necessary.
-                if ((f64_t)set->count / set->size > 0.7)
-                    set_rehash(set);
-
                 return true;
             }
-
-            if (set->compare(keys[i], key) == 0)
-                return false;
         }
 
         set_rehash(set);
     }
 }
 
-bool_t set_contains(set_t *set, i64_t key)
+bool_t set_contains(set_t set, i64_t key)
 {
-    i32_t i, size = set->size;
-    u64_t factor = set->size - 1, index = set->hasher(key) & factor;
-    i64_t *keys = set->keys;
+    // i32_t i, size = set->size;
+    // u64_t factor = set->size - 1, index = set->hash(key) & factor;
+    // i64_t *keys = set->keys;
 
-    for (i = index; i < size; i++)
-    {
-        if (keys[i] != NULL_I64)
-        {
-            if (set->compare(keys[i], key) == 0)
-                return true;
-        }
-        else
-            return false;
-    }
+    // for (i = index; i < size; i++)
+    // {
+    //     if (keys[i] != NULL_I64)
+    //     {
+    //         if (set->cmp(keys[i], key) == 0)
+    //             return true;
+    //     }
+    //     else
+    //         return false;
+    // }
 
     return false;
-}
-
-i64_t set_next(set_t *set, i64_t *index)
-{
-    i64_t *keys = set->keys;
-
-    for (; *index < set->size; (*index)++)
-    {
-        if (keys[*index] != NULL_I64)
-            return keys[(*index)++];
-    }
-
-    return NULL_I64;
 }

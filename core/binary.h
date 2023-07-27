@@ -25,8 +25,7 @@
 #define BINARY_H
 
 #include "rayforce.h"
-
-typedef obj_t (*binary_t)(obj_t, obj_t);
+#include "ops.h"
 
 obj_t rf_call_binary(u8_t attrs, binary_t f, obj_t x, obj_t y);
 obj_t rf_set(obj_t key, obj_t val);

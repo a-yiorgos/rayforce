@@ -573,7 +573,7 @@ obj_t parse_vector(parser_t *parser)
             {
                 vec->type = TYPE_F64;
                 for (i = 0; i < (i32_t)vec->len; i++)
-                    as_vector_f64(vec)[i] = (f64_t)as_vector_i64(vec)[i];
+                    as_f64(vec)[i] = (f64_t)as_i64(vec)[i];
 
                 join_raw(&vec, *(nil_t **)&tok->f64);
             }

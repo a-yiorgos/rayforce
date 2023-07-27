@@ -78,10 +78,18 @@
  */
 #define ALIGNUP(x, a) (((x) + (a)-1) & ~((a)-1))
 
+typedef u64_t (*hash_t)(i64_t);
+typedef i32_t (*cmp_t)(i64_t, i64_t);
+typedef obj_t (*unary_t)(obj_t);
+typedef obj_t (*binary_t)(obj_t, obj_t);
+typedef obj_t (*vary_t)(obj_t *, i64_t n);
+
+i32_t i64_cmp(i64_t a, i64_t b);
+
 bool_t rfi_is_nan(f64_t x);
 bool_t rfi_eq(obj_t x, obj_t y);
 bool_t rfi_lt(obj_t x, obj_t y);
-bool_t rfi_as_vector_bool(obj_t x);
+bool_t rfi_as_bool(obj_t x);
 
 i64_t rfi_round_f64(f64_t x);
 i64_t rfi_floor_f64(f64_t x);
@@ -94,5 +102,8 @@ u64_t rfi_kmh_hash(i64_t key);
 u64_t rfi_fnv1a_hash_64(i64_t key);
 // Identity
 u64_t rfi_i64_hash(i64_t a);
+
+obj_t distinct(obj_t x);
+obj_t group(obj_t x);
 
 #endif

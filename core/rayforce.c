@@ -353,19 +353,19 @@ obj_t at_idx(obj_t obj, u64_t idx)
     {
     case TYPE_I64:
         if (idx < obj->len)
-            return i64(as_vector_i64(obj)[idx]);
+            return i64(as_i64(obj)[idx]);
         return i64(NULL_I64);
     case TYPE_SYMBOL:
         if (idx < obj->len)
-            return symboli64(as_vector_symbol(obj)[idx]);
+            return symboli64(as_symbol(obj)[idx]);
         return symboli64(NULL_I64);
     case TYPE_TIMESTAMP:
         if (idx < obj->len)
-            return timestamp(as_vector_timestamp(obj)[idx]);
+            return timestamp(as_timestamp(obj)[idx]);
         return timestamp(NULL_I64);
     case TYPE_F64:
         if (idx < obj->len)
-            return f64(as_vector_f64(obj)[idx]);
+            return f64(as_f64(obj)[idx]);
         return f64(NULL_F64);
     case TYPE_CHAR:
         if (idx < obj->len)
@@ -417,11 +417,11 @@ obj_t set_idx(obj_t *obj, u64_t idx, obj_t val)
     case mtype2(TYPE_I64, -TYPE_I64):
     case mtype2(TYPE_SYMBOL, -TYPE_I64):
     case mtype2(TYPE_TIMESTAMP, -TYPE_I64):
-        as_vector_i64(*obj)[idx] = val->i64;
+        as_i64(*obj)[idx] = val->i64;
         drop(val);
         return *obj;
     case mtype2(TYPE_F64, -TYPE_F64):
-        as_vector_f64(*obj)[idx] = val->f64;
+        as_f64(*obj)[idx] = val->f64;
         drop(val);
         return *obj;
     case mtype2(TYPE_CHAR, -TYPE_CHAR):
@@ -507,7 +507,7 @@ bool_t equal(obj_t a, obj_t b)
         return a->f64 == b->f64;
     else if (a->type == TYPE_I64 || a->type == TYPE_SYMBOL)
     {
-        if (as_vector_i64(a) == as_vector_i64(b))
+        if (as_i64(a) == as_i64(b))
             return true;
         if (a->len != b->len)
             return false;
@@ -515,14 +515,14 @@ bool_t equal(obj_t a, obj_t b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            if (as_vector_i64(a)[i] != as_vector_i64(b)[i])
+            if (as_i64(a)[i] != as_i64(b)[i])
                 return false;
         }
         return 1;
     }
     else if (a->type == TYPE_F64)
     {
-        if (as_vector_f64(a) == as_vector_f64(b))
+        if (as_f64(a) == as_f64(b))
             return 1;
         if (a->len != b->len)
             return false;
@@ -530,7 +530,7 @@ bool_t equal(obj_t a, obj_t b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            if (as_vector_f64(a)[i] != as_vector_f64(b)[i])
+            if (as_f64(a)[i] != as_f64(b)[i])
                 return false;
         }
         return true;
@@ -553,13 +553,13 @@ i64_t find_raw(obj_t obj, nil_t *val)
     case TYPE_TIMESTAMP:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (as_vector_i64(obj)[i] == val)
+            if (as_i64(obj)[i] == val)
                 return i;
         return l;
     case TYPE_F64:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (as_vector_f64(obj)[i] == *(f64_t *)&val)
+            if (as_f64(obj)[i] == *(f64_t *)&val)
                 return i;
         return l;
     case TYPE_CHAR:
@@ -653,19 +653,19 @@ obj_t cast(type_t type, obj_t obj)
         l = obj->len;
         res = vector_f64(l);
         for (i = 0; i < l; i++)
-            as_vector_f64(res)[i] = (f64_t)as_vector_i64(obj)[i];
+            as_f64(res)[i] = (f64_t)as_i64(obj)[i];
         return res;
     case mtype2(TYPE_I64, TYPE_F64):
         l = obj->len;
         res = vector_i64(l);
         for (i = 0; i < l; i++)
-            as_vector_i64(res)[i] = (i64_t)as_vector_f64(obj)[i];
+            as_i64(res)[i] = (i64_t)as_f64(obj)[i];
         return res;
     case mtype2(TYPE_BOOL, TYPE_I64):
         l = obj->len;
         res = vector_bool(l);
         for (i = 0; i < l; i++)
-            as_vector_bool(res)[i] = (bool_t)as_vector_i64(obj)[i];
+            as_bool(res)[i] = (bool_t)as_i64(obj)[i];
         return res;
         // case mtype2(-TYPE_GUID, TYPE_CHAR):
         //     res = guid(NULL);
@@ -696,13 +696,13 @@ obj_t cast(type_t type, obj_t obj)
         l = obj->len;
         res = vector_i64(l);
         for (i = 0; i < l; i++)
-            as_vector_i64(res)[i] = as_vector_timestamp(obj)[i];
+            as_i64(res)[i] = as_timestamp(obj)[i];
         return res;
     case mtype2(TYPE_TIMESTAMP, TYPE_I64):
         l = obj->len;
         res = vector_timestamp(l);
         for (i = 0; i < l; i++)
-            as_vector_timestamp(res)[i] = as_vector_i64(obj)[i];
+            as_timestamp(res)[i] = as_i64(obj)[i];
         return res;
     default:
         msg = str_fmt(0, "invalid conversion from '%s' to '%s'",

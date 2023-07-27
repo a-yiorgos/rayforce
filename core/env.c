@@ -58,9 +58,9 @@ obj_t rf_memstat()
     // memstat_t stat = heap_memstat();
 
     // keys = vector_symbol(3);
-    // as_vector_symbol(&keys)[0] = symbol("total").i64;
-    // as_vector_symbol(&keys)[1] = symbol("used ").i64;
-    // as_vector_symbol(&keys)[2] = symbol("free ").i64;
+    // as_symbol(&keys)[0] = symbol("total").i64;
+    // as_symbol(&keys)[1] = symbol("used ").i64;
+    // as_symbol(&keys)[2] = symbol("free ").i64;
 
     // vals = list(3);
     // as_list(&vals)[0] = i64(stat.total);
@@ -226,9 +226,9 @@ i64_t env_get_typename_by_type(env_t *env, type_t type)
     i64_t i = find_raw(as_list(env->typenames)[0], type);
 
     if (i == as_list(env->typenames)[0])
-        return as_vector_symbol(as_list(env->typenames)[1])[0];
+        return as_symbol(as_list(env->typenames)[1])[0];
 
-    return as_vector_symbol(as_list(env->typenames)[1])[i];
+    return as_symbol(as_list(env->typenames)[1])[i];
 }
 
 type_t env_get_type_by_typename(env_t *env, i64_t name)
@@ -238,7 +238,7 @@ type_t env_get_type_by_typename(env_t *env, i64_t name)
     if (i == as_list(env->typenames)[1]->len)
         return TYPE_ERROR;
 
-    return (type_t)as_vector_i64(as_list(env->typenames)[0])[i];
+    return (type_t)as_i64(as_list(env->typenames)[0])[i];
 }
 
 str_t env_get_typename(type_t type)

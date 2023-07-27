@@ -25,8 +25,7 @@
 #define MONAD_H
 
 #include "rayforce.h"
-
-typedef obj_t (*unary_t)(obj_t);
+#include "ops.h"
 
 obj_t rf_call_unary(u8_t attrs, unary_t f, obj_t x);
 obj_t rf_get(obj_t x);

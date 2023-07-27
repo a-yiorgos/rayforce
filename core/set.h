@@ -25,22 +25,23 @@
 #define SET_H
 
 #include "rayforce.h"
+#include "util.h"
+#include "ops.h"
 
 typedef struct set_t
 {
-    u64_t (*hasher)(i64_t a);
-    i32_t (*compare)(i64_t a, i64_t b);
-    i64_t size;
-    i64_t count;
-    i64_t *keys;
-} set_t;
+    hash_t hash;
+    u64_t size;
+    i64_t keys[];
+} *set_t;
+
+CASSERT(sizeof(struct set_t) == 16, set_h)
 
 // clang-format off
-set_t  *set_new(i64_t size, u64_t (*hasher)(i64_t a), i32_t (*compare)(i64_t a, i64_t b));
-nil_t  set_free(set_t *set);
-bool_t  set_insert(set_t *set, i64_t key);
-bool_t  set_contains(set_t *set, i64_t key);
-i64_t   set_next(set_t *set, i64_t *index);
+set_t  set_new(u64_t size, hash_t hash);
+nil_t  set_free(set_t set);
+bool_t set_insert(set_t *set, i64_t key);
+bool_t set_contains(set_t set, i64_t key);
 // clang-format on
 
 #endif

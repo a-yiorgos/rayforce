@@ -25,8 +25,7 @@
 #define VARY_H
 
 #include "rayforce.h"
-
-typedef obj_t (*vary_t)(obj_t *, i64_t n);
+#include "ops.h"
 
 obj_t rf_call_vary(u8_t attrs, vary_t f, obj_t *x, i64_t n);
 obj_t rf_list(obj_t *x, i64_t n);

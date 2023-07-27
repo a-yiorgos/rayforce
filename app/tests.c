@@ -141,7 +141,7 @@ nil_t test_find()
     // obj_tv = vector_i64(100000000);
     // for (int i = 0; i < 100000000; i++)
     // {
-    //     as_vector_i64(&v)[i] = i;
+    //     as_i64(&v)[i] = i;
     // }
 
     // clock_t start, end;
@@ -173,7 +173,7 @@ nil_t test_vector()
     debug("testing vector");
 
     obj_t v = vector_i64(1);
-    as_vector_i64(v)[0] = 1;
+    as_i64(v)[0] = 1;
 
     for (i32_t i = 0; i < 1000000; i++)
         join_raw(v, i);

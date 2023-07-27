@@ -157,7 +157,7 @@ op_jne:
     vm->ip++;
     x2 = stack_pop(vm);
     load_u64(l, vm);
-    if (!rfi_as_vector_bool(x2))
+    if (!rfi_as_bool(x2))
         vm->ip = l;
     dispatch();
 op_jmp:

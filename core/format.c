@@ -233,19 +233,19 @@ i32_t raw_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t li
     switch (obj->type)
     {
     case TYPE_BOOL:
-        return bool_fmt_into(dst, len, offset, limit, as_vector_bool(obj)[i]);
+        return bool_fmt_into(dst, len, offset, limit, as_bool(obj)[i]);
     case TYPE_I64:
-        return i64_fmt_into(dst, len, offset, limit, as_vector_i64(obj)[i]);
+        return i64_fmt_into(dst, len, offset, limit, as_i64(obj)[i]);
     case TYPE_F64:
-        return f64_fmt_into(dst, len, offset, limit, as_vector_f64(obj)[i]);
+        return f64_fmt_into(dst, len, offset, limit, as_f64(obj)[i]);
     case TYPE_SYMBOL:
-        return symbol_fmt_into(dst, len, offset, limit, as_vector_symbol(obj)[i]);
+        return symbol_fmt_into(dst, len, offset, limit, as_symbol(obj)[i]);
     case TYPE_TIMESTAMP:
-        return ts_fmt_into(dst, len, offset, limit, as_vector_timestamp(obj)[i]);
+        return ts_fmt_into(dst, len, offset, limit, as_timestamp(obj)[i]);
     // case TYPE_GUID:
-    //     return guid_fmt_into(dst, len, offset, limit, as_vector_guid(obj)[i]);
+    //     return guid_fmt_into(dst, len, offset, limit, as_guid(obj)[i]);
     // case TYPE_CHAR:
-    //     return str_fmt_into(dst, len, offset, limit, "%c", as_vector_char(obj)[i]);
+    //     return str_fmt_into(dst, len, offset, limit, "%c", as_string(obj)[i]);
     case TYPE_LIST:
         return obj_fmt_into(dst, len, offset, indent, limit, as_list(obj)[i]);
     default:
@@ -362,7 +362,7 @@ i32_t dict_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t l
 
 i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, obj_t obj)
 {
-    i64_t *header = as_vector_symbol(as_list(obj)[0]);
+    i64_t *header = as_symbol(as_list(obj)[0]);
     obj_t columns = as_list(obj)[1], column_widths, c;
     i32_t table_width, table_height;
     str_t s, formatted_columns[TABLE_MAX_WIDTH][TABLE_MAX_HEIGHT] = {{NULL}};
@@ -383,7 +383,7 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, obj_t 
     {
         // First check the column name
         n = strlen(symbols_get(header[i]));
-        as_vector_i64(column_widths)[i] = n;
+        as_i64(column_widths)[i] = n;
 
         // Then traverse column until maximum height limit
         for (j = 0; j < table_height; j++)
@@ -394,14 +394,14 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, obj_t 
             o = 0;
             raw_fmt_into(&s, &l, &o, 0, 31, column, j);
             formatted_columns[i][j] = s;
-            maxn(as_vector_i64(column_widths)[i], n);
+            maxn(as_i64(column_widths)[i], n);
         }
     }
 
     // Print table header
     for (i = 0; i < table_width; i++)
     {
-        n = as_vector_i64(column_widths)[i];
+        n = as_i64(column_widths)[i];
         s = symbols_get(header[i]);
         n = n - strlen(s);
         str_fmt_into(dst, len, offset, 0, " %s%*.*s |", s, n, n, PADDING);
@@ -414,7 +414,7 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, obj_t 
     str_fmt_into(dst, len, offset, 0, "\n%*.*s+", indent, indent, PADDING);
     for (i = 0; i < table_width; i++)
     {
-        n = as_vector_i64(column_widths)[i] + 2;
+        n = as_i64(column_widths)[i] + 2;
         str_fmt_into(dst, len, offset, 0, "%*.*s+", n, n, TABLE_HEADER_SEPARATOR);
     }
 
@@ -425,7 +425,7 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, obj_t 
 
         for (i = 0; i < table_width; i++)
         {
-            n = as_vector_i64(column_widths)[i] + 1;
+            n = as_i64(column_widths)[i] + 1;
             s = formatted_columns[i][j];
             n = n - strlen(s);
             str_fmt_into(dst, len, offset, 0, " %s%*.*s|", s, n, n, PADDING);
@@ -454,7 +454,7 @@ i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_
     i64_t id, sym;
 
     // id = vector_find(&as_list(functions)[1], obj);
-    // sym = as_vector_symbol(as_list(functions)[0])[id];
+    // sym = as_symbol(as_list(functions)[0])[id];
 
     // return symbol_fmt_into(dst, len, offset, limit, sym);
 

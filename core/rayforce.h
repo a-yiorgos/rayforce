@@ -153,14 +153,14 @@ extern obj_t error(i8_t code, str_t msg);
 extern nil_t drop(obj_t obj);
 
 // Accessors
-#define as_string(obj)           ((obj)->arr)
-#define as_vector_bool(obj)      ((bool_t *)(as_string(obj)))
-#define as_vector_i64(obj)       ((i64_t *)(as_string(obj)))
-#define as_vector_f64(obj)       ((f64_t *)(as_string(obj)))
-#define as_vector_symbol(obj)    ((i64_t *)(as_string(obj)))
-#define as_vector_timestamp(obj) ((i64_t *)(as_string(obj)))
-#define as_vector_guid(obj)      ((guid_t *)(as_string(obj)))
-#define as_list(obj)             ((obj_t *)(as_string(obj)))
+#define as_string(obj)    ((i8_t *)(obj + 1))
+#define as_bool(obj)      ((bool_t *)(as_string(obj)))
+#define as_i64(obj)       ((i64_t *)(as_string(obj)))
+#define as_f64(obj)       ((f64_t *)(as_string(obj)))
+#define as_symbol(obj)    ((i64_t *)(as_string(obj)))
+#define as_timestamp(obj) ((i64_t *)(as_string(obj)))
+#define as_guid(obj)      ((guid_t *)(as_string(obj)))
+#define as_list(obj)      ((obj_t *)(as_string(obj)))
 
 // Checkers
 extern bool_t is_null(obj_t obj);
