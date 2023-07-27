@@ -85,9 +85,9 @@ obj_t rf_call_unary_atomic(unary_t f, obj_t x)
     return f(x);
 }
 
-obj_t rf_call_unary(u8_t flags, unary_t f, obj_t x)
+obj_t rf_call_unary(u8_t attrs, unary_t f, obj_t x)
 {
-    switch (flags)
+    switch (attrs)
     {
     case FLAG_ATOMIC:
         return rf_call_unary_atomic(f, x);
@@ -151,7 +151,7 @@ obj_t rf_til(obj_t x)
     for (i = 0; i < l; i++)
         as_vector_i64(vec)[i] = i;
 
-    vec->flags = VEC_ATTR_ASC | VEC_ATTR_WITHOUT_NULLS | VEC_ATTR_DISTINCT;
+    vec->attrs = ATTR_ASC | ATTR_WITHOUT_NULLS | ATTR_DISTINCT;
 
     return vec;
 }
@@ -195,7 +195,7 @@ obj_t rf_sum(obj_t x)
         return clone(x);
     case mtype(TYPE_I64):
         l = x->len;
-        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->attrs & ATTR_WITHOUT_NULLS)
         {
             for (i = 0; i < l; i++)
                 isum += as_vector_i64(x)[i];
@@ -236,7 +236,7 @@ obj_t rf_avg(obj_t x)
         iv = as_vector_i64(x);
         isum = 0;
         // vectorized version when we exactly know that there are no nulls
-        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->attrs & ATTR_WITHOUT_NULLS)
         {
             for (i = 0; i < l; i++)
                 isum += iv[i];
@@ -285,11 +285,11 @@ obj_t rf_min(obj_t x)
         iv = as_vector_i64(x);
         imin = iv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->attrs & ATTR_WITHOUT_NULLS)
         {
-            if (x->flags & VEC_ATTR_ASC)
+            if (x->attrs & ATTR_ASC)
                 return i64(iv[0]);
-            if (x->flags & VEC_ATTR_DESC)
+            if (x->attrs & ATTR_DESC)
                 return i64(iv[l - 1]);
             imin = iv[0];
             for (i = 1; i < l; i++)
@@ -325,11 +325,11 @@ obj_t rf_min(obj_t x)
         fv = as_vector_f64(x);
         fmin = fv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->attrs & ATTR_WITHOUT_NULLS)
         {
-            if (x->flags & VEC_ATTR_ASC)
+            if (x->attrs & ATTR_ASC)
                 return f64(fv[0]);
-            if (x->flags & VEC_ATTR_DESC)
+            if (x->attrs & ATTR_DESC)
                 return f64(fv[l - 1]);
             fmin = fv[0];
             for (i = 1; i < l; i++)
@@ -365,11 +365,11 @@ obj_t rf_max(obj_t x)
         iv = as_vector_i64(x);
         imax = iv[0];
         // vectorized version when we exactly know that there are no nulls
-        if (x->flags & VEC_ATTR_WITHOUT_NULLS)
+        if (x->attrs & ATTR_WITHOUT_NULLS)
         {
-            if (x->flags & VEC_ATTR_ASC)
+            if (x->attrs & ATTR_ASC)
                 return i64(iv[l - 1]);
-            if (x->flags & VEC_ATTR_DESC)
+            if (x->attrs & ATTR_DESC)
                 return i64(iv[0]);
             imax = iv[0];
             for (i = 1; i < l; i++)
@@ -461,7 +461,7 @@ obj_t rf_asc(obj_t x)
         for (i = 0; i < l; i++)
             as_vector_i64(idx)[i] = as_vector_i64(x)[as_vector_i64(idx)[i]];
 
-        idx->flags |= VEC_ATTR_ASC;
+        idx->attrs |= ATTR_ASC;
 
         return idx;
 
@@ -482,7 +482,7 @@ obj_t rf_desc(obj_t x)
         for (i = 0; i < l; i++)
             as_vector_i64(idx)[i] = as_vector_i64(x)[as_vector_i64(idx)[i]];
 
-        idx->flags |= VEC_ATTR_DESC;
+        idx->attrs |= ATTR_DESC;
 
         return idx;
 

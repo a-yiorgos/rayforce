@@ -86,7 +86,7 @@ obj_t __attribute__((hot)) vm_exec(vm_t *vm, obj_t fun)
     str_t code = as_string(f->code);
     obj_t x0, x1, x2, x3, *addr;
     i64_t t;
-    u8_t n, flags;
+    u8_t n, attrs;
     u64_t l, p;
     i32_t i, j, b;
     ctx_t ctx;
@@ -167,23 +167,23 @@ op_jmp:
     dispatch();
 op_call1:
     b = vm->ip++;
-    flags = code[vm->ip++];
+    attrs = code[vm->ip++];
     load_u64(l, vm);
 made_call1:
     x2 = stack_pop(vm);
-    x1 = rf_call_unary(flags, (unary_t)l, x2);
+    x1 = rf_call_unary(attrs, (unary_t)l, x2);
     drop(x2);
     unwrap(x1, b);
     stack_push(vm, x1);
     dispatch();
 op_call2:
     b = vm->ip++;
-    flags = code[vm->ip++];
+    attrs = code[vm->ip++];
     load_u64(l, vm);
 made_call2:
     x3 = stack_pop(vm);
     x2 = stack_pop(vm);
-    x1 = rf_call_binary(flags, (binary_t)l, x2, x3);
+    x1 = rf_call_binary(attrs, (binary_t)l, x2, x3);
     drop(x2);
     drop(x3);
     unwrap(x1, b);
@@ -192,11 +192,11 @@ made_call2:
 op_calln:
     b = vm->ip++;
     n = code[vm->ip++];
-    flags = code[vm->ip++];
+    attrs = code[vm->ip++];
     load_u64(l, vm);
 made_calln:
     addr = (obj_t *)(&vm->stack[vm->sp - n]);
-    x1 = rf_call_vary(flags, (vary_t)l, addr, n);
+    x1 = rf_call_vary(attrs, (vary_t)l, addr, n);
     for (i = 0; i < n; i++)
         drop(stack_pop(vm)); // pop args
     unwrap(x1, b);
@@ -214,19 +214,19 @@ made_calld:
     //         unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
     //     x0 = stack_pop(vm);
     //     l = x0->i64;
-    //     flags = x0->flags;
+    //     attrs = x0->attrs;
     //     goto made_call1;
     // case TYPE_BINARY:
     //     if (n != 2)
     //         unwrap(error(ERR_LENGTH, "wrong number of arguments"), b);
     //     x0 = stack_pop(vm);
     //     l = x0.i64;
-    //     flags = x0.flags;
+    //     attrs = x0.attrs;
     //     goto made_call2;
     // case TYPE_VARY:
     //     x0 = stack_pop(vm);
     //     l = x0.i64;
-    //     flags = x0.flags;
+    //     attrs = x0.attrs;
     //     goto made_calln;
     // case TYPE_LAMBDA:
     //     /* Call stack of user lambda call looks as follows:
@@ -498,20 +498,20 @@ str_t vm_code_fmt(obj_t fun)
             b = ip++;
             n = code[ip++];
             load_u64(p, code, ip);
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call1 <flags: %d fn: %p>\n", c++, b, n, p);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call1 <attrs: %d fn: %p>\n", c++, b, n, p);
             break;
         case OP_CALL2:
             b = ip++;
             n = code[ip++];
             load_u64(p, code, ip);
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call2 <flags: %d fn: %p>\n", c++, b, n, p);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] call2 <attrs: %d fn: %p>\n", c++, b, n, p);
             break;
         case OP_CALLN:
             b = ip++;
             m = code[ip++];
             n = code[ip++];
             load_u64(p, code, ip);
-            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] calln <argn: %d flags: %d fn: %p>\n", c++, b, m, n, p);
+            str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] calln <argn: %d attrs: %d fn: %p>\n", c++, b, m, n, p);
             break;
         case OP_TIMER_SET:
             str_fmt_into(&s, &l, &o, 0, "%.4d: [%.4d] timer_set\n", c++, ip++);

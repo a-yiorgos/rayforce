@@ -36,7 +36,7 @@
     {                                                           \
         join_raw(&as_list(r)[0], intern_keyword(n, strlen(n))); \
         obj_t _o = atom(-t);                                    \
-        _o->flags = f;                                          \
+        _o->attrs = f;                                          \
         _o->i64 = (i64_t)o;                                     \
         join_raw(&as_list(r)[1], _o);                           \
     };

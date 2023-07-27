@@ -43,9 +43,9 @@ obj_t rf_call_vary_atomic(vary_t f, obj_t *x, i64_t n)
         return f(x, n);
 }
 
-obj_t rf_call_vary(u8_t flags, vary_t f, obj_t *x, i64_t n)
+obj_t rf_call_vary(u8_t attrs, vary_t f, obj_t *x, i64_t n)
 {
-    switch (flags)
+    switch (attrs)
     {
     case FLAG_ATOMIC:
         return rf_call_vary_atomic(f, x, n);

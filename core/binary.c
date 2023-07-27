@@ -284,9 +284,9 @@ obj_t rf_call_binary_atomic(binary_t f, obj_t x, obj_t y)
     return call_binary(f, x, y);
 }
 
-obj_t rf_call_binary(u8_t flags, binary_t f, obj_t x, obj_t y)
+obj_t rf_call_binary(u8_t attrs, binary_t f, obj_t x, obj_t y)
 {
-    switch (flags)
+    switch (attrs)
     {
     case FLAG_ATOMIC:
         return rf_call_binary_atomic(f, x, y);

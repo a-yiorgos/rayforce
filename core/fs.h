@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include "rayforce.h"
 
-i64_t fs_fopen(str_t path, i64_t flags);
+i64_t fs_fopen(str_t path, i64_t attrs);
 i64_t fs_fsize(i64_t fd);
 i64_t fs_fclose(i64_t fd);
 

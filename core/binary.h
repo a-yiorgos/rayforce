@@ -28,7 +28,7 @@
 
 typedef obj_t (*binary_t)(obj_t, obj_t);
 
-obj_t rf_call_binary(u8_t flags, binary_t f, obj_t x, obj_t y);
+obj_t rf_call_binary(u8_t attrs, binary_t f, obj_t x, obj_t y);
 obj_t rf_set(obj_t key, obj_t val);
 obj_t rf_dict(obj_t x, obj_t y);
 obj_t rf_table(obj_t x, obj_t y);

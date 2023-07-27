@@ -605,11 +605,6 @@ i64_t find_sym(obj_t obj, str_t str)
     return find_raw(obj, n);
 }
 
-/*
- * Casts the obj to the specified type.
- * If the cast is not possible, returns an error obj.
- * If obj is already of the specified type, returns the obj itself (cloned).
- */
 obj_t cast(type_t type, obj_t obj)
 {
     obj_t res, err;

@@ -101,7 +101,7 @@ typedef struct obj_t
     u8_t arch;
     u8_t code;
     type_t type;
-    u8_t flags;
+    u8_t attrs;
     u32_t rc;
     union
     {

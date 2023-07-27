@@ -24,6 +24,7 @@
 #include "sort.h"
 #include "util.h"
 #include "string.h"
+#include "ops.h"
 
 #define COUNTING_SORT_LIMIT 1024 * 1024
 
@@ -274,14 +275,14 @@ obj_t rf_sort_asc(obj_t vec)
     obj_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(indices);
 
-    if (vec->flags & VEC_ATTR_ASC)
+    if (vec->attrs & ATTR_ASC)
     {
         for (i = 0; i < len; i++)
             ov[i] = i;
         return indices;
     }
 
-    if (vec->flags & VEC_ATTR_DESC)
+    if (vec->attrs & ATTR_DESC)
     {
         for (i = 0; i < len; i++)
             ov[i] = len - i - 1;
@@ -307,7 +308,7 @@ obj_t rf_sort_asc(obj_t vec)
     // ascending order
     if (out_of_order == 0)
     {
-        vec->flags |= VEC_ATTR_ASC;
+        vec->attrs |= ATTR_ASC;
         for (i = 0; i < len; i++)
             ov[i] = i;
         return indices;
@@ -316,7 +317,7 @@ obj_t rf_sort_asc(obj_t vec)
     // descending order
     if (out_of_order == len - 1)
     {
-        vec->flags |= VEC_ATTR_DESC;
+        vec->attrs |= ATTR_DESC;
         for (i = 0; i < len; i++)
             ov[i] = len - i - 1;
         return indices;
@@ -355,14 +356,14 @@ obj_t rf_sort_desc(obj_t vec)
     obj_t indices = vector_i64(len);
     i64_t *iv = as_vector_i64(vec), *ov = as_vector_i64(indices);
 
-    if (vec->flags & VEC_ATTR_DESC)
+    if (vec->attrs & ATTR_DESC)
     {
         for (i64_t i = 0; i < len; i++)
             ov[i] = i;
         return indices;
     }
 
-    if (vec->flags & VEC_ATTR_ASC)
+    if (vec->attrs & ATTR_ASC)
     {
         for (i64_t i = 0; i < len; i++)
             ov[i] = len - i - 1;
@@ -388,7 +389,7 @@ obj_t rf_sort_desc(obj_t vec)
     // descending order
     if (out_of_order == 0)
     {
-        vec->flags |= VEC_ATTR_DESC;
+        vec->attrs |= ATTR_DESC;
         for (i64_t i = 0; i < len; i++)
             ov[i] = i;
         return indices;
@@ -397,7 +398,7 @@ obj_t rf_sort_desc(obj_t vec)
     // ascending order
     if (out_of_order == len - 1)
     {
-        vec->flags |= VEC_ATTR_ASC;
+        vec->attrs |= ATTR_ASC;
         for (i64_t i = 0; i < len; i++)
             ov[i] = len - i - 1;
         return indices;

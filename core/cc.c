@@ -360,7 +360,7 @@ cc_result_t cc_compile_call(cc_t *cc, obj_t car, u8_t arity)
             cerr(cc, car, ERR_LENGTH, "unary function expects 1 argument");
 
         push_opcode(cc, car, code, OP_CALL1);
-        push_u8(code, prim->flags);
+        push_u8(code, prim->attrs);
         push_u64(code, prim->i64);
 
         return CC_OK;
@@ -369,14 +369,14 @@ cc_result_t cc_compile_call(cc_t *cc, obj_t car, u8_t arity)
             cerr(cc, car, ERR_LENGTH, "binary function expects 2 arguments");
 
         push_opcode(cc, car, code, OP_CALL2);
-        push_u8(code, prim->flags);
+        push_u8(code, prim->attrs);
         push_u64(code, prim->i64);
 
         return CC_OK;
     case TYPE_VARY:
         push_opcode(cc, car, code, OP_CALLN);
         push_u8(code, arity);
-        push_u8(code, prim->flags);
+        push_u8(code, prim->attrs);
         push_u64(code, prim->i64);
 
         return CC_OK;
@@ -811,6 +811,16 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, obj_t obj)
     case -TYPE_SYMBOL:
         if (!has_consumer)
             return CC_NULL;
+
+        // Symbol is quoted
+        if (obj->attrs & ATTR_QUOTED)
+        {
+            push_opcode(cc, obj, code, OP_PUSH);
+            push_const(cc, clone(obj));
+            func->stack_size++;
+
+            return CC_OK;
+        }
 
         // self is a special case
         if (obj->i64 == KW_SELF)

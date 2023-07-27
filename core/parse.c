@@ -358,33 +358,48 @@ obj_t parse_char(parser_t *parser)
 {
     span_t span = span_start(parser);
     str_t pos = parser->current + 1; // skip '''
-    obj_t ch, err;
+    obj_t res, err;
+    i64_t id;
+    char_t ch;
 
     if (at_eof(*pos) || *pos == '\n')
     {
-        span.end_column += (pos - parser->current);
-        nfo_insert(&parser->nfo, parser->count, span);
-        err = parse_error(parser, parser->count++, str_fmt(0, "Expected character"));
+        shift(parser, pos - parser->current);
+        span_extend(parser, &span);
+        nfo_insert(&parser->nfo, res, span);
 
-        return err;
+        res = null(TYPE_SYMBOL);
+        res->attrs = ATTR_QUOTED;
+
+        return res;
     }
 
-    ch = schar(*pos++);
+    ch = *pos++;
 
     if (*pos != '\'')
     {
-        span.end_column += (pos - parser->current);
-        nfo_insert(&parser->nfo, parser->count, span);
-        err = parse_error(parser, parser->count++, str_fmt(0, "Expected '''"));
+        // continue parsing a symbol
+        while (!at_eof(*pos) && *pos != '\n' && (is_alphanum(*pos) || is_op(*pos)))
+            pos++;
 
-        return err;
+        id = intern_symbol(parser->current + 1, pos - (parser->current + 1));
+        res = i64(id);
+        res->type = -TYPE_SYMBOL;
+        res->attrs = ATTR_QUOTED;
+        shift(parser, pos - parser->current);
+        span_extend(parser, &span);
+        nfo_insert(&parser->nfo, res, span);
+
+        return res;
     }
+
+    res = schar(ch);
 
     shift(parser, 3);
     span_extend(parser, &span);
-    nfo_insert(&parser->nfo, ch, span);
+    nfo_insert(&parser->nfo, res, span);
 
-    return ch;
+    return res;
 }
 
 obj_t parse_string(parser_t *parser)
@@ -774,20 +789,6 @@ obj_t advance(parser_t *parser)
             shift(parser, 1);
 
         return advance(parser);
-    }
-
-    if ((*parser->current) == '`')
-    {
-        shift(parser, 1);
-
-        tok = advance(parser);
-        if (is_error(tok))
-            return tok;
-
-        if (is_at_term(tok))
-            tok = null(0);
-
-        return list(2, symbol("`"), tok);
     }
 
     if (at_eof(*parser->current))

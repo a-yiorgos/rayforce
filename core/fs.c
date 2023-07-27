@@ -23,9 +23,9 @@
 
 #include "fs.h"
 
-i64_t fs_fopen(str_t path, i64_t flags)
+i64_t fs_fopen(str_t path, i64_t attrs)
 {
-    return open(path, flags);
+    return open(path, attrs);
 }
 
 i64_t fs_fsize(i64_t fd)

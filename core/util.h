@@ -95,11 +95,6 @@
         return _e;                          \
     }
 
-#define VEC_ATTR_DISTINCT 1
-#define VEC_ATTR_ASC 2
-#define VEC_ATTR_DESC 4
-#define VEC_ATTR_WITHOUT_NULLS 8
-
 bool_t is_valid(obj_t obj);
 
 i32_t size_of(type_t type);
