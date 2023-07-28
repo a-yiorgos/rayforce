@@ -33,7 +33,7 @@
 #include "runtime.h"
 #include "ops.h"
 
-#define SYMBOLS_POOL_SIZE 4096 * 8
+#define SYMBOLS_POOL_SIZE 128
 
 typedef struct str_slice_t
 {
@@ -122,8 +122,8 @@ symbols_t *symbols_new()
     symbols->pool_node = node;
     symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr
 
-    symbols->str_to_id = ht_new(SYMBOLS_POOL_SIZE, &string_hash, &string_str_cmp);
-    symbols->id_to_str = ht_new(SYMBOLS_POOL_SIZE, &rfi_i64_hash, &i64_cmp);
+    symbols->str_to_id = ht(SYMBOLS_POOL_SIZE, 2);
+    symbols->id_to_str = ht(SYMBOLS_POOL_SIZE, 2);
     symbols->next_sym_id = 0;
     symbols->next_kw_id = -1;
 
@@ -141,68 +141,70 @@ nil_t symbols_free(symbols_t *symbols)
         node = next;
     }
 
-    ht_free(symbols->str_to_id);
-    ht_free(symbols->id_to_str);
+    drop(symbols->str_to_id);
+    drop(symbols->id_to_str);
 }
 
 i64_t intern_symbol(str_t s, i64_t len)
 {
+    str_t p;
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    bucket_t *b = ht_get(&symbols->str_to_id, (i64_t)&str_slice);
-    str_t p;
+    i64_t *b = ht_get_with(&symbols->str_to_id, (i64_t)&str_slice,
+                           &string_hash, &string_str_cmp);
 
     // insert new symbol
-    if (b->key == NULL_I64)
+    if (b[0] == NULL_I64)
     {
         p = str_intern(symbols, s, len);
-        b->key = p;
-        b->val = symbols->next_sym_id;
+        b[0] = p;
+        b[1] = symbols->next_sym_id;
 
         // insert id into id_to_str
         b = ht_get(&symbols->id_to_str, symbols->next_sym_id);
-        b->key = symbols->next_sym_id;
-        b->val = p;
+        b[0] = symbols->next_sym_id;
+        b[1] = p;
 
         return symbols->next_sym_id++;
     }
     // symbol is already interned
     else
-        return b->val;
+        return b[1];
 }
 
 i64_t intern_keyword(str_t s, i64_t len)
 {
+    str_t p;
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    bucket_t *b = ht_get(&symbols->str_to_id, (i64_t)&str_slice);
-    str_t p;
+    i64_t *b = ht_get_with(&symbols->str_to_id, (i64_t)&str_slice,
+                           &string_hash, &string_str_cmp);
 
     // insert new symbol
-    if (b->key == NULL_I64)
+    if (b[0] == NULL_I64)
     {
         p = str_intern(symbols, s, len);
-        b->key = p;
-        b->val = symbols->next_kw_id;
+        b[0] = p;
+        b[1] = symbols->next_kw_id;
 
         // insert id into id_to_str
         b = ht_get(&symbols->id_to_str, symbols->next_kw_id);
-        b->key = symbols->next_kw_id;
-        b->val = p;
+        b[0] = symbols->next_kw_id;
+        b[1] = p;
 
         return symbols->next_kw_id--;
     }
     // symbol is already interned
     else
-        return b->val;
+        return b[1];
 }
 
 str_t symbols_get(i64_t key)
 {
     symbols_t *symbols = runtime_get()->symbols;
-    bucket_t *b = ht_get(&symbols->id_to_str, key);
-    if (b->key == NULL_I64)
+    i64_t *b = ht_get(&symbols->id_to_str, key);
+    if (b[0] == NULL_I64)
         return "";
 
-    return (str_t)b->val;
+    return (str_t)b[1];
 }

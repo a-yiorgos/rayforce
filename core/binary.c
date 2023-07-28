@@ -29,7 +29,6 @@
 #include "util.h"
 #include "format.h"
 #include "hash.h"
-#include "set.h"
 
 obj_t call_binary(binary_f f, obj_t x, obj_t y)
 {
@@ -1272,7 +1271,7 @@ obj_t rf_find_vector_i64_vector_i64(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //         ov[i] = ht_get(ht, iv2[i]);
 
-    //     ht_free(ht);
+    //     drop(ht);
 
     //     return vec;
 
@@ -1795,8 +1794,7 @@ obj_t rf_take(obj_t x, obj_t y)
 obj_t rf_in(obj_t x, obj_t y)
 {
     i64_t i, xl, yl;
-    obj_t vec;
-    set_t *set;
+    obj_t vec, set;
 
     // switch
     //     mtype2(x->type, y->type)

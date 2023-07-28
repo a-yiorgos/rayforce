@@ -659,12 +659,12 @@ nil_t print_error(obj_t error, str_t filename, str_t source, u32_t len)
 
     if (!source)
     {
-        printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s %s %s\n", TOMATO, error->code, RESET,
+        printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s %s %s\n", TOMATO, as_list(error)[0]->i64, RESET,
                error_desc, CYAN, RESET, filename, span.end_line, span.end_column, TOMATO, as_string(as_list(error)[1]), RESET);
         return;
     }
 
-    printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s|%s\n", TOMATO, error->code, RESET,
+    printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s|%s\n", TOMATO, as_list(error)[0]->i64, RESET,
            error_desc, CYAN, RESET, filename, span.end_line, span.end_column, CYAN, RESET);
 
     while (1)

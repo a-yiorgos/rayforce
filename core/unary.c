@@ -29,7 +29,6 @@
 #include "format.h"
 #include "sort.h"
 #include "guid.h"
-#include "set.h"
 #include "env.h"
 #include "parse.h"
 #include "fs.h"

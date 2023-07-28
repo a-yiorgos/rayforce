@@ -32,7 +32,7 @@ nfo_t nfo_new(str_t filename, str_t lambda)
     nfo_t nfo = {
         .filename = filename,
         .lambda = lambda,
-        .spans = ht_new(32, &rfi_i64_hash, &i64_cmp),
+        .spans = ht(32, 2),
     };
 
     return nfo;
@@ -40,25 +40,25 @@ nfo_t nfo_new(str_t filename, str_t lambda)
 
 nil_t nfo_insert(nfo_t *nfo, i64_t index, span_t span)
 {
-    bucket_t *b = ht_get(&nfo->spans, index);
-    b->key = index;
-    memcpy(&b->val, &span, sizeof(span_t));
+    i64_t *b = ht_get(&nfo->spans, index);
+    b[0] = index;
+    memcpy(b + 1, &span, sizeof(span_t));
 }
 
 span_t nfo_get(nfo_t *nfo, i64_t index)
 {
-    bucket_t *b = ht_get(&nfo->spans, index);
+    i64_t *b = ht_get(&nfo->spans, index);
 
-    if (b->key == NULL_I64)
+    if (b[0] == NULL_I64)
         return (span_t){0};
 
     span_t span;
-    memcpy(&span, &b->val, sizeof(span_t));
+    memcpy(&span, b + 1, sizeof(span_t));
 
     return span;
 }
 
 nil_t nfo_free(nfo_t *nfo)
 {
-    ht_free(nfo->spans);
+    drop(nfo->spans);
 }

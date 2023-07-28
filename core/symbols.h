@@ -46,8 +46,8 @@ typedef struct symbols_t
 {
     i64_t next_kw_id;
     i64_t next_sym_id;
-    ht_t str_to_id;
-    ht_t id_to_str;
+    obj_t str_to_id;
+    obj_t id_to_str;
     pool_node_t *pool_node_0;
     pool_node_t *pool_node;
     str_t strings_pool;

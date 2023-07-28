@@ -31,94 +31,98 @@
 #include "heap.h"
 #include "util.h"
 
-obj_t ht(u64_t size)
+/*
+ * Create a new hash table as a vector
+ */
+obj_t ht(u64_t size, u64_t bucket_size)
 {
-    size = next_power_of_two_u64(size);
+    u64_t i;
+    obj_t obj;
 
-    obj_t ht = (obj_t)heap_malloc(sizeof(struct obj_t) + size * size_of(i64_t));
+    size = next_power_of_two_u64(size) * bucket_size;
+    obj = vector(TYPE_I64, size);
+    obj->mul = bucket_size;
 
-    vec->type = type;
-    vec->rc = 1;
-    vec->len = len;
-    vec->attrs = 0;
-    i64_t i;
-    bucket_t *buckets;
-    ht_t ht = (ht_t)heap_malloc(sizeof(struct ht_t) + size * sizeof(struct bucket_t));
+    for (i = 0; i < size; i += bucket_size)
+        as_i64(obj)[i] = NULL_I64;
 
-    ht->size = size;
-    ht->hash = hash;
-    ht->cmp = cmp;
-
-    buckets = ht->buckets;
-
-    for (i = 0; i < size; i++)
-        buckets[i].key = NULL_I64;
-
-    return ht;
+    return obj;
 }
 
-nil_t ht_free(ht_t ht)
+nil_t ht_rehash(obj_t *obj, hash_f hash)
 {
-    heap_free(ht);
+    u64_t i, l, size = (*obj)->len, mul = (*obj)->mul, key, val, factor, index;
+    obj_t new_ht = ht(size * 2, mul);
+
+    factor = new_ht->len - 1;
+
+    for (i = 0; i < size * 2; i += mul)
+        as_i64(new_ht)[i] = NULL_I64;
+
+    for (i = 0; i < size; i += mul)
+    {
+        if (as_i64(*obj)[i] != NULL_I64)
+        {
+            key = as_i64(*obj)[i];
+            val = as_i64(*obj)[i + 1];
+            index = hash ? hash(key) & factor : key & factor;
+
+            while (as_i64(new_ht)[i] != NULL_I64)
+            {
+                if (index == size * 2)
+                    panic("ht is full!!");
+
+                index = index + 1;
+            }
+
+            as_i64(new_ht)[index] = key;
+            as_i64(new_ht)[index + 1] = val;
+        }
+    }
+
+    drop(*obj);
+
+    *obj = new_ht;
 }
 
-nil_t ht_rehash(ht_t *table)
+i64_t *ht_get(obj_t *obj, i64_t key)
 {
-    // i64_t i, old_size = table->size, key, val, factor, index;
-    // bucket_t *old_buckets = table->buckets, *new_buckets;
+    u64_t mul = (*obj)->mul;
+    u64_t size = (*obj)->len / mul;
 
-    // // Double the table size.
-    // table->size *= 2;
-    // table->buckets = (bucket_t *)heap_malloc(table->size * sizeof(bucket_t));
-    // factor = table->size - 1;
-
-    // new_buckets = table->buckets;
-
-    // for (i = 0; i < table->size; i++)
-    //     new_buckets[i].key = NULL_I64;
-
-    // for (i = 0; i < old_size; i++)
-    // {
-    //     if (old_buckets[i].key != NULL_I64)
-    //     {
-    //         key = old_buckets[i].key;
-    //         val = old_buckets[i].val;
-    //         index = table->hasher(key) & factor;
-
-    //         // Linear probing.
-    //         while (new_buckets[index].key != NULL_I64)
-    //         {
-    //             if (index == table->size)
-    //                 panic("ht is full!!");
-
-    //             index = index + 1;
-    //         }
-
-    //         new_buckets[index].key = key;
-    //         new_buckets[index].val = val;
-    //     }
-    // }
-
-    // heap_free(old_buckets);
-}
-
-bucket_t *ht_get(ht_t *ht, i64_t key)
-{
     while (true)
     {
-        bucket_t *buckets = (*ht)->buckets;
-        u64_t i = 0, size = (*ht)->size, factor = size - 1,
-              index = (*ht)->hash(key) & factor;
-        cmp_f cmp = (*ht)->cmp;
+        u64_t i = key & (size - 1);
+        i64_t *b = as_i64(*obj) + i * mul;
 
-        for (i = index; i < size; i++)
+        for (; i < size; i++, b += mul)
         {
-            if (buckets[i].key == NULL_I64)
-                return buckets + i;
-            if (cmp(buckets[i].key, key) == 0)
-                return buckets + i;
+            if (b[0] == NULL_I64 || b[0] == key)
+                return b;
         }
 
-        ht_rehash(ht);
+        ht_rehash(obj, NULL);
+        size = (*obj)->len / mul;
+    }
+}
+
+i64_t *ht_get_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp)
+{
+    u64_t mul = (*obj)->mul;
+    u64_t size = (*obj)->len / mul;
+
+    while (true)
+    {
+        u64_t i = hash(key) & (size - 1);
+        i64_t *b = as_i64(*obj) + i * mul;
+
+        for (; i < size; i++, b += mul)
+        {
+            if (b[0] == NULL_I64 || (cmp(b[0], key) == 0))
+                return b;
+        }
+
+        ht_rehash(obj, hash);
+        size = (*obj)->len / mul;
     }
 }

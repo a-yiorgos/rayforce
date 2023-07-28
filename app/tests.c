@@ -81,7 +81,7 @@
 //     printf("Time: %f ms\n", cpu_time_used * 1000);
 //     printf("Collisions: %lld  %lld%%", collisions, (collisions * 100) / 1000000);
 
-//     ht_free(table);
+//     drop(table);
 
 //     return 0;
 // }

@@ -25,7 +25,6 @@
 #include "ops.h"
 #include "string.h"
 #include "util.h"
-#include "set.h"
 #include "hash.h"
 
 static u64_t __RND_SEED__ = 0;
@@ -203,9 +202,8 @@ bool_t pos_update(i64_t key, i64_t val, nil_t *seed, i64_t *tkey, i64_t *tval)
 
 obj_t distinct(obj_t x)
 {
-    i64_t i, j = 0, l;
-    obj_t mask, vec;
-    set_t set;
+    i64_t i, j = 0, l, *p;
+    obj_t mask, vec, set;
 
     if (!x || x->len == 0)
         return vector_i64(0);
@@ -215,16 +213,22 @@ obj_t distinct(obj_t x)
 
     l = x->len;
 
-    set = set_new(l, &rfi_i64_hash);
+    set = ht(l, 1);
     vec = vector_i64(l);
 
     for (i = 0; i < l; i++)
-        if (set_insert(&set, as_i64(x)[i]))
+    {
+        p = ht_get(&set, as_i64(x)[i]);
+        if (p[0] == NULL_I64)
+        {
+            p[0] = as_i64(x)[i];
             as_i64(vec)[j++] = as_i64(x)[i];
+        }
+    }
 
     vec->attrs |= ATTR_DISTINCT;
 
-    set_free(set);
+    drop(set);
     resize(&vec, j);
 
     return vec;
@@ -255,7 +259,7 @@ obj_t group(obj_t x)
     //         as_i64(keys)[j++] = as_i64(x)[i];
     // }
 
-    // ht_free(ht);
+    // drop(ht);
 
     // resize(&keys, j);
     // resize(&vals, j);

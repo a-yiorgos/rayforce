@@ -27,24 +27,8 @@
 #include "rayforce.h"
 #include "ops.h"
 
-typedef struct bucket_t
-{
-    i64_t key;
-    i64_t val;
-} bucket_t;
-
-typedef struct ht_t
-{
-    hash_f hash;
-    cmp_f cmp;
-    u64_t size;
-    bucket_t buckets[];
-} *ht_t;
-
-// clang-format off
-ht_t       ht_new(u64_t size, hash_f hash, cmp_f cmp);
-nil_t      ht_free(ht_t ht);
-bucket_t  *ht_get(ht_t *ht, i64_t key);
-// clang-format on
+obj_t ht(u64_t size, u64_t bucket_size);
+i64_t *ht_get(obj_t *obj, i64_t key);
+i64_t *ht_get_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp);
 
 #endif

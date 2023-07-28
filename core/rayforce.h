@@ -45,7 +45,6 @@ extern "C"
 #define TYPE_UNARY 101
 #define TYPE_BINARY 102
 #define TYPE_VARY 103
-#define TYPE_INSTRUCTION 111
 #define TYPE_ERROR 127
 
 // Result constants
@@ -99,7 +98,7 @@ typedef struct guid_t
 typedef struct obj_t
 {
     u8_t arch;
-    u8_t code;
+    u8_t mul;
     type_t type;
     u8_t attrs;
     u32_t rc;
