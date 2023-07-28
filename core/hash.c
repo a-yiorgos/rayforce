@@ -31,13 +31,16 @@
 #include "heap.h"
 #include "util.h"
 
-CASSERT(sizeof(struct bucket_t) == 16, hash_h)
-CASSERT(sizeof(struct ht_t) == 24, hash_h)
-
-ht_t ht_new(u64_t size, hash_f hash, cmp_f cmp)
+obj_t ht(u64_t size)
 {
     size = next_power_of_two_u64(size);
 
+    obj_t ht = (obj_t)heap_malloc(sizeof(struct obj_t) + size * size_of(i64_t));
+
+    vec->type = type;
+    vec->rc = 1;
+    vec->len = len;
+    vec->attrs = 0;
     i64_t i;
     bucket_t *buckets;
     ht_t ht = (ht_t)heap_malloc(sizeof(struct ht_t) + size * sizeof(struct bucket_t));
