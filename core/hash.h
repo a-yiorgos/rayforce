@@ -27,8 +27,11 @@
 #include "rayforce.h"
 #include "ops.h"
 
-obj_t hash_table(u64_t size, u64_t bucket_size);
-i64_t *ht_get(obj_t *obj, i64_t key);
-i64_t *ht_get_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp);
+obj_t ht_tab(u64_t size);
+obj_t ht_set(u64_t size);
+i64_t *ht_tab_get(obj_t *obj, i64_t key);
+i64_t *ht_tab_get_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp);
+i64_t *ht_set_get(obj_t *obj, i64_t key);
+i64_t *ht_set_get_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp);
 
 #endif

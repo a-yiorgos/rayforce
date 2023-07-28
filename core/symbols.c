@@ -122,8 +122,8 @@ symbols_t *symbols_new()
     symbols->pool_node = node;
     symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr
 
-    symbols->str_to_id = hash_table(SYMBOLS_POOL_SIZE, 2);
-    symbols->id_to_str = hash_table(SYMBOLS_POOL_SIZE, 2);
+    symbols->str_to_id = ht_tab(SYMBOLS_POOL_SIZE);
+    symbols->id_to_str = ht_tab(SYMBOLS_POOL_SIZE);
     symbols->next_sym_id = 0;
     symbols->next_kw_id = -1;
 
@@ -150,8 +150,8 @@ i64_t intern_symbol(str_t s, i64_t len)
     str_t p;
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    i64_t *b = ht_get_with(&symbols->str_to_id, (i64_t)&str_slice,
-                           &string_hash, &string_str_cmp);
+    i64_t *b = ht_tab_get_with(&symbols->str_to_id, (i64_t)&str_slice,
+                               &string_hash, &string_str_cmp);
 
     // insert new symbol
     if (b[0] == NULL_I64)
@@ -161,7 +161,7 @@ i64_t intern_symbol(str_t s, i64_t len)
         b[1] = symbols->next_sym_id;
 
         // insert id into id_to_str
-        b = ht_get(&symbols->id_to_str, symbols->next_sym_id);
+        b = ht_tab_get(&symbols->id_to_str, symbols->next_sym_id);
         b[0] = symbols->next_sym_id;
         b[1] = p;
 
@@ -177,8 +177,8 @@ i64_t intern_keyword(str_t s, i64_t len)
     str_t p;
     symbols_t *symbols = runtime_get()->symbols;
     str_slice_t str_slice = {s, len};
-    i64_t *b = ht_get_with(&symbols->str_to_id, (i64_t)&str_slice,
-                           &string_hash, &string_str_cmp);
+    i64_t *b = ht_tab_get_with(&symbols->str_to_id, (i64_t)&str_slice,
+                               &string_hash, &string_str_cmp);
 
     // insert new symbol
     if (b[0] == NULL_I64)
@@ -188,7 +188,7 @@ i64_t intern_keyword(str_t s, i64_t len)
         b[1] = symbols->next_kw_id;
 
         // insert id into id_to_str
-        b = ht_get(&symbols->id_to_str, symbols->next_kw_id);
+        b = ht_tab_get(&symbols->id_to_str, symbols->next_kw_id);
         b[0] = symbols->next_kw_id;
         b[1] = p;
 
@@ -202,7 +202,7 @@ i64_t intern_keyword(str_t s, i64_t len)
 str_t symbols_get(i64_t key)
 {
     symbols_t *symbols = runtime_get()->symbols;
-    i64_t *b = ht_get(&symbols->id_to_str, key);
+    i64_t *b = ht_tab_get(&symbols->id_to_str, key);
     if (b[0] == NULL_I64)
         return "";
 

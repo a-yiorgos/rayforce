@@ -213,12 +213,12 @@ obj_t distinct(obj_t x)
 
     l = x->len;
 
-    set = hash_table(l, 1);
+    set = ht_set(l);
     vec = vector_i64(l);
 
     for (i = 0; i < l; i++)
     {
-        p = ht_get(&set, as_i64(x)[i]);
+        p = ht_set_get(&set, as_i64(x)[i]);
         if (p[0] == NULL_I64)
         {
             p[0] = as_i64(x)[i];

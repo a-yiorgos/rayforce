@@ -32,7 +32,7 @@ nfo_t nfo_new(str_t filename, str_t lambda)
     nfo_t nfo = {
         .filename = filename,
         .lambda = lambda,
-        .spans = hash_table(32, 2),
+        .spans = ht_tab(32),
     };
 
     return nfo;
@@ -40,14 +40,14 @@ nfo_t nfo_new(str_t filename, str_t lambda)
 
 nil_t nfo_insert(nfo_t *nfo, i64_t index, span_t span)
 {
-    i64_t *b = ht_get(&nfo->spans, index);
+    i64_t *b = ht_tab_get(&nfo->spans, index);
     b[0] = index;
     memcpy(b + 1, &span, sizeof(span_t));
 }
 
 span_t nfo_get(nfo_t *nfo, i64_t index)
 {
-    i64_t *b = ht_get(&nfo->spans, index);
+    i64_t *b = ht_tab_get(&nfo->spans, index);
 
     if (b[0] == NULL_I64)
         return (span_t){0};
