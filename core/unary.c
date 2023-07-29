@@ -191,22 +191,12 @@ obj_t rf_sum(obj_t x)
         return clone(x);
     case mtype(TYPE_I64):
         l = x->len;
-        if (x->attrs & ATTR_WITHOUT_NULLS)
-        {
-            for (i = 0; i < l; i++)
+        // #pragma omp simd reduction(+ : isum)
+        for (i = 0; i < l; i++)
+            if (as_i64(x)[i] != NULL_I64)
                 isum += as_i64(x)[i];
-        }
-        else
-        {
-            for (i = 0; i < l; i++)
-            {
-                if (as_i64(x)[i] ^ NULL_I64)
-                    isum += as_i64(x)[i];
-            }
-        }
 
         return i64(isum);
-
     case mtype(TYPE_F64):
         l = x->len;
         for (i = 0; i < l; i++)
@@ -222,40 +212,29 @@ obj_t rf_sum(obj_t x)
 obj_t rf_avg(obj_t x)
 {
     i32_t i;
-    i64_t l, isum, *iv, n = 0;
-    f64_t fsum, *fv;
+    i64_t l, isum, n = 0;
+    f64_t fsum;
 
     switch (mtype(x->type))
     {
     case mtype(TYPE_I64):
         l = x->len;
-        iv = as_i64(x);
         isum = 0;
-        // vectorized version when we exactly know that there are no nulls
-        if (x->attrs & ATTR_WITHOUT_NULLS)
+        for (i = 0; i < l; i++)
         {
-            for (i = 0; i < l; i++)
-                isum += iv[i];
+            if (as_i64(x)[i] != NULL_I64)
+                isum += as_i64(x)[i];
+            else
+                n++;
         }
-        else
-        {
-            // atom version
-            for (i = 0; i < l; i++)
-            {
-                if (iv[i] ^ NULL_I64)
-                    isum += iv[i];
-                else
-                    n++;
-            }
-        }
+
         return f64((f64_t)isum / (l - n));
 
     case mtype(TYPE_F64):
         l = x->len;
-        fv = as_f64(x);
         fsum = 0;
         for (i = 0; i < l; i++)
-            fsum += fv[i];
+            fsum += as_f64(x)[i];
 
         return f64(fsum / l);
 
