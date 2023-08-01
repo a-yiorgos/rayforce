@@ -143,6 +143,9 @@ u64_t rfi_i64_hash(i64_t key)
 
 bool_t rfi_as_bool(obj_t x)
 {
+    if (is_null(x))
+        return false;
+
     switch (x->type)
     {
     case -TYPE_BOOL:

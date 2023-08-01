@@ -35,9 +35,9 @@
 typedef struct runtime_t
 {
     u16_t slaves;       // Number of slave threads.
-    symbols_t *symbols; // vector_symbols pool.
     env_t env;          // Environment.
     vm_t vm;            // Virtual machine.
+    symbols_t *symbols; // vector_symbols pool.
 } *runtime_t;
 
 extern nil_t runtime_init(u16_t slaves);

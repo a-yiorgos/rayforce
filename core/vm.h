@@ -31,6 +31,8 @@
 #include "nfo.h"
 
 #define VM_STACK_SIZE PAGE_SIZE * 4
+#define VM_STACK_STUB 0xFADEFACE00000000
+#define VM_SPILL_REGS 6
 
 typedef enum vm_opcode_t
 {
@@ -71,9 +73,11 @@ typedef struct vm_t
 {
     i8_t halted;  // Halt flag
     u8_t trace;   // Trace flag (print stack trace on error limited to n frames)
-    i32_t ip;     // Instruction pointer
-    i32_t sp;     // Stack pointer
-    i32_t bp;     // Base pointer (beginning on stack frame)
+    i64_t ip;     // Instruction pointer
+    i64_t sp;     // Stack pointer
+    i64_t bp;     // Base pointer (beginning on stack frame)
+    i64_t cnt;    // Counter
+    obj_t acc;    // Accumulator
     i64_t timer;  // Timer for execution time
     obj_t *stack; // Stack of arguments
 } vm_t;

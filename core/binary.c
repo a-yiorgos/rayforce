@@ -102,7 +102,7 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
 
         res = list(l);
 
-        write_obj(&res, 0, item);
+        write_obj(res, 0, item);
 
         for (i = 1; i < l; i++)
         {
@@ -117,7 +117,7 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
                 return item;
             }
 
-            write_obj(&res, i, item);
+            write_obj(res, i, item);
         }
 
         return res;
@@ -158,7 +158,7 @@ obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
                 return item;
             }
 
-            write_obj(&res, i, item);
+            write_obj(res, i, item);
         }
 
         return res;
@@ -192,7 +192,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         res = list(l);
 
-        write_obj(&res, 0, item);
+        write_obj(res, 0, item);
 
         for (i = 1; i < l; i++)
         {
@@ -209,7 +209,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
                 return item;
             }
 
-            write_obj(&res, i, item);
+            write_obj(res, i, item);
         }
 
         return res;
@@ -226,7 +226,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         res = list(l);
 
-        write_obj(&res, 0, item);
+        write_obj(res, 0, item);
 
         for (i = 1; i < l; i++)
         {
@@ -241,7 +241,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
                 return item;
             }
 
-            write_obj(&res, i, item);
+            write_obj(res, i, item);
         }
 
         return res;
@@ -258,7 +258,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         res = list(l);
 
-        write_obj(&res, 0, item);
+        write_obj(res, 0, item);
 
         for (i = 1; i < l; i++)
         {
@@ -273,7 +273,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
                 return item;
             }
 
-            write_obj(&res, i, item);
+            write_obj(res, i, item);
         }
 
         return res;
@@ -558,267 +558,257 @@ obj_t rf_add(obj_t x, obj_t y)
 
 obj_t rf_sub(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t vec;
+    i32_t i;
+    i64_t l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (i64(SUBvector_i64(x->i64, y->i64)));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (i64(subi64(x->i64, y->i64)));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (f64(SUBvector_f64(x->f64, y->f64)));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (f64(subf64(x->f64, y->f64)));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = SUBvector_i64(as_i64(x)[i], y->i64);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = subi64(as_i64(x)[i], y->i64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = SUBvector_i64(as_i64(x)[i], as_i64(y)[i]);
+    case mtype2(TYPE_I64, TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = subi64(as_i64(x)[i], as_i64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = SUBvector_f64(as_f64(x)[i], y->f64);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = subf64(as_f64(x)[i], y->f64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = SUBvector_f64(as_f64(x)[i], as_f64(y)[i]);
+    case mtype2(TYPE_F64, TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = subf64(as_f64(x)[i], as_f64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "sub: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "sub: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_mul(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t vec;
+    i32_t i;
+    i64_t l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (i64(MULvector_i64(x->i64, y->i64)));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (i64(muli64(x->i64, y->i64)));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (f64(MULvector_f64(x->f64, y->f64)));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (f64(mulf64(x->f64, y->f64)));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = MULvector_i64(as_i64(x)[i], y->i64);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = muli64(as_i64(x)[i], y->i64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = MULvector_i64(as_i64(x)[i], as_i64(y)[i]);
+    case mtype2(TYPE_I64, TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = muli64(as_i64(x)[i], as_i64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = MULvector_f64(as_f64(x)[i], y->f64);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = mulf64(as_f64(x)[i], y->f64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = MULvector_f64(as_f64(x)[i], as_f64(y)[i]);
+    case mtype2(TYPE_F64, TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = mulf64(as_f64(x)[i], as_f64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "mul: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "mul: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_div(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t vec;
+    i32_t i;
+    i64_t l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (i64(DIVvector_i64(x->i64, y->i64)));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (i64(divi64(x->i64, y->i64)));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (f64(DIVvector_f64(x->f64, y->f64)));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (f64(divf64(x->f64, y->f64)));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = DIVvector_i64(as_i64(x)[i], y->i64);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = divi64(as_i64(x)[i], y->i64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = DIVvector_i64(as_i64(x)[i], as_i64(y)[i]);
+    case mtype2(TYPE_I64, TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = divi64(as_i64(x)[i], as_i64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = DIVvector_f64(as_f64(x)[i], y->f64);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = divf64(as_f64(x)[i], y->f64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = DIVvector_f64(as_f64(x)[i], as_f64(y)[i]);
+    case mtype2(TYPE_F64, TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = divf64(as_f64(x)[i], as_f64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "mul: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "div: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_fdiv(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t vec;
+    i32_t i;
+    i64_t l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (f64(FDIVvector_i64(x->i64, y->i64)));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (f64(fdivi64(x->i64, y->i64)));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (f64(FDIVvector_f64(x->f64, y->f64)));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (f64(fdivf64(x->f64, y->f64)));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = FDIVvector_i64(as_i64(x)[i], y->i64);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = fdivi64(as_i64(x)[i], y->i64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = FDIVvector_i64(as_i64(x)[i], as_i64(y)[i]);
+    case mtype2(TYPE_I64, TYPE_I64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = fdivi64(as_i64(x)[i], as_i64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = FDIVvector_f64(as_f64(x)[i], y->f64);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = fdivf64(as_f64(x)[i], y->f64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = FDIVvector_f64(as_f64(x)[i], as_f64(y)[i]);
+    case mtype2(TYPE_F64, TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = fdivf64(as_f64(x)[i], as_f64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "fdiv: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "fdiv: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_mod(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t vec;
+    i32_t i;
+    i64_t l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (i64(MODvector_i64(x->i64, y->i64)));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (i64(modi64(x->i64, y->i64)));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (f64(MODvector_f64(x->f64, y->f64)));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (f64(modf64(x->f64, y->f64)));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = MODvector_i64(as_i64(x)[i], y->i64);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = modi64(as_i64(x)[i], y->i64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_i64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_i64(&vec)[i] = MODvector_i64(as_i64(x)[i], as_i64(y)[i]);
+    case mtype2(TYPE_I64, TYPE_I64):
+        l = x->len;
+        vec = vector_i64(l);
+        for (i = 0; i < l; i++)
+            as_i64(vec)[i] = modi64(as_i64(x)[i], as_i64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = MODvector_f64(as_f64(x)[i], y->f64);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = modf64(as_f64(x)[i], y->f64);
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_f64(l);
-    //     for (i = 0; i < l; i++)
-    //         as_f64(&vec)[i] = MODvector_f64(as_f64(x)[i], as_f64(y)[i]);
+    case mtype2(TYPE_F64, TYPE_F64):
+        l = x->len;
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = modf64(as_f64(x)[i], as_f64(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "mod: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "mod: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_like(obj_t x, obj_t y)
@@ -835,115 +825,113 @@ obj_t rf_like(obj_t x, obj_t y)
 
 obj_t rf_eq(obj_t x, obj_t y)
 {
-    // i64_t i, l;
-    // obj_t vec;
+    i64_t i, l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(TYPE_BOOL, TYPE_BOOL):
-    //     return (bool(x->bool == y->bool));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(TYPE_BOOL, TYPE_BOOL):
+        return (bool(x->bool == y->bool));
 
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (bool(x->i64 == y->i64));
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (bool(x->i64 == y->i64));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (bool(x->f64 == y->f64));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (bool(x->f64 == y->f64));
 
-    // case mtype2(TYPE_I64, -TYPE_I64):
-    //     l = x->len;
-    //     vec = vector_bool(l);
+    case mtype2(TYPE_I64, -TYPE_I64):
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_i64(x)[i] == y->i64;
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_i64(x)[i] == y->i64;
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, -TYPE_F64):
-    //     l = x->len;
-    //     vec = vector_bool(l);
+    case mtype2(TYPE_F64, -TYPE_F64):
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_f64(x)[i] == y->f64;
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_f64(x)[i] == y->f64;
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(-TYPE_I64, TYPE_I64):
-    //     l = y->len;
-    //     vec = vector_bool(l);
+    case mtype2(-TYPE_I64, TYPE_I64):
+        l = y->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = x->i64 == as_i64(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = x->i64 == as_i64(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(-TYPE_F64, TYPE_F64):
-    //     l = y->len;
-    //     vec = vector_bool(l);
+    case mtype2(-TYPE_F64, TYPE_F64):
+        l = y->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = x->f64 == as_f64(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = x->f64 == as_f64(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-    //     l = x->len;
-    //     vec = vector_bool(l);
+    case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_symbol(x)[i] == y->i64;
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_symbol(x)[i] == y->i64;
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
-    //     l = y->len;
-    //     vec = vector_bool(l);
+    case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
+        l = y->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = x->i64 == as_symbol(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = x->i64 == as_symbol(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     if (x->len != y->len)
-    //         return error(ERR_LENGTH, "eq: vectors of different length");
+    case mtype2(TYPE_I64, TYPE_I64):
+        if (x->len != y->len)
+            return error(ERR_LENGTH, "eq: vectors of different length");
 
-    //     l = x->len;
-    //     vec = vector_bool(l);
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_i64(x)[i] == as_i64(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_i64(x)[i] == as_i64(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_F64, TYPE_F64):
-    //     if (x->len != y->len)
-    //         return error(ERR_LENGTH, "eq: vectors of different length");
+    case mtype2(TYPE_F64, TYPE_F64):
+        if (x->len != y->len)
+            return error(ERR_LENGTH, "eq: vectors of different length");
 
-    //     l = x->len;
-    //     vec = vector_bool(l);
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_f64(x)[i] == as_f64(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_f64(x)[i] == as_f64(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // case mtype2(TYPE_LIST, TYPE_LIST):
-    //     if (x->len != y->len)
-    //         return error(ERR_LENGTH, "eq: lists of different length");
+    case mtype2(TYPE_LIST, TYPE_LIST):
+        if (x->len != y->len)
+            return error(ERR_LENGTH, "eq: lists of different length");
 
-    //     l = x->len;
-    //     vec = vector_bool(l);
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = rf_eq(&as_list(x)[i], &as_list(y)[i]).bool;
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = equal(as_list(x)[i], as_list(y)[i]);
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "eq: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "eq: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_ne(obj_t x, obj_t y)
@@ -996,34 +984,32 @@ obj_t rf_le(obj_t x, obj_t y)
 
 obj_t rf_gt(obj_t x, obj_t y)
 {
-    // i64_t i, l;
-    // obj_t vec;
+    i64_t i, l;
+    obj_t vec;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_I64, -TYPE_I64):
-    //     return (bool(x->i64 > y->i64));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_I64, -TYPE_I64):
+        return (bool(x->i64 > y->i64));
 
-    // case mtype2(-TYPE_F64, -TYPE_F64):
-    //     return (bool(x->f64 > y->f64));
+    case mtype2(-TYPE_F64, -TYPE_F64):
+        return (bool(x->f64 > y->f64));
 
-    // case mtype2(TYPE_I64, TYPE_I64):
-    //     if (x->len != y->len)
-    //         return error(ERR_LENGTH, "gt: vectors of different length");
+    case mtype2(TYPE_I64, TYPE_I64):
+        if (x->len != y->len)
+            return error(ERR_LENGTH, "gt: vectors of different length");
 
-    //     l = x->len;
-    //     vec = vector_bool(l);
+        l = x->len;
+        vec = vector_bool(l);
 
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&vec)[i] = as_i64(x)[i] > as_i64(y)[i];
+        for (i = 0; i < l; i++)
+            as_bool(vec)[i] = as_i64(x)[i] > as_i64(y)[i];
 
-    //     return vec;
+        return vec;
 
-    // default:
-    //     return error_type2(x->type, y->type, "gt: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "gt: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_ge(obj_t x, obj_t y)
@@ -1043,54 +1029,50 @@ obj_t rf_ge(obj_t x, obj_t y)
 
 obj_t rf_and(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t res;
+    i32_t i;
+    i64_t l;
+    obj_t res;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_BOOL, -TYPE_BOOL):
-    //     return (bool(x->bool && y->bool));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_BOOL, -TYPE_BOOL):
+        return (bool(x->bool && y->bool));
 
-    // case mtype2(TYPE_BOOL, TYPE_BOOL):
-    //     l = x->len;
-    //     res = vector_bool(x->len);
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&res)[i] = as_bool(x)[i] & as_bool(y)[i];
+    case mtype2(TYPE_BOOL, TYPE_BOOL):
+        l = x->len;
+        res = vector_bool(x->len);
+        for (i = 0; i < l; i++)
+            as_bool(res)[i] = as_bool(x)[i] & as_bool(y)[i];
 
-    //     return res;
+        return res;
 
-    // default:
-    //     return error_type2(x->type, y->type, "and: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "and: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_or(obj_t x, obj_t y)
 {
-    // i32_t i;
-    // i64_t l;
-    // obj_t res;
+    i32_t i;
+    i64_t l;
+    obj_t res;
 
-    // switch (mtype2(x->type, y->type))
-    // {
-    // case mtype2(-TYPE_BOOL, -TYPE_BOOL):
-    //     return (bool(x->bool || y->bool));
+    switch (mtype2(x->type, y->type))
+    {
+    case mtype2(-TYPE_BOOL, -TYPE_BOOL):
+        return (bool(x->bool || y->bool));
 
-    // case mtype2(TYPE_BOOL, TYPE_BOOL):
-    //     l = x->len;
-    //     res = vector_bool(x->len);
-    //     for (i = 0; i < l; i++)
-    //         as_bool(&res)[i] = as_bool(x)[i] | as_bool(y)[i];
+    case mtype2(TYPE_BOOL, TYPE_BOOL):
+        l = x->len;
+        res = vector_bool(x->len);
+        for (i = 0; i < l; i++)
+            as_bool(res)[i] = as_bool(x)[i] | as_bool(y)[i];
 
-    //     return res;
+        return res;
 
-    // default:
-    //     return error_type2(x->type, y->type, "and: unsupported types");
-    // }
-
-    return null(0);
+    default:
+        raise(ERR_TYPE, "or: unsupported types: %d %d", x->type, y->type);
+    }
 }
 
 obj_t rf_at(obj_t x, obj_t y)
@@ -1120,9 +1102,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_bool(y)[i] >= xl)
-    //             as_bool(&vec)[i] = false;
+    //             as_bool(vec)[i] = false;
     //         else
-    //             as_bool(&vec)[i] = as_bool(x)[(i32_t)as_bool(y)[i]];
+    //             as_bool(vec)[i] = as_bool(x)[(i32_t)as_bool(y)[i]];
     //     }
 
     //     return vec;
@@ -1134,9 +1116,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_i64(y)[i] >= xl)
-    //             as_i64(&vec)[i] = NULL_I64;
+    //             as_i64(vec)[i] = NULL_I64;
     //         else
-    //             as_i64(&vec)[i] = as_i64(x)[(i32_t)as_i64(y)[i]];
+    //             as_i64(vec)[i] = as_i64(x)[(i32_t)as_i64(y)[i]];
     //     }
 
     //     return vec;
@@ -1148,9 +1130,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_i64(y)[i] >= xl)
-    //             as_f64(&vec)[i] = NULL_F64;
+    //             as_f64(vec)[i] = NULL_F64;
     //         else
-    //             as_f64(&vec)[i] = as_f64(x)[(i32_t)as_i64(y)[i]];
+    //             as_f64(vec)[i] = as_f64(x)[(i32_t)as_i64(y)[i]];
     //     }
 
     //     return vec;
@@ -1162,9 +1144,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_i64(y)[i] >= xl)
-    //             as_timestamp(&vec)[i] = NULL_I64;
+    //             as_timestamp(vec)[i] = NULL_I64;
     //         else
-    //             as_timestamp(&vec)[i] = as_timestamp(x)[(i32_t)as_i64(y)[i]];
+    //             as_timestamp(vec)[i] = as_timestamp(x)[(i32_t)as_i64(y)[i]];
     //     }
 
     //     return vec;
@@ -1176,9 +1158,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     //     for (i = 0; i < yl; i++)
     //     //     {
     //     //         if (as_i64(y)[i] >= xl)
-    //     //             as_guid(&vec)[i] = guid(NULL_GUID);
+    //     //             as_guid(vec)[i] = guid(NULL_GUID);
     //     //         else
-    //     //             as_guid(&vec)[i] = as_guid(x)[(i32_t)as_i64(y)[i]];
+    //     //             as_guid(vec)[i] = as_guid(x)[(i32_t)as_i64(y)[i]];
     //     //     }
 
     //     //     return vec;
@@ -1190,9 +1172,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_i64(y)[i] >= xl)
-    //             as_string(&vec)[i] = ' ';
+    //             as_string(vec)[i] = ' ';
     //         else
-    //             as_string(&vec)[i] = as_string(x)[(i32_t)as_i64(y)[i]];
+    //             as_string(vec)[i] = as_string(x)[(i32_t)as_i64(y)[i]];
     //     }
 
     //     return vec;
@@ -1204,9 +1186,9 @@ obj_t rf_at(obj_t x, obj_t y)
     //     for (i = 0; i < yl; i++)
     //     {
     //         if (as_i64(y)[i] >= xl)
-    //             as_list(&vec)[i] = null(0);
+    //             as_list(vec)[i] = null(0);
     //         else
-    //             as_list(&vec)[i] = clone(&as_list(x)[(i32_t)as_i64(y)[i]]);
+    //             as_list(vec)[i] = clone(&as_list(x)[(i32_t)as_i64(y)[i]]);
     //     }
 
     //     return vec;
@@ -1323,64 +1305,64 @@ obj_t rf_concat(obj_t x, obj_t y)
     // {
     // case mtype2(-TYPE_BOOL, -TYPE_BOOL):
     //     vec = vector_bool(2);
-    //     as_bool(&vec)[0] = x->bool;
-    //     as_bool(&vec)[1] = y->bool;
+    //     as_bool(vec)[0] = x->bool;
+    //     as_bool(vec)[1] = y->bool;
     //     return vec;
 
     // case mtype2(-TYPE_I64, -TYPE_I64):
     //     vec = vector_i64(2);
-    //     as_i64(&vec)[0] = x->i64;
-    //     as_i64(&vec)[1] = y->i64;
+    //     as_i64(vec)[0] = x->i64;
+    //     as_i64(vec)[1] = y->i64;
     //     return vec;
 
     // case mtype2(-TYPE_F64, -TYPE_F64):
     //     vec = vector_f64(2);
-    //     as_f64(&vec)[0] = x->f64;
-    //     as_f64(&vec)[1] = y->f64;
+    //     as_f64(vec)[0] = x->f64;
+    //     as_f64(vec)[1] = y->f64;
     //     return vec;
 
     // case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
     //     vec = vector_timestamp(2);
-    //     as_timestamp(&vec)[0] = x->i64;
-    //     as_timestamp(&vec)[1] = y->i64;
+    //     as_timestamp(vec)[0] = x->i64;
+    //     as_timestamp(vec)[1] = y->i64;
     //     return vec;
 
     // case mtype2(-TYPE_GUID, -TYPE_GUID):
     //     vec = vector_guid(2);
-    //     memcpy(&as_guid(&vec)[0], x->guid, sizeof(guid_t));
-    //     memcpy(&as_guid(&vec)[1], y->guid, sizeof(guid_t));
+    //     memcpy(&as_guid(vec)[0], x->guid, sizeof(guid_t));
+    //     memcpy(&as_guid(vec)[1], y->guid, sizeof(guid_t));
     //     return vec;
 
     // case mtype2(-TYPE_CHAR, -TYPE_CHAR):
     //     vec = string(2);
-    //     as_string(&vec)[0] = x->schar;
-    //     as_string(&vec)[1] = y->schar;
+    //     as_string(vec)[0] = x->schar;
+    //     as_string(vec)[1] = y->schar;
     //     return vec;
 
     // case mtype2(TYPE_BOOL, -TYPE_BOOL):
     //     xl = x->len;
     //     vec = vector_bool(xl + 1);
     //     for (i = 0; i < xl; i++)
-    //         as_bool(&vec)[i] = as_bool(x)[i];
+    //         as_bool(vec)[i] = as_bool(x)[i];
 
-    //     as_bool(&vec)[xl] = y->bool;
+    //     as_bool(vec)[xl] = y->bool;
     //     return vec;
 
     // case mtype2(TYPE_I64, -TYPE_I64):
     //     xl = x->len;
     //     vec = vector_i64(xl + 1);
     //     for (i = 0; i < xl; i++)
-    //         as_i64(&vec)[i] = as_i64(x)[i];
+    //         as_i64(vec)[i] = as_i64(x)[i];
 
-    //     as_i64(&vec)[xl] = y->i64;
+    //     as_i64(vec)[xl] = y->i64;
     //     return vec;
 
     // case mtype2(-TYPE_I64, TYPE_I64):
     //     yl = y->len;
     //     vec = vector_i64(yl + 1);
-    //     as_i64(&vec)[0] = x->i64;
+    //     as_i64(vec)[0] = x->i64;
     //     for (i = 1; i <= yl; i++)
-    //         as_i64(&vec)[i] = as_i64(y)[i - 1];
+    //         as_i64(vec)[i] = as_i64(y)[i - 1];
 
     //     return vec;
 
@@ -1388,27 +1370,27 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     xl = x->len;
     //     vec = vector_f64(xl + 1);
     //     for (i = 0; i < xl; i++)
-    //         as_f64(&vec)[i] = as_f64(x)[i];
+    //         as_f64(vec)[i] = as_f64(x)[i];
 
-    //     as_f64(&vec)[xl] = y->f64;
+    //     as_f64(vec)[xl] = y->f64;
     //     return vec;
 
     // case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
     //     xl = x->len;
     //     vec = vector_timestamp(xl + 1);
     //     for (i = 0; i < xl; i++)
-    //         as_timestamp(&vec)[i] = as_timestamp(x)[i];
+    //         as_timestamp(vec)[i] = as_timestamp(x)[i];
 
-    //     as_timestamp(&vec)[xl] = y->i64;
+    //     as_timestamp(vec)[xl] = y->i64;
     //     return vec;
 
     // case mtype2(TYPE_GUID, -TYPE_GUID):
     //     xl = x->len;
     //     vec = vector_guid(xl + 1);
     //     for (i = 0; i < xl; i++)
-    //         as_guid(&vec)[i] = as_guid(x)[i];
+    //         as_guid(vec)[i] = as_guid(x)[i];
 
-    //     memcpy(&as_guid(&vec)[xl], y->guid, sizeof(guid_t));
+    //     memcpy(&as_guid(vec)[xl], y->guid, sizeof(guid_t));
     //     return vec;
 
     // case mtype2(TYPE_BOOL, TYPE_BOOL):
@@ -1416,9 +1398,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = vector_bool(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_bool(&vec)[i] = as_bool(x)[i];
+    //         as_bool(vec)[i] = as_bool(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_bool(&vec)[i + xl] = as_bool(y)[i];
+    //         as_bool(vec)[i + xl] = as_bool(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_I64, TYPE_I64):
@@ -1426,9 +1408,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = vector_i64(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_i64(&vec)[i] = as_i64(x)[i];
+    //         as_i64(vec)[i] = as_i64(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_i64(&vec)[i + xl] = as_i64(y)[i];
+    //         as_i64(vec)[i + xl] = as_i64(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_F64, TYPE_F64):
@@ -1436,9 +1418,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = vector_f64(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_f64(&vec)[i] = as_f64(x)[i];
+    //         as_f64(vec)[i] = as_f64(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_f64(&vec)[i + xl] = as_f64(y)[i];
+    //         as_f64(vec)[i + xl] = as_f64(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
@@ -1446,9 +1428,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = vector_timestamp(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_timestamp(&vec)[i] = as_timestamp(x)[i];
+    //         as_timestamp(vec)[i] = as_timestamp(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_timestamp(&vec)[i + xl] = as_timestamp(y)[i];
+    //         as_timestamp(vec)[i + xl] = as_timestamp(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_GUID, TYPE_GUID):
@@ -1456,9 +1438,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = vector_guid(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_guid(&vec)[i] = as_guid(x)[i];
+    //         as_guid(vec)[i] = as_guid(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_guid(&vec)[i + xl] = as_guid(y)[i];
+    //         as_guid(vec)[i + xl] = as_guid(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_CHAR, TYPE_CHAR):
@@ -1466,9 +1448,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = string(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_string(&vec)[i] = as_string(x)[i];
+    //         as_string(vec)[i] = as_string(x)[i];
     //     for (i = 0; i < yl; i++)
-    //         as_string(&vec)[i + xl] = as_string(y)[i];
+    //         as_string(vec)[i + xl] = as_string(y)[i];
     //     return vec;
 
     // case mtype2(TYPE_LIST, TYPE_LIST):
@@ -1476,9 +1458,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     yl = y->len;
     //     vec = list(xl + yl);
     //     for (i = 0; i < xl; i++)
-    //         as_list(&vec)[i] = clone(&as_list(x)[i]);
+    //         as_list(vec)[i] = clone(&as_list(x)[i]);
     //     for (i = 0; i < yl; i++)
-    //         as_list(&vec)[i + xl] = clone(&as_list(y)[i]);
+    //         as_list(vec)[i + xl] = clone(&as_list(y)[i]);
     //     return vec;
 
     // default:
@@ -1487,8 +1469,8 @@ obj_t rf_concat(obj_t x, obj_t y)
     //         xl = x->len;
     //         vec = list(xl + 1);
     //         for (i = 0; i < xl; i++)
-    //             as_list(&vec)[i] = clone(&as_list(x)[i]);
-    //         as_list(&vec)[xl] = clone(y);
+    //             as_list(vec)[i] = clone(&as_list(x)[i]);
+    //         as_list(vec)[xl] = clone(y);
 
     //         return vec;
     //     }
@@ -1496,9 +1478,9 @@ obj_t rf_concat(obj_t x, obj_t y)
     //     {
     //         yl = y->len;
     //         vec = list(yl + 1);
-    //         as_list(&vec)[0] = clone(x);
+    //         as_list(vec)[0] = clone(x);
     //         for (i = 0; i < yl; i++)
-    //             as_list(&vec)[i + 1] = clone(&as_list(y)[i]);
+    //             as_list(vec)[i + 1] = clone(&as_list(y)[i]);
 
     //         return vec;
     //     }
@@ -1526,9 +1508,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_bool(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_bool(&res)[j++] = as_bool(x)[i];
+    //             as_bool(res)[j++] = as_bool(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1540,9 +1522,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_i64(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_i64(&res)[j++] = as_i64(x)[i];
+    //             as_i64(res)[j++] = as_i64(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1554,9 +1536,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_symbol(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_symbol(&res)[j++] = as_symbol(x)[i];
+    //             as_symbol(res)[j++] = as_symbol(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1568,9 +1550,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_f64(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_f64(&res)[j++] = as_f64(x)[i];
+    //             as_f64(res)[j++] = as_f64(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1582,9 +1564,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_timestamp(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_timestamp(&res)[j++] = as_timestamp(x)[i];
+    //             as_timestamp(res)[j++] = as_timestamp(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1596,9 +1578,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = vector_guid(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_guid(&res)[j++] = as_guid(x)[i];
+    //             as_guid(res)[j++] = as_guid(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1610,9 +1592,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = string(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_string(&res)[j++] = as_string(x)[i];
+    //             as_string(res)[j++] = as_string(x)[i];
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1624,9 +1606,9 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     res = list(l);
     //     for (i = 0; i < l; i++)
     //         if (as_bool(y)[i])
-    //             as_list(&res)[j++] = clone(&as_list(x)[i]);
+    //             as_list(res)[j++] = clone(&as_list(x)[i]);
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
 
@@ -1639,7 +1621,7 @@ obj_t rf_filter(obj_t x, obj_t y)
     //     {
     //         col = vector_filter(&as_list(vals)[i], as_bool(y), p);
     //         p = col->len;
-    //         as_list(&res)[i] = col;
+    //         as_list(res)[i] = col;
     //     }
 
     //     return table(clone(&as_list(x)[0]), res);
@@ -1679,7 +1661,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     l = x->i64;
         //     res = list(l);
         //     for (i = 0; i < l; i++)
-        //         as_list(&res)[i] = *y;
+        //         as_list(res)[i] = *y;
 
         return res;
     case mtype2(-TYPE_I64, -TYPE_I64):
@@ -1751,7 +1733,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     res = vector_i64(l);
 
         //     for (i = 0; i < l; i++)
-        //         as_i64(&res)[i] = vector_get(x, as_i64(y)[i]).i64;
+        //         as_i64(res)[i] = vector_get(x, as_i64(y)[i]).i64;
 
         //     return res;
 
@@ -1760,7 +1742,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     res = vector_symbol(l);
 
         //     for (i = 0; i < l; i++)
-        //         as_symbol(&res)[i] = vector_get(x, as_i64(y)[i]).i64;
+        //         as_symbol(res)[i] = vector_get(x, as_i64(y)[i]).i64;
 
         //     return res;
 
@@ -1769,7 +1751,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     res = vector_f64(l);
 
         //     for (i = 0; i < l; i++)
-        //         as_f64(&res)[i] = vector_get(x, as_i64(y)[i]).f64;
+        //         as_f64(res)[i] = vector_get(x, as_i64(y)[i]).f64;
 
         //     return res;
 
@@ -1778,7 +1760,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     res = vector_timestamp(l);
 
         //     for (i = 0; i < l; i++)
-        //         as_timestamp(&res)[i] = vector_get(x, as_i64(y)[i]).i64;
+        //         as_timestamp(res)[i] = vector_get(x, as_i64(y)[i]).i64;
 
         //     return res;
 
@@ -1787,7 +1769,7 @@ obj_t rf_take(obj_t x, obj_t y)
         //     res = list(l);
 
         //     for (i = 0; i < l; i++)
-        //         as_list(&res)[i] = clone(&as_list(x)[as_i64(y)[i]]);
+        //         as_list(res)[i] = clone(&as_list(x)[as_i64(y)[i]]);
 
         //     return res;
 
@@ -1816,7 +1798,7 @@ obj_t rf_in(obj_t x, obj_t y)
     //         vec = vector_bool(xl);
 
     //         for (i = 0; i < xl; i++)
-    //             as_bool(&vec)[i] = set_contains(set, as_i64(x)[i]);
+    //             as_bool(vec)[i] = set_contains(set, as_i64(x)[i]);
 
     //         set_free(set);
 
@@ -1863,10 +1845,10 @@ obj_t rf_except(obj_t x, obj_t y)
     //     for (i = 0; i < l; i++)
     //     {
     //         if (as_i64(x)[i] != y->i64)
-    //             as_i64(&res)[j++] = as_i64(x)[i];
+    //             as_i64(res)[j++] = as_i64(x)[i];
     //     }
 
-    //     resize(&res, j);
+    //     resize(res, j);
 
     //     return res;
     // case mtype2(TYPE_I64, TYPE_I64):
@@ -1894,7 +1876,7 @@ obj_t rf_group_Table(obj_t x, obj_t y)
     //     l = as_list(x)[1]->len;
     //     res = list(l);
     //     for (i = 0; i < l; i++)
-    //         as_list(&res)[i] = rf_call_binary_right_atomic(rf_take, &as_list(&as_list(x)[1])[i], y);
+    //         as_list(res)[i] = rf_call_binary_right_atomic(rf_take, &as_list(&as_list(x)[1])[i], y);
 
     //     return table(clone(&as_list(x)[0]), res);
 
