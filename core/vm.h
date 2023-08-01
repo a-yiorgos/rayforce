@@ -31,7 +31,7 @@
 #include "nfo.h"
 
 #define VM_STACK_SIZE PAGE_SIZE * 4
-#define VM_STACK_STUB 0xFADEFACE00000000
+#define VM_STACK_STUB 0xFACE1E5500000000
 #define VM_SPILL_REGS 6
 
 typedef enum vm_opcode_t

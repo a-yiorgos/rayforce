@@ -356,14 +356,14 @@ op_lget:
 op_lpush:
     b = vm->ip++;
     x1 = stack_pop(); // table or dict
-    // if (x1->type != TYPE_TABLE && x1->type != TYPE_DICT)
-    //     unwrap(error(ERR_TYPE, "expected dict or table"), b);
-    // vector_push(&f->locals, x1);
+    if (x1->type != TYPE_TABLE && x1->type != TYPE_DICT)
+        unwrap(error(ERR_TYPE, "expected dict or table"), b);
+    join_obj(&f->locals, x1);
     dispatch();
 op_lpop:
     b = vm->ip++;
-    // x1 = vector_pop(&f->locals);
-    // stack_push( x1);
+    x1 = pop_obj(&f->locals);
+    stack_push(x1);
     dispatch();
 op_try:
     b = vm->ip++;

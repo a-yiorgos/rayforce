@@ -475,6 +475,34 @@ obj_t set_obj(obj_t *obj, obj_t idx, obj_t val)
     }
 }
 
+obj_t pop_obj(obj_t *obj)
+{
+    u64_t i;
+    obj_t res;
+
+    if (obj == NULL || (*obj)->len == 0)
+        return null(0);
+
+    switch ((*obj)->type)
+    {
+    case TYPE_I64:
+        return i64(as_i64(*obj)[(*obj)->len--]);
+    case TYPE_SYMBOL:
+        return symboli64(as_symbol(*obj)[(*obj)->len--]);
+    case TYPE_TIMESTAMP:
+        return timestamp(as_timestamp(*obj)[(*obj)->len--]);
+    case TYPE_F64:
+        return f64(as_f64(*obj)[(*obj)->len--]);
+    case TYPE_CHAR:
+        return schar(as_string(*obj)[(*obj)->len--]);
+    case TYPE_LIST:
+        return as_list(*obj)[(*obj)->len--];
+
+    default:
+        panic(str_fmt(0, "pop_obj: invalid type: %d", (*obj)->type));
+    }
+}
+
 bool_t is_null(obj_t obj)
 {
     return (obj == NULL) ||

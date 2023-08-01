@@ -172,6 +172,9 @@ extern obj_t join_raw(obj_t *obj, nil_t *val); // join raw value into a list
 extern obj_t join_obj(obj_t *obj, obj_t  val); // join object to a list
 extern obj_t join_sym(obj_t *obj, str_t  str); // join interned string to a symbol vector
 
+// Pop
+extern obj_t pop_obj(obj_t *obj); // pop object from a list
+
 // Writes
 extern obj_t write_raw(obj_t *obj, u64_t idx, nil_t *val); // write raw value into a list
 extern obj_t write_obj(obj_t *obj, u64_t idx, obj_t  val); // write object to a list
