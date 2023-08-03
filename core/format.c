@@ -450,10 +450,18 @@ i32_t error_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t o
 i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t obj)
 {
     obj_t functions = runtime_get()->env.functions;
-    i64_t id, sym;
+    i64_t sym = 0;
+    u64_t i, l;
 
-    id = at_obj(as_list(functions)[1], obj)->i64;
-    sym = as_symbol(as_list(functions)[0])[id];
+    l = as_list(functions)[1]->len;
+    for (i = 0; i < l; i++)
+    {
+        if (as_list(as_list(functions)[1])[i]->i64 == obj->i64)
+        {
+            sym = as_symbol(as_list(functions)[0])[i];
+            break;
+        }
+    }
 
     return symbol_fmt_into(dst, len, offset, limit, sym);
 }
@@ -462,8 +470,6 @@ i32_t lambda_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t 
 {
     unused(limit);
     unused(obj);
-
-    // lambda_t *lambda = as_lambda(obj_t);
 
     return str_fmt_into(dst, len, offset, 0, "<lambda>");
 }
@@ -607,7 +613,7 @@ nil_t print_error(obj_t error, str_t filename, str_t source, u32_t len)
     str_t start = source;
     str_t end = NULL;
     str_t error_desc, lf = "", p, msg;
-    span_t span = *(span_t *)as_list(error)[2];
+    span_t span = *(span_t *)&as_list(error)[2];
 
     switch (as_list(error)[0]->i64)
     {

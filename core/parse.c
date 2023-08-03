@@ -60,7 +60,7 @@ obj_t parse_error(parser_t *parser, i64_t id, str_t msg)
 {
     obj_t obj = error(ERR_PARSE, msg);
     span_t span = nfo_get(&parser->nfo, id);
-    *(span_t *)(as_list(obj)[2]) = span;
+    *(span_t *)(&as_list(obj)[2]) = span;
 
     heap_free(msg);
 
@@ -778,7 +778,7 @@ obj_t parse_dict(parser_t *parser)
 
 obj_t advance(parser_t *parser)
 {
-    obj_t tok, err;
+    obj_t tok = NULL, err = NULL;
 
     // Skip all whitespaces
     while (is_whitespace(*parser->current))

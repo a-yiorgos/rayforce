@@ -74,8 +74,7 @@ obj_t __attribute__((hot)) vm_exec(vm_t *vm, obj_t fun)
     str_t code = as_string(f->code);
     obj_t x0, x1, x2, x3, *addr;
     u8_t n, attrs;
-    u64_t l;
-    i64_t i, j, b;
+    u64_t i, j, l, b;
     vm_t cvm;
 
     // init registers
@@ -113,6 +112,8 @@ obj_t __attribute__((hot)) vm_exec(vm_t *vm, obj_t fun)
         (v)->ip += _o;                                    \
         x = *(u64_t *)_p;                                 \
     }
+
+    dispatch();
 
 op_ret:
     if (vm->sp > 0)
