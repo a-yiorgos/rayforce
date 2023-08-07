@@ -44,7 +44,7 @@ obj_t string_from_str(str_t str, i32_t len)
  * Note that this implementation assumes that the pattern and text strings do not contain any null characters ('\0').
  * If this is not the case, a more sophisticated implementation may be required.
  */
-bool_t string_match(str_t str, str_t pat)
+bool_t str_match(str_t str, str_t pat)
 {
     str_t end;
     i8_t inv = 0, match = 0;
@@ -61,7 +61,7 @@ bool_t string_match(str_t str, str_t pat)
 
             while (*str != '\0')
             {
-                if (string_match(pat, str))
+                if (str_match(pat, str))
                     return 1;
 
                 str++;
@@ -140,10 +140,20 @@ str_t str_dup(str_t str)
     return dup;
 }
 
-u64_t string_len(str_t s, u64_t n)
+u64_t str_len(str_t s, u64_t n)
 {
     u64_t i;
     for (i = 0; i < n && s[i] != '\0'; ++i)
         ;
+    return i;
+}
+
+u64_t str_cpy(str_t dst, str_t src)
+{
+    u64_t i;
+    for (i = 0; src[i] != '\0'; ++i)
+        dst[i] = src[i];
+    dst[i] = '\0';
+
     return i;
 }

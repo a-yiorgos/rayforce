@@ -140,6 +140,7 @@ extern obj_t schar(char_t c);                               // char
 extern obj_t string(u64_t len);                             // string 
 
 #define vector_bool(len)      (vector(TYPE_BOOL,      len)) // bool vector
+#define vector_byte(len)      (vector(TYPE_BYTE,      len)) // byte vector
 #define vector_i64(len)       (vector(TYPE_I64,       len)) // i64 vector
 #define vector_f64(len)       (vector(TYPE_F64,       len)) // f64 vector
 #define vector_symbol(len)    (vector(TYPE_SYMBOL,    len)) // symbol vector

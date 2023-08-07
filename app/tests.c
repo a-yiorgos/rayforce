@@ -153,16 +153,16 @@ nil_t test_find()
     // printf("Time: %f ms\n", cpu_time_used * 1000);
 }
 
-nil_t test_string_match()
+nil_t test_str_match()
 {
-    debug("-- %d\n", string_match("brown", "br?*wn"));
-    debug("-- %d\n", string_match("broasdfasdfwn", "br?*wn"));
-    debug("-- %d\n", string_match("browmwn", "br?*wn"));
-    debug("-- %d\n", string_match("brown", "[wertfb]rown"));
-    debug("-- %d\n", string_match("brown", "[^wertf]rown"));
-    debug("-- %d\n", string_match("bro[wn", "[^wertf]ro[[wn"));
-    debug("-- %d\n", string_match("bro^wn", "[^wertf]ro^wn"));
-    debug("-- %d\n", string_match("brown", "br[?*]wn"));
+    debug("-- %d\n", str_match("brown", "br?*wn"));
+    debug("-- %d\n", str_match("broasdfasdfwn", "br?*wn"));
+    debug("-- %d\n", str_match("browmwn", "br?*wn"));
+    debug("-- %d\n", str_match("brown", "[wertfb]rown"));
+    debug("-- %d\n", str_match("brown", "[^wertf]rown"));
+    debug("-- %d\n", str_match("bro[wn", "[^wertf]ro[[wn"));
+    debug("-- %d\n", str_match("bro^wn", "[^wertf]ro^wn"));
+    debug("-- %d\n", str_match("brown", "br[?*]wn"));
 
     return;
 }

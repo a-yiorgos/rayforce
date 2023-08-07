@@ -21,9 +21,11 @@
  *   SOFTWARE.
  */
 
-#include "../core/string.h"
+#define _POSIX_C_SOURCE 1
+
 #include <time.h>
 #include <signal.h>
+#include "../core/string.h"
 #include "../core/mmap.h"
 #include "../core/rayforce.h"
 #include "../core/format.h"

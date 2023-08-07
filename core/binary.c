@@ -857,7 +857,7 @@ obj_t rf_like(obj_t x, obj_t y)
     switch (mtype2(x->type, y->type))
     {
     case mtype2(TYPE_CHAR, TYPE_CHAR):
-        return (bool(string_match(as_string(x), as_string(y))));
+        return (bool(str_match(as_string(x), as_string(y))));
 
     default:
         raise(ERR_TYPE, "like: unsupported types: %d %d", x->type, y->type);

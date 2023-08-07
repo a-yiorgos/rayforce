@@ -38,7 +38,7 @@ u64_t obj_size(obj_t obj)
     case -TYPE_BOOL:
         return sizeof(type_t) + sizeof(bool_t);
     case -TYPE_BYTE:
-        return sizeof(type_t) + sizeof(u8_t);
+        return sizeof(type_t) + sizeof(byte_t);
     case -TYPE_I64:
     case -TYPE_TIMESTAMP:
         return sizeof(type_t) + sizeof(i64_t);
@@ -46,6 +46,25 @@ u64_t obj_size(obj_t obj)
         return sizeof(type_t) + sizeof(f64_t);
     case -TYPE_SYMBOL:
         return sizeof(type_t) + strlen(symtostr(obj->i64)) + 1;
+    case -TYPE_CHAR:
+        return sizeof(type_t) + sizeof(char_t);
+    case TYPE_GUID:
+        return sizeof(type_t) + sizeof(u64_t) + obj->len * sizeof(guid_t);
+    case TYPE_BOOL:
+        return sizeof(type_t) + sizeof(u64_t) + obj->len * sizeof(bool_t);
+    case TYPE_BYTE:
+        return sizeof(type_t) + sizeof(u64_t) + obj->len * sizeof(byte_t);
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+        return sizeof(type_t) + sizeof(u64_t) + obj->len * sizeof(i64_t);
+    case TYPE_F64:
+        return sizeof(type_t) + sizeof(u64_t) + obj->len * sizeof(f64_t);
+    case TYPE_SYMBOL:
+        l = obj->len;
+        size = sizeof(type_t) + sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            size += strlen(symtostr(as_symbol(obj)[i])) + 1;
+        return size;
     case TYPE_LIST:
         l = obj->len;
         size = sizeof(type_t);
@@ -80,7 +99,61 @@ u64_t _ser(byte_t *buf, u64_t len, obj_t obj)
     case -TYPE_SYMBOL:
         s = symtostr(obj->i64);
         strncpy(buf, s, len);
-        return sizeof(type_t) + string_len(s, len) + 1;
+        return sizeof(type_t) + str_len(s, len) + 1;
+    case -TYPE_CHAR:
+        buf[0] = obj->schar;
+        return sizeof(type_t) + sizeof(char_t);
+    // case TYPE_GUID:
+    //     memcpy(buf, &obj->guid, sizeof(guid_t));
+    //     return sizeof(type_t) + sizeof(guid_t);
+    case TYPE_BOOL:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            buf[i] = as_bool(obj)[i];
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(bool_t);
+    case TYPE_BYTE:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            buf[i] = as_byte(obj)[i];
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(byte_t);
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            memcpy(buf + i * sizeof(i64_t), &as_i64(obj)[i], sizeof(i64_t));
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(i64_t);
+    case TYPE_F64:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            memcpy(buf + i * sizeof(f64_t), &as_f64(obj)[i], sizeof(f64_t));
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(f64_t);
+    case TYPE_SYMBOL:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+        {
+            s = symtostr(as_symbol(obj)[i]);
+            buf += str_cpy(buf, s);
+            *buf = '\0';
+            buf++;
+        }
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(i64_t);
+    case TYPE_LIST:
+        l = obj->len;
+        memcpy(buf, &l, sizeof(u64_t));
+        buf += sizeof(u64_t);
+        for (i = 0; i < l; i++)
+            buf += _ser(buf, len, as_list(obj)[i]);
+        return sizeof(type_t) + sizeof(u64_t) + l * sizeof(obj_t);
     default:
         panic(str_fmt(0, "ser: unsupported type: %d", obj->type));
     }
@@ -103,30 +176,88 @@ obj_t ser(obj_t obj)
     return buf;
 }
 
-obj_t _de(byte_t *buf, u64_t len)
+obj_t _de(byte_t **buf, u64_t len)
 {
     u64_t i, l;
     obj_t obj;
-    type_t type = *buf;
-    buf++;
+    type_t type = **buf;
+    (*buf)++;
 
     switch (type)
     {
     case -TYPE_BOOL:
-        obj = bool(buf[0]);
+        obj = bool((*buf)[0]);
+        (*buf)++;
         return obj;
     case -TYPE_BYTE:
-        obj = byte(buf[0]);
+        obj = byte((*buf)[0]);
+        (*buf)++;
         return obj;
     case -TYPE_I64:
     case -TYPE_TIMESTAMP:
         obj = i64(0);
-        memcpy(&obj->i64, buf, sizeof(i64_t));
+        memcpy(&obj->i64, *buf, sizeof(i64_t));
+        (*buf) += sizeof(i64_t);
         return obj;
     case -TYPE_SYMBOL:
-        l = string_len(buf, len);
-        i = intern_symbol(buf, l);
+        l = str_len(*buf, len);
+        i = intern_symbol(*buf, l);
         obj = symboli64(i);
+        (*buf) += l + 1;
+        return obj;
+    case -TYPE_CHAR:
+        obj = schar((*buf)[0]);
+        (*buf)++;
+        return obj;
+    // case TYPE_GUID:
+    //     obj = guid(buf);
+    //     return obj;
+    case TYPE_BOOL:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = vector_bool(l);
+        memcpy(as_bool(obj), *buf, l * sizeof(bool_t));
+        (*buf) += l * sizeof(bool_t);
+        return obj;
+    case TYPE_BYTE:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = vector_byte(l);
+        memcpy(as_byte(obj), *buf, l * sizeof(byte_t));
+        (*buf) += l * sizeof(byte_t);
+        return obj;
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = vector_i64(l);
+        memcpy(as_i64(obj), *buf, l * sizeof(i64_t));
+        (*buf) += l * sizeof(i64_t);
+        return obj;
+    case TYPE_F64:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = vector_f64(l);
+        memcpy(as_f64(obj), *buf, l * sizeof(f64_t));
+        (*buf) += l * sizeof(f64_t);
+        return obj;
+    case TYPE_SYMBOL:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = vector_symbol(l);
+        for (i = 0; i < l; i++)
+        {
+            u64_t id = intern_symbol(*buf, str_len(*buf, len));
+            as_symbol(obj)[i] = id;
+            (*buf) += str_len(*buf, len) + 1;
+        }
+        return obj;
+    case TYPE_LIST:
+        memcpy(&l, *buf, sizeof(u64_t));
+        (*buf) += sizeof(u64_t);
+        obj = list(l);
+        for (i = 0; i < l; i++)
+            as_list(obj)[i] = _de(buf, len);
         return obj;
     default:
         panic(str_fmt(0, "de: unsupported type: %d", *buf));
@@ -136,6 +267,7 @@ obj_t _de(byte_t *buf, u64_t len)
 obj_t de(obj_t buf)
 {
     header_t *header = (header_t *)as_byte(buf);
+    byte_t *b;
 
     if (header->version > RAYFORCE_VERSION)
         return error(ERR_NOT_SUPPORTED, "de: version is higher than supported");
@@ -143,5 +275,6 @@ obj_t de(obj_t buf)
     if (header->size != buf->len - sizeof(struct header_t))
         return error(ERR_IO, "de: corrupted data in a buffer");
 
-    return _de(as_byte(buf) + sizeof(struct header_t), header->size);
+    b = as_byte(buf) + sizeof(struct header_t);
+    return _de(&b, header->size);
 }
