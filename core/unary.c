@@ -169,6 +169,7 @@ obj_t rf_get(obj_t x)
 
             size = fs_fsize(fd);
             res = (obj_t)mmap_file(fd, size);
+            fs_fclose(fd);
 
             res->attrs |= ATTR_MMAP;
             res->rc = 1;
