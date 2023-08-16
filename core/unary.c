@@ -225,7 +225,7 @@ obj_t rf_get(obj_t x)
                     raise(ERR_TYPE, "get: expected anymap schema as a byte vector, got: %d", keys->type);
                 }
 
-                memcpy((str_t)res - PAGE_SIZE, &keys, sizeof(obj_t));
+                ((obj_t)((str_t)res - PAGE_SIZE))->obj = keys;
             }
 
             res->rc = 1;

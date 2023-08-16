@@ -115,6 +115,7 @@ typedef struct obj_t
         char_t vchar;
         i64_t i64;
         f64_t f64;
+        struct obj_t *obj;
         struct {
             u64_t len;
             i8_t arr[];
