@@ -446,6 +446,10 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
     // compile table
     key = symboli64(KW_FROM);
     val = at_obj(params, key);
+
+    if (is_null(val))
+        cerr(cc, car, ERR_LENGTH, "'select' expects 'from' param");
+
     res = cc_compile_expr(true, cc, val);
     dropn(2, key, val);
 
@@ -577,7 +581,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
             push_u64(code, rf_sect);
             push_opcode(cc, params, code, OP_CALL2);
             push_u8(code, 0);
-            push_u64(code, rf_take);
+            push_u64(code, rf_at);
         }
         else
             drop(k);
