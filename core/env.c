@@ -199,7 +199,7 @@ nil_t init_kw_symbols()
     assert(intern_keyword("from",    4)  == KW_FROM);
     assert(intern_keyword("where",   5)  == KW_WHERE);
     assert(intern_keyword("by",      2)  == KW_BY);
-    assert(intern_keyword("order",   5)  == KW_ORDER);
+    assert(intern_keyword("take",    4)  == KW_TAKE);
     assert(intern_keyword("eval",    4)  == KW_EVAL);
     assert(intern_keyword("load",    4)  == KW_LOAD);
     assert(intern_keyword("return",  6)  == KW_RETURN);

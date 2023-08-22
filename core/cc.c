@@ -428,7 +428,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
     i64_t i, l;
     obj_t car, params, key, val, cols, syms, k, v;
     lambda_t *func = as_lambda(cc->lambda);
-    obj_t *code = &func->code;
+    obj_t *code = &func->code, take = null(0);
     bool_t groupby = false, map = false;
 
     car = as_list(obj)[0];
@@ -451,6 +451,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
 
     if (res == CC_ERROR)
         return CC_ERROR;
+
     // determine which of columns are used in select and which names will be used for result columns
     cols = vector_symbol(0);
     syms = vector_symbol(0);
@@ -478,15 +479,22 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
         {
             v = at_obj(params, k);
             find_used_symbols(v, &syms);
-            drop(v);
 
             if (k->i64 == KW_BY)
             {
+                dropn(2, k, v);
+                continue;
+            }
+
+            if (k->i64 == KW_TAKE)
+            {
                 drop(k);
+                take = v;
                 continue;
             }
 
             join_obj(&cols, k);
+            drop(k);
             map = true;
         }
         else
@@ -502,6 +510,16 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
     }
 
     drop(syms);
+
+    // compile take (if any)
+    if (!is_null(take))
+    {
+        push_opcode(cc, car, code, OP_PUSH);
+        push_const(cc, take);
+        push_opcode(cc, car, code, OP_CALL2);
+        push_u8(code, 0);
+        push_u64(code, rf_take);
+    }
 
     // compile filters
     key = symboli64(KW_WHERE);
@@ -650,7 +668,7 @@ cc_result_t cc_compile_select(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t ar
         for (i = 0; i < l; i++)
         {
             k = at_idx(as_list(params)[0], i);
-            if (k->i64 != KW_FROM && k->i64 != KW_WHERE && k->i64 != KW_BY)
+            if (k->i64 != KW_FROM && k->i64 != KW_WHERE && k->i64 != KW_BY && k->i64 != KW_TAKE)
             {
                 v = at_idx(as_list(params)[1], i);
                 res = cc_compile_expr(true, cc, v);

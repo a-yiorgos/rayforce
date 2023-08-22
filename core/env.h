@@ -49,7 +49,7 @@
 #define KW_FROM -13
 #define KW_WHERE -14
 #define KW_BY -15
-#define KW_ORDER -16
+#define KW_TAKE -16
 #define KW_EVAL -17
 #define KW_LOAD -18
 #define KW_RETURN -19

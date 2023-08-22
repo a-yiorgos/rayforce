@@ -2554,17 +2554,35 @@ obj_t rf_take(obj_t x, obj_t y)
 
         return res;
 
+    case mtype2(-TYPE_I64, TYPE_CHAR):
+        m = x->i64;
+        n = y->len;
+        res = string(m);
+
+        for (i = 0; i < m; i++)
+            as_string(res)[i] = as_string(y)[i % n];
+
+        return res;
+
     case mtype2(-TYPE_I64, TYPE_TABLE):
-        k = atom(-TYPE_VARY);
-        k->i64 = (i64_t)rf_take;
-        k->attrs = FLAG_NONE;
-        v = rf_map_vary_f(k, as_list(as_list(y)[1]), as_list(y)[1]->len);
-        drop(k);
+        l = as_list(y)[1]->len;
+        res = vector(TYPE_LIST, l);
+        for (i = 0; i < l; i++)
+        {
+            v = rf_take(x, as_list(as_list(y)[1])[i]);
 
-        if (is_error(v))
-            return v;
+            if (is_error(v))
+            {
+                res->len = i;
+                drop(v);
+                drop(res);
+                return v;
+            }
 
-        return table(clone(as_list(y)[0]), v);
+            as_list(res)[i] = v;
+        }
+
+        return table(clone(as_list(y)[0]), res);
 
     default:
         raise(ERR_TYPE, "take: unsupported types: %d %d", x->type, y->type);
