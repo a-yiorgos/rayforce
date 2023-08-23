@@ -42,19 +42,19 @@
 obj_t rf_call_unary_atomic(unary_f f, obj_t x)
 {
     u64_t i, l;
-    obj_t res = NULL, item = NULL;
+    obj_t res = NULL, item = NULL, a;
 
-    // argument is a list, so iterate through it
-    if (x->type == TYPE_LIST)
+    switch (x->type)
     {
+    case TYPE_LIST:
         l = x->len;
 
         if (l == 0)
-            return error(ERR_TYPE, "empty list");
+            return null(0);
 
-        item = rf_call_unary_atomic(f, as_list(x)[0]); // call function with first item
+        item = rf_call_unary_atomic(f, as_list(x)[0]);
 
-        if (item->type == TYPE_ERROR)
+        if (is_error(item))
             return item;
 
         res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
@@ -65,7 +65,7 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
         {
             item = rf_call_unary_atomic(f, as_list(x)[i]);
 
-            if (item->type == TYPE_ERROR)
+            if (is_error(item))
             {
                 res->len = i;
                 drop(res);
@@ -76,9 +76,44 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
         }
 
         return res;
-    }
 
-    return f(x);
+    case TYPE_ANYMAP:
+        l = x->len;
+        if (l == 0)
+            return null(0);
+
+        a = at_idx(x, 0);
+        item = rf_call_unary_atomic(f, a);
+        drop(a);
+
+        if (is_error(item))
+            return item;
+
+        res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
+
+        write_obj(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            a = at_idx(x, i);
+            item = rf_call_unary_atomic(f, a);
+            drop(a);
+
+            if (is_error(item))
+            {
+                res->len = i;
+                drop(res);
+                return item;
+            }
+
+            write_obj(&res, i, item);
+        }
+
+        return res;
+
+    default:
+        return f(x);
+    }
 }
 
 obj_t rf_call_unary(u8_t attrs, unary_f f, obj_t x)

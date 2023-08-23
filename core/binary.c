@@ -131,8 +131,38 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
     u64_t i, l;
     obj_t res, item, a;
 
-    if (x->type == TYPE_LIST || x->type == TYPE_ANYMAP)
+    switch (x->type)
     {
+    case TYPE_LIST:
+        l = x->len;
+        a = as_list(x)[0];
+        item = rf_call_binary_left_atomic(f, a, y);
+
+        if (is_error(item))
+            return item;
+
+        res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
+
+        write_obj(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            a = as_list(x)[i];
+            item = rf_call_binary_left_atomic(f, a, y);
+
+            if (is_error(item))
+            {
+                res->len = i;
+                drop(res);
+                return item;
+            }
+
+            write_obj(&res, i, item);
+        }
+
+        return res;
+
+    case TYPE_ANYMAP:
         l = x->len;
         a = at_idx(x, 0);
         item = rf_call_binary_left_atomic(f, a, y);
@@ -151,7 +181,7 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
             item = rf_call_binary_left_atomic(f, a, y);
             drop(a);
 
-            if (item->type == TYPE_ERROR)
+            if (is_error(item))
             {
                 res->len = i;
                 drop(res);
@@ -162,9 +192,10 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
         }
 
         return res;
-    }
 
-    return f(x, y);
+    default:
+        return f(x, y);
+    }
 }
 
 obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
@@ -172,8 +203,38 @@ obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
     u64_t i, l;
     obj_t res, item, b;
 
-    if (y->type == TYPE_LIST || y->type == TYPE_ANYMAP)
+    switch (y->type)
     {
+    case TYPE_LIST:
+        l = y->len;
+        b = as_list(y)[0];
+        item = rf_call_binary_right_atomic(f, x, b);
+
+        if (is_error(item))
+            return item;
+
+        res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
+
+        write_obj(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            b = as_list(y)[i];
+            item = rf_call_binary_right_atomic(f, x, b);
+
+            if (is_error(item))
+            {
+                res->len = i;
+                drop(res);
+                return item;
+            }
+
+            write_obj(&res, i, item);
+        }
+
+        return res;
+
+    case TYPE_ANYMAP:
         l = y->len;
         b = at_idx(y, 0);
         item = rf_call_binary_right_atomic(f, x, b);
@@ -203,9 +264,10 @@ obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
         }
 
         return res;
-    }
 
-    return f(x, y);
+    default:
+        return f(x, y);
+    }
 }
 
 // Atomic binary functions (iterates through list of arguments down to atoms)
@@ -213,55 +275,25 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 {
     u64_t i, l;
     obj_t res, item, a, b;
+    type_t xt = x->type, yt = y->type;
 
-    if (((x->type == TYPE_LIST || x->type == TYPE_ANYMAP) && is_vector(y)) ||
-        ((y->type == TYPE_LIST || y->type == TYPE_ANYMAP) && is_vector(x)))
+    if (((xt == TYPE_LIST || xt == TYPE_ANYMAP) && is_vector(y)) ||
+        ((yt == TYPE_LIST || yt == TYPE_ANYMAP) && is_vector(x)))
     {
         l = x->len;
 
         if (l != y->len)
             return error(ERR_LENGTH, "binary: vectors must be of the same length");
 
-        a = at_idx(x, 0);
-        b = at_idx(y, 0);
+        a = xt == TYPE_LIST ? as_list(x)[0] : at_idx(x, 0);
+        b = yt == TYPE_LIST ? as_list(y)[0] : at_idx(y, 0);
         item = rf_call_binary_atomic(f, a, b);
-        drop(a);
-        drop(b);
 
-        if (is_error(item))
-            return item;
-
-        res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
-
-        write_obj(&res, 0, item);
-
-        for (i = 1; i < l; i++)
-        {
-            a = at_idx(x, i);
-            b = at_idx(y, i);
-            item = rf_call_binary_atomic(f, a, b);
+        if (xt != TYPE_LIST)
             drop(a);
+        if (yt != TYPE_LIST)
             drop(b);
 
-            if (item->type == TYPE_ERROR)
-            {
-                res->len = i;
-                drop(res);
-                return item;
-            }
-
-            write_obj(&res, i, item);
-        }
-
-        return res;
-    }
-    else if (x->type == TYPE_LIST || x->type == TYPE_ANYMAP)
-    {
-        l = x->len;
-        a = at_idx(x, 0);
-        item = rf_call_binary_atomic(f, a, y);
-        drop(a);
-
         if (is_error(item))
             return item;
 
@@ -271,9 +303,14 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         for (i = 1; i < l; i++)
         {
-            a = at_idx(x, i);
-            item = rf_call_binary_atomic(f, a, y);
-            drop(a);
+            a = xt == TYPE_LIST ? as_list(x)[i] : at_idx(x, i);
+            b = yt == TYPE_LIST ? as_list(y)[i] : at_idx(y, i);
+            item = rf_call_binary_atomic(f, a, b);
+
+            if (xt != TYPE_LIST)
+                drop(a);
+            if (yt != TYPE_LIST)
+                drop(b);
 
             if (is_error(item))
             {
@@ -287,14 +324,15 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         return res;
     }
-    else if (y->type == TYPE_LIST || y->type == TYPE_ANYMAP)
+    else if (xt == TYPE_LIST || xt == TYPE_ANYMAP)
     {
-        l = y->len;
-        b = at_idx(y, 0);
-        item = rf_call_binary_atomic(f, x, b);
-        drop(b);
+        l = x->len;
+        a = xt == TYPE_LIST ? as_list(x)[0] : at_idx(x, 0);
+        item = rf_call_binary_atomic(f, a, y);
+        if (xt != TYPE_LIST)
+            drop(a);
 
-        if (item->type == TYPE_ERROR)
+        if (is_error(item))
             return item;
 
         res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
@@ -303,11 +341,46 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         for (i = 1; i < l; i++)
         {
-            b = at_idx(y, i);
-            item = rf_call_binary_atomic(f, x, b);
+            a = xt == TYPE_LIST ? as_list(x)[i] : at_idx(x, i);
+            item = rf_call_binary_atomic(f, a, y);
+            if (xt != TYPE_LIST)
+                drop(a);
+
+            if (is_error(item))
+            {
+                res->len = i;
+                drop(res);
+                return item;
+            }
+
+            write_obj(&res, i, item);
+        }
+
+        return res;
+    }
+    else if (yt == TYPE_LIST || yt == TYPE_ANYMAP)
+    {
+        l = y->len;
+        b = yt == TYPE_LIST ? as_list(y)[0] : at_idx(y, 0);
+        item = rf_call_binary_atomic(f, x, b);
+        if (yt != TYPE_LIST)
             drop(b);
 
-            if (item->type == TYPE_ERROR)
+        if (is_error(item))
+            return item;
+
+        res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
+
+        write_obj(&res, 0, item);
+
+        for (i = 1; i < l; i++)
+        {
+            b = yt == TYPE_LIST ? as_list(y)[i] : at_idx(y, i);
+            item = rf_call_binary_atomic(f, x, b);
+            if (yt != TYPE_LIST)
+                drop(b);
+
+            if (is_error(item))
             {
                 res->len = i;
                 drop(res);
