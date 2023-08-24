@@ -38,11 +38,11 @@
 #include "ops.h"
 #include "serde.h"
 
-// Atomic unary functions (iterates through list of argumen items down to atoms)
+// Atomic unary functions (iterates through list of argument items down to atoms)
 obj_t rf_call_unary_atomic(unary_f f, obj_t x)
 {
     u64_t i, l;
-    obj_t res = NULL, item = NULL, a;
+    obj_t res = NULL, item = NULL, a, *v;
 
     switch (x->type)
     {
@@ -52,7 +52,8 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
         if (l == 0)
             return null(0);
 
-        item = rf_call_unary_atomic(f, as_list(x)[0]);
+        v = as_list(x);
+        item = rf_call_unary_atomic(f, v[0]);
 
         if (is_error(item))
             return item;
@@ -63,7 +64,7 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
 
         for (i = 1; i < l; i++)
         {
-            item = rf_call_unary_atomic(f, as_list(x)[i]);
+            item = rf_call_unary_atomic(f, v[i]);
 
             if (is_error(item))
             {
@@ -418,8 +419,8 @@ obj_t rf_sum(obj_t x)
 
 obj_t rf_avg(obj_t x)
 {
-    i32_t i;
-    i64_t l, isum, n = 0;
+    u64_t i, l, n;
+    i64_t isum;
     f64_t fsum;
 
     switch (x->type)
@@ -431,7 +432,7 @@ obj_t rf_avg(obj_t x)
         l = x->len;
         isum = 0;
 
-        for (i = 0; i < l; i++)
+        for (i = 0, n = 0; i < l; i++)
         {
             if (as_i64(x)[i] != NULL_I64)
                 isum += as_i64(x)[i];

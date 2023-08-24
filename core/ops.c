@@ -26,6 +26,7 @@
 #include "string.h"
 #include "util.h"
 #include "hash.h"
+#include "heap.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
@@ -287,11 +288,13 @@ obj_t distinct(obj_t x)
 
 obj_t group(obj_t x)
 {
-    i64_t i, j = 0, n, xl = x->len, idx, min, max, range, *iv, *hk, *hv, *kv;
+    i64_t i, j = 0, n, xl, idx, min, max, range, *iv, *hk, *hv, *kv;
     obj_t keys, vals, v, ht, *vv;
 
-    if (xl == 0)
+    if (x->len == 0)
         return dict(vector_i64(0), list(0));
+
+    xl = x->len;
 
     iv = as_i64(x);
     min = max = iv[0];
@@ -304,11 +307,50 @@ obj_t group(obj_t x)
 
     range = max - min + 1;
 
+    // use flat vector instead of hash table
+    if (range <= xl)
+    {
+        ht = vector_i64(range);
+        hk = as_i64(ht);
+        memset(hk, 0, range * sizeof(i64_t));
+
+        // First pass - Count occurrences
+        for (i = 0; i < xl; i++)
+        {
+            n = iv[i] - min;
+            hk[n]++;
+        }
+
+        // Pre-compute offsets into all_indices array
+        for (i = 0, n = 0; i < range; i++)
+        {
+            j = hk[i];
+            hk[i] = n;
+            n += j;
+        }
+
+        // Allocate space for all indices
+        vals = vector_i64(n);
+        hv = as_i64(vals);
+
+        // Single pass through the input, populating all_indices
+        for (i = 0; i < xl; i++)
+        {
+            n = iv[i] - min;
+            hv[hk[n]++] = i;
+        }
+
+        drop(ht);
+
+        return vals; // The start of each group in this array is based on the values in hk.
+    }
+
     ht = ht_tab(range < xl ? range : xl, TYPE_I64);
     hk = as_i64(as_list(ht)[0]);
     hv = as_i64(as_list(ht)[1]);
 
     // calculate counts for each key
+    // #pragma clang loop vectorize(enable)
     for (i = 0; i < xl; i++)
     {
         n = iv[i] - min;
