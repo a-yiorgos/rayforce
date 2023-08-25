@@ -2790,18 +2790,50 @@ obj_t rf_except(obj_t x, obj_t y)
 
 obj_t rf_group_Table(obj_t x, obj_t y)
 {
-    i64_t i, l;
+    i64_t i, j, k, m, group_start, group_size, g, l, o, *offsets, *indices;
     obj_t res;
 
     switch (mtype2(x->type, y->type))
     {
-    case mtype2(TYPE_TABLE, TYPE_LIST):
-        l = as_list(x)[1]->len;
-        res = vector(TYPE_LIST, l);
-        for (i = 0; i < l; i++)
-            as_list(res)[i] = rf_call_binary_right_atomic(rf_at, as_list(as_list(x)[1])[i], y);
+    case mtype2(TYPE_LIST, TYPE_TABLE):
+        l = as_list(y)[1]->len; // Number of columns
+        g = as_list(x)[0]->len; // Number of groups
 
-        return table(clone(as_list(x)[0]), res);
+        offsets = as_i64(as_list(x)[0]);
+        indices = as_i64(as_list(x)[1]);
+
+        // allocate columns
+        res = vector(TYPE_LIST, l);
+
+        // per column
+        for (k = 0; k < l; k++)
+        {
+            obj_t column = vector(TYPE_LIST, g);
+
+            group_start = 0;
+
+            // per group
+            for (i = 0; i < g; i++)
+            {
+                while (*offsets == 0)
+                {
+                    offsets++;
+                }
+                group_size = *offsets - group_start;
+                obj_t group = vector(TYPE_LIST, group_size);
+
+                for (j = 0; j < group_size; j++)
+                    as_list(group)[j] = at_idx(as_list(as_list(y)[1])[k], indices[group_start + j]);
+
+                as_list(column)[i] = group;
+
+                group_start = *offsets;
+            }
+
+            as_list(res)[k] = column;
+        }
+
+        return table(clone(as_list(y)[0]), res);
 
     default:
         raise(ERR_TYPE, "group: unsupported types: %d %d", x->type, y->type);

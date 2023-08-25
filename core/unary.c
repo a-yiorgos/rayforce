@@ -119,6 +119,9 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
 
 obj_t rf_call_unary(u8_t attrs, unary_f f, obj_t x)
 {
+    if (!x)
+        return null(0);
+
     switch (attrs)
     {
     case FLAG_ATOMIC:
@@ -377,7 +380,7 @@ obj_t rf_distinct(obj_t x)
 
 obj_t rf_group(obj_t x)
 {
-    if (x->type != TYPE_I64)
+    if (!x || x->type != TYPE_I64)
         raise(ERR_TYPE, "group: expected vector_i64");
 
     return group(x);
