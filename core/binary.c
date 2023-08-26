@@ -2836,7 +2836,7 @@ obj_t rf_group_Table(obj_t x, obj_t y)
         return table(clone(as_list(y)[0]), res);
 
     default:
-        raise(ERR_TYPE, "group: unsupported types: %d %d", x->type, y->type);
+        raise(ERR_TYPE, "group table: unsupported types: %d %d", x->type, y->type);
     }
 }
 
