@@ -199,7 +199,7 @@ extern obj_t write_obj(obj_t *obj, u64_t idx, obj_t val); // write object to a l
 extern obj_t write_sym(obj_t *obj, u64_t idx, str_t str); // write interned string to a symbol vector
 
 // Read
-extern obj_t at_idx(obj_t obj, u64_t idx); // read raw value from a obj at index
+extern obj_t at_idx(obj_t obj, u64_t idx); // read raw value from an obj at index
 extern obj_t at_obj(obj_t obj, obj_t idx); // read from obj indexed by obj
 extern str_t symtostr(i64_t id);           // return interned string by interned id
 
