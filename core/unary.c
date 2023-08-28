@@ -47,7 +47,7 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
     switch (x->type)
     {
     case TYPE_LIST:
-        l = x->len;
+        l = count(x);
 
         if (l == 0)
             return null(0);
@@ -79,7 +79,7 @@ obj_t rf_call_unary_atomic(unary_f f, obj_t x)
         return res;
 
     case TYPE_ANYMAP:
-        l = x->len;
+        l = count(x);
         if (l == 0)
             return null(0);
 
@@ -329,18 +329,7 @@ obj_t rf_type(obj_t x)
 
 obj_t rf_count(obj_t x)
 {
-    if (!x)
-        return i64(0);
-
-    switch (x->type)
-    {
-    case TYPE_TABLE:
-        return i64(as_list(as_list(x)[1])[0]->len);
-    case TYPE_DICT:
-        return i64(as_list(x)[0]->len);
-    default:
-        return i64(x->len);
-    }
+    return i64(count(x));
 }
 
 obj_t rf_til(obj_t x)
@@ -412,7 +401,7 @@ obj_t rf_group(obj_t x)
 obj_t rf_sum(obj_t x)
 {
     i32_t i;
-    i64_t l, v, isum = 0;
+    i64_t l, v, isum = 0, *indices, *values;
     f64_t fsum = 0.0;
 
     switch (x->type)
@@ -437,6 +426,20 @@ obj_t rf_sum(obj_t x)
             fsum += as_f64(x)[i];
 
         return f64(fsum);
+
+    case TYPE_VECMAP:
+        l = as_list(x)[1]->len;
+        values = as_i64(as_list(x)[0]);
+        indices = as_i64(as_list(x)[1]);
+
+        for (i = 0; i < l; i++)
+        {
+            v = values[indices[i]];
+            v = (v == NULL_I64) ? 0 : v;
+            isum += v;
+        }
+
+        return i64(isum);
 
     default:
         raise(ERR_TYPE, "sum: unsupported type: %d", x->type);

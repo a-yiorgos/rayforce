@@ -134,7 +134,7 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
     switch (x->type)
     {
     case TYPE_LIST:
-        l = x->len;
+        l = count(x);
         a = as_list(x)[0];
         item = rf_call_binary_left_atomic(f, a, y);
 
@@ -163,7 +163,7 @@ obj_t rf_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
         return res;
 
     case TYPE_ANYMAP:
-        l = x->len;
+        l = count(x);
         a = at_idx(x, 0);
         item = rf_call_binary_left_atomic(f, a, y);
         drop(a);
@@ -206,7 +206,7 @@ obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
     switch (y->type)
     {
     case TYPE_LIST:
-        l = y->len;
+        l = count(y);
         b = as_list(y)[0];
         item = rf_call_binary_right_atomic(f, x, b);
 
@@ -235,7 +235,7 @@ obj_t rf_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
         return res;
 
     case TYPE_ANYMAP:
-        l = y->len;
+        l = count(y);
         b = at_idx(y, 0);
         item = rf_call_binary_right_atomic(f, x, b);
         drop(b);
@@ -275,14 +275,20 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 {
     u64_t i, l;
     obj_t res, item, a, b;
-    type_t xt = x->type, yt = y->type;
+    type_t xt, yt;
+
+    if (!x || !y)
+        raise(ERR_TYPE, "binary: null argument");
+
+    xt = x->type;
+    yt = y->type;
 
     if (((xt == TYPE_LIST || xt == TYPE_ANYMAP) && is_vector(y)) ||
         ((yt == TYPE_LIST || yt == TYPE_ANYMAP) && is_vector(x)))
     {
-        l = x->len;
+        l = count(x);
 
-        if (l != y->len)
+        if (l != count(y))
             return error(ERR_LENGTH, "binary: vectors must be of the same length");
 
         a = xt == TYPE_LIST ? as_list(x)[0] : at_idx(x, 0);
@@ -326,7 +332,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
     }
     else if (xt == TYPE_LIST || xt == TYPE_ANYMAP)
     {
-        l = x->len;
+        l = count(x);
         a = xt == TYPE_LIST ? as_list(x)[0] : at_idx(x, 0);
         item = rf_call_binary_atomic(f, a, y);
         if (xt != TYPE_LIST)
@@ -360,7 +366,7 @@ obj_t rf_call_binary_atomic(binary_f f, obj_t x, obj_t y)
     }
     else if (yt == TYPE_LIST || yt == TYPE_ANYMAP)
     {
-        l = y->len;
+        l = count(y);
         b = yt == TYPE_LIST ? as_list(y)[0] : at_idx(y, 0);
         item = rf_call_binary_atomic(f, x, b);
         if (yt != TYPE_LIST)
@@ -2895,4 +2901,11 @@ obj_t rf_enum(obj_t x, obj_t y)
     default:
         raise(ERR_TYPE, "enum: unsupported types: %d %d", x->type, y->type);
     }
+}
+
+obj_t rf_vecmap(obj_t x, obj_t y)
+{
+    obj_t v = list(2, clone(x), clone(y));
+    v->type = TYPE_VECMAP;
+    return v;
 }

@@ -421,7 +421,7 @@ obj_t at_idx(obj_t obj, u64_t idx)
     obj_t k, v;
     byte_t *buf;
 
-    if (obj == NULL || (!is_vector(obj) && obj->type != TYPE_ANYMAP))
+    if (!obj)
         return null(0);
 
     switch (obj->type)
@@ -462,6 +462,9 @@ obj_t at_idx(obj_t obj, u64_t idx)
         }
 
         return null(0);
+
+    case TYPE_VECMAP:
+        return at_idx(as_list(obj)[0], (u64_t)as_i64(as_list(obj)[1])[idx]);
 
     default:
         throw("at_idx: invalid type: %d", obj->type);

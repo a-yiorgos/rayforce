@@ -438,6 +438,28 @@ obj_t group(obj_t x)
     return list(3, k, v, vals);
 }
 
+u64_t count(obj_t x)
+{
+    if (!x)
+        return 0;
+
+    switch (x->type)
+    {
+    case TYPE_TABLE:
+        return as_list(as_list(x)[1])[0]->len;
+    case TYPE_DICT:
+        return as_list(x)[0]->len;
+    case TYPE_ENUM:
+        return enum_val(x)->len;
+    case TYPE_ANYMAP:
+        return anymap_val(x)->len;
+    case TYPE_VECMAP:
+        return as_list(x)[1]->len;
+    default:
+        return x->len;
+    }
+}
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 
 str_t get_os_error()

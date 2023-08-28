@@ -42,6 +42,8 @@ extern "C"
 #define TYPE_CHAR 8
 #define TYPE_ENUM 20
 #define TYPE_ANYMAP 77
+#define TYPE_VECMAP 78
+#define TYPE_LISTMAP 79
 #define TYPE_TABLE 98
 #define TYPE_DICT 99
 #define TYPE_LAMBDA 100

@@ -85,7 +85,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "til",       TYPE_UNARY,    FLAG_NONE,         rf_til);
     regf(functions,  "distinct",  TYPE_UNARY,    FLAG_ATOMIC,       rf_distinct);
     regf(functions,  "group",     TYPE_UNARY,    FLAG_NONE,         rf_group);
-    regf(functions,  "sum",       TYPE_UNARY,    FLAG_ATOMIC,       rf_sum);
+    regf(functions,  "sum",       TYPE_UNARY,    FLAG_NONE,         rf_sum);
     regf(functions,  "avg",       TYPE_UNARY,    FLAG_ATOMIC,       rf_avg);
     regf(functions,  "min",       TYPE_UNARY,    FLAG_ATOMIC,       rf_min);
     regf(functions,  "max",       TYPE_UNARY,    FLAG_ATOMIC,       rf_max);
@@ -136,6 +136,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "xasc",      TYPE_BINARY,   FLAG_NONE,         rf_xasc);
     regf(functions,  "xdesc",     TYPE_BINARY,   FLAG_NONE,         rf_xdesc);
     regf(functions,  "enum",      TYPE_BINARY,   FLAG_NONE,         rf_enum);
+    regf(functions,  "vecmap",      TYPE_BINARY,   FLAG_NONE,         rf_vecmap);
     
     // Lambdas       
     // regf(function s, "env",        rf_env);
