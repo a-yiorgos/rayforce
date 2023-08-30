@@ -164,8 +164,8 @@ i32_t bool_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, bool_t v
 {
     if (val)
         return str_fmt_into(dst, len, offset, limit, "true");
-    else
-        return str_fmt_into(dst, len, offset, limit, "false");
+
+    return str_fmt_into(dst, len, offset, limit, "false");
 }
 
 i32_t byte_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, u8_t val)
@@ -177,16 +177,23 @@ i32_t i64_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, i64_t val
 {
     if (val == NULL_I64)
         return str_fmt_into(dst, len, offset, limit, "%s", "0i");
-    else
-        return str_fmt_into(dst, len, offset, limit, "%lld", val);
+
+    return str_fmt_into(dst, len, offset, limit, "%lld", val);
 }
 
 i32_t f64_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, f64_t val)
 {
+    f64_t order;
+
     if (rfi_is_nan(val))
         return str_fmt_into(dst, len, offset, limit, "0f");
-    else
-        return str_fmt_into(dst, len, offset, limit, "%.*f", F64_PRECISION, val);
+
+    // Find the order of magnitude of the number to select the appropriate format
+    order = __builtin_log10(val);
+    if (val && (order > 6 || order < -4))
+        return str_fmt_into(dst, len, offset, limit, "%.*e", 2 * F64_PRECISION, val);
+
+    return str_fmt_into(dst, len, offset, limit, "%.*f", F64_PRECISION, val);
 }
 
 i32_t symbol_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, i64_t val)
