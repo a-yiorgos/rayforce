@@ -1018,7 +1018,7 @@ dispatch:
             xivals = as_i64(x);
             vec = vector_i64(l);
             for (i = 0; i < l; i++)
-                as_i64(vec)[i] = addi64(y->i64, xivals[i]);
+                as_i64(vec)[i] = addi64(y->i64, xivals[xids[i]]);
 
             return vec;
         }
@@ -1042,6 +1042,9 @@ dispatch:
         }
         else if (xids)
         {
+            if (l != y->len)
+                raise(ERR_LENGTH, "add: vectors must be of the same length");
+
             xivals = as_i64(x);
             yivals = as_i64(y);
             vec = vector_i64(l);
@@ -1050,6 +1053,9 @@ dispatch:
         }
         else if (yids)
         {
+            if (l != x->len)
+                raise(ERR_LENGTH, "add: vectors must be of the same length");
+
             xivals = as_i64(x);
             yivals = as_i64(y);
             vec = vector_i64(l);
@@ -1059,6 +1065,9 @@ dispatch:
         else
         {
             l = x->len;
+            if (l != y->len)
+                raise(ERR_LENGTH, "add: vectors must be of the same length");
+
             xivals = as_i64(x);
             yivals = as_i64(y);
             vec = vector_i64(l);
@@ -1068,63 +1077,22 @@ dispatch:
 
         return vec;
 
-        // case mtype2(TYPE_F64, -TYPE_F64):
-        //     if (vm_ctx()->indices[0])
-        //     {
-        //         l = vm_ctx()->indices[0]->len;
-        //         xidx = as_i64(vm_ctx()->indices[0]);
-        //         xi = as_i64(x);
-        //         vec = vector_f64(l);
-        //         for (i = 0; i < l; i++)
-        //             as_f64(vec)[i] = addf64(xi[xidx[i]], y->f64);
-        //     }
-        //     else
-        //     {
-        //         l = x->len;
-        //         vec = vector_f64(l);
-        //         for (i = 0; i < l; i++)
-        //             as_f64(vec)[i] = addf64(as_f64(x)[i], y->f64);
-        //     }
-
-        //     return vec;
-
-        // case mtype2(TYPE_F64, TYPE_F64):
-        //     if (vm_ctx()->indices[0] && vm_ctx()->indices[1])
-        //     {
-        //         l = vm_ctx()->indices[0]->len;
-        //         xidx = as_i64(vm_ctx()->indices[0]);
-        //         yidx = as_i64(vm_ctx()->indices[1]);
-        //         xi = as_i64(x);
-        //         yi = as_i64(y);
-        //         vec = vector_f64(l);
-        //         for (i = 0; i < l; i++)
-        //             as_f64(vec)[i] = addf64(xi[xidx[i]], yi[yidx[i]]);
-        //     }
-        //     else if (vm_ctx()->indices[0])
-        //     {
-        //         l = vm_ctx()->indices[0]->len;
-        //         xidx = as_i64(vm_ctx()->indices[0]);
-        //         xi = as_i64(x);
-        //         vec = vector_f64(l);
-        //         for (i = 0; i < l; i++)
-        //             as_f64(vec)[i] = addf64(xi[xidx[i]], as_f64(y)[i]);
-        //     }
-        //     else if (vm_ctx()->indices[1])
-        //     {
-        //         l = vm_ctx()->indices[1]->len;
-        //         yidx = as_i64(vm_ctx()->indices[1]);
-        //         yi = as_i64(y);
-        //         vec = vector_f64(l);
-        //         for (i = 0; i < l; i++)
-        //             as_f64(vec)[i] = addf64(as_f64(x)[i], yi[yidx[i]]);
-        //     }
-        //     else
+    case mtype2(TYPE_F64, -TYPE_F64):
+        if (xids)
         {
-            l = x->len;
+            xfvals = as_f64(x);
             vec = vector_f64(l);
             for (i = 0; i < l; i++)
-                as_f64(vec)[i] = addf64(as_f64(x)[i], as_f64(y)[i]);
+                as_f64(vec)[i] = addf64(y->f64, xfvals[xids[i]]);
+
+            return vec;
         }
+
+        l = x->len;
+        xfvals = as_f64(x);
+        vec = vector_f64(l);
+        for (i = 0; i < l; i++)
+            as_f64(vec)[i] = addf64(y->f64, xfvals[i]);
 
         return vec;
 
@@ -1134,6 +1102,9 @@ dispatch:
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
+
+            if (l != as_list(y)[1]->len)
+                raise(ERR_LENGTH, "add: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
