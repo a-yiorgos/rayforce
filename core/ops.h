@@ -32,6 +32,7 @@
 #define FN_RIGHT_ATOMIC 2
 #define FN_ATOMIC 4
 #define FN_LAZY 8
+#define FN_ATOMIC_MASK 7
 
 // Object's attributes
 #define ATTR_DISTINCT 1

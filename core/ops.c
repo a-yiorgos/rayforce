@@ -520,6 +520,7 @@ u64_t count(obj_t x)
     case TYPE_ANYMAP:
         return anymap_val(x)->len;
     case TYPE_VECMAP:
+    case TYPE_LISTMAP:
         return as_list(x)[1]->len;
     default:
         return x->len;

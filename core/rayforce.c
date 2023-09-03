@@ -29,6 +29,7 @@
 #include "heap.h"
 #include "string.h"
 #include "util.h"
+#include "binary.h"
 #include "string.h"
 #include "runtime.h"
 #include "ops.h"
@@ -465,6 +466,10 @@ obj_t at_idx(obj_t obj, u64_t idx)
 
     case TYPE_VECMAP:
         return at_idx(as_list(obj)[0], (u64_t)as_i64(as_list(obj)[1])[idx]);
+
+    case TYPE_LISTMAP:
+        v = as_list(as_list(obj)[1])[idx];
+        return ray_vecmap(as_list(obj)[0], v);
 
     default:
         throw("at_idx: invalid type: %d", obj->type);
