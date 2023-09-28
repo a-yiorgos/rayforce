@@ -9,8 +9,8 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest]
-        # os: [ubuntu-latest, windows-latest]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -34,6 +34,18 @@ jobs:
       if: runner.os == 'Windows'
       run: mingw32-make.exe CC="gcc" release 
     
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        if ! command -v clang &> /dev/null
+        then
+          xcode-select --install
+        fi
+
+    - name: Make (macOS)
+      if: runner.os == 'macOS'
+      run: make release
+
     - name: Create build directory and copy binary (Linux)
       if: runner.os == 'Linux'
       run: |
@@ -49,6 +61,14 @@ jobs:
         cp ./rayforce.exe ./build/
         cd build
         7z a ../rayforce.zip .
+
+    - name: Create build directory and copy binary (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        mkdir build
+        cp ./rayforce ./build/
+        cd build
+        zip -r ../rayforce.zip .  
 
     - name: Create Release
       id: create_release
