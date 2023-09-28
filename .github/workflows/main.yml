@@ -33,6 +33,15 @@ jobs:
     #   if: runner.os == 'Windows'
     #   run: make
 
+    - name: Determine binary extension
+      id: artifact_ext
+      run: echo "::set-output name=ext::$(if [[ "${{ runner.os }}" == "Windows" ]]; then echo '.exe'; else echo ''; fi)"
+
+    - name: Create build directory and copy binary
+      run: |
+        mkdir build
+        cp ./rayforce${{ steps.artifact_ext.outputs.ext }} ./build/  
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -51,6 +60,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./
-        asset_name: program-${{ runner.os }}
+        asset_path: ./build
+        asset_name: rayforce-${{ runner.os }}
         asset_content_type: application/octet-stream
