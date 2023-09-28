@@ -33,9 +33,12 @@ jobs:
 
     - name: Make (Windows)
       if: runner.os == 'Windows'
-      run: |
-        mingw32-make.exe CC="gcc" release 
-        echo "::set-output name=ext::.exe"
+      run: mingw32-make.exe CC="gcc" release 
+
+    - name: Set artifact extension
+      id: artifact_ext
+      if: runner.os == 'Windows'
+      run: echo "::set-output name=ext::.exe"
 
     - name: Create build directory and copy binary
       run: |
