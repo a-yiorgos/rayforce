@@ -42,11 +42,7 @@ jobs:
         mkdir build
         cp ./rayforce${{ steps.artifact_ext.outputs.ext }} ./build/  
         cd build
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          7z a ../rayforce.zip .
-        else
-          zip -r ../rayforce.zip .
-        fi
+        zip -r ../rayforce.zip .
 
     - name: Create Release
       id: create_release
