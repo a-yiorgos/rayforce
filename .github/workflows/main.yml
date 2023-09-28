@@ -27,8 +27,9 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         choco install make mingw -y
-        choco install tdmgcc -y
-
+        Invoke-WebRequest -Uri "https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe" -OutFile "tdm-gcc-installer.exe"
+        Start-Process "tdm-gcc-installer.exe" -ArgumentList "/S" -NoNewWindow -Wait
+        
     - name: Make (Windows)
       if: runner.os == 'Windows'
       run: mingw32-make.exe CC="gcc" release 
