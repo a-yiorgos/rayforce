@@ -47,24 +47,6 @@ obj_t ray_count(obj_t x)
     return i64(count(x));
 }
 
-obj_t ray_til(obj_t x)
-{
-    if (x->type != -TYPE_I64)
-        return error(ERR_TYPE, "til: expected i64");
-
-    i32_t i, l = (i32_t)x->i64;
-    obj_t vec = NULL;
-
-    vec = vector_i64(l);
-
-    for (i = 0; i < l; i++)
-        as_i64(vec)[i] = i;
-
-    vec->attrs = ATTR_ASC | ATTR_DISTINCT;
-
-    return vec;
-}
-
 obj_t ray_distinct(obj_t x)
 {
     obj_t res = NULL;

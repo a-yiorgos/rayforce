@@ -35,6 +35,7 @@ obj_t ray_vecmap(obj_t x, obj_t y);
 obj_t ray_listmap(obj_t x, obj_t y);
 obj_t ray_concat(obj_t x, obj_t y);
 obj_t ray_til(obj_t x);
+obj_t ray_reverse(obj_t x);
 obj_t ray_group(obj_t x);
 obj_t ray_group_remap(obj_t x);
 obj_t ray_guid(obj_t x);

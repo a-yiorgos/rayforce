@@ -56,6 +56,77 @@ obj_t ray_cast(obj_t x, obj_t y)
     return cast(type, y);
 }
 
+obj_t ray_til(obj_t x)
+{
+    if (x->type != -TYPE_I64)
+        return error(ERR_TYPE, "til: expected i64");
+
+    i32_t i, l = (i32_t)x->i64;
+    obj_t vec = NULL;
+
+    vec = vector_i64(l);
+
+    for (i = 0; i < l; i++)
+        as_i64(vec)[i] = i;
+
+    vec->attrs = ATTR_ASC | ATTR_DISTINCT;
+
+    return vec;
+}
+
+obj_t ray_reverse(obj_t x)
+{
+
+    i64_t i, l;
+    obj_t res;
+
+    switch (x->type)
+    {
+    case TYPE_CHAR:
+    case TYPE_BYTE:
+    case TYPE_BOOL:
+        l = x->len;
+        res = string(l);
+
+        for (i = l - 1; i >= 0; i--)
+            as_string(res)[l - i] = as_string(x)[i];
+
+        return res;
+
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+    case TYPE_SYMBOL:
+        l = x->len;
+        res = vector(x->type, l);
+
+        for (i = 0; i < l; i++)
+            as_i64(res)[i] = as_i64(x)[l - i - 1];
+
+        return res;
+
+    case TYPE_F64:
+        l = x->len;
+        res = vector_f64(l);
+
+        for (i = 0; i < l; i++)
+            as_f64(res)[i] = as_f64(x)[l - i - 1];
+
+        return res;
+
+    case TYPE_LIST:
+        l = x->len;
+        res = vector(TYPE_LIST, l);
+
+        for (i = 0; i < l; i++)
+            as_list(res)[i] = clone(as_list(x)[l - i - 1]);
+
+        return res;
+
+    default:
+        emit(ERR_TYPE, "reverse: unsupported type: %d", x->type);
+    }
+}
+
 obj_t ray_dict(obj_t x, obj_t y)
 {
     if (!is_vector(x) || !is_vector(y))

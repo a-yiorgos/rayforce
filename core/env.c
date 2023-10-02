@@ -91,6 +91,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "read",      TYPE_UNARY,    FN_NONE,           ray_read);
     regf(functions,  "type",      TYPE_UNARY,    FN_NONE,           ray_type);
     regf(functions,  "til",       TYPE_UNARY,    FN_NONE,           ray_til);
+    regf(functions,  "reverse",   TYPE_UNARY,    FN_NONE,           ray_reverse);
     regf(functions,  "distinct",  TYPE_UNARY,    FN_NONE,           ray_distinct);
     regf(functions,  "group",     TYPE_UNARY,    FN_NONE,           ray_group);
     regf(functions,  "sum",       TYPE_UNARY,    FN_ATOMIC,         ray_sum);
