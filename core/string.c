@@ -39,6 +39,82 @@ obj_t string_from_str(str_t str, i32_t len)
 }
 
 /*
+ * Checks if pattern is like *?**literal.
+ */
+str_t str_chk_from_end(str_t pat)
+{
+    u64_t l;
+    str_t p, s;
+
+    l = strlen(pat);
+
+    if (l == 0)
+        return NULL;
+
+    p = pat;
+
+    while (*p == '*' || *p == '?')
+        p++;
+
+    if (*p == '\0')
+        return p;
+
+    s = p;
+    while (*s != '*' && *s != '?' && *s != '[' && *s != '\0')
+        s++;
+
+    if (*s == '\0')
+        return p;
+
+    return pat;
+}
+/*
+ * Checks if string starts with a literal.
+ */
+bool_t str_starts_with(str_t str, str_t pat)
+{
+    u64_t str_len = strlen(str);
+    u64_t pat_len = strlen(pat);
+
+    // If the pattern is longer than the string, it can't be a suffix.
+    if (pat_len > str_len)
+        return false;
+
+    // Compare the tail of the string with the pattern.
+    return strcmp(pat, str) == 0;
+}
+
+/*
+ * Checks if string ends with a literal.
+ */
+bool_t str_ends_with(str_t str, str_t pat)
+{
+    // Pointers to the ends of the strings
+    const char *s = str, *p = pat;
+
+    // Traverse to the end of both strings
+    while (*s)
+        ++s;
+    while (*p)
+        ++p;
+
+    // Check character by character from the end
+    while (s >= str && p >= pat)
+    {
+        if (*s != *p)
+        {
+            return false;
+        }
+        s--;
+        p--;
+    }
+
+    // If we've traversed all of the pattern, but not all of the string
+    // This means the string ends with the pattern
+    return p < pat;
+}
+
+/*
  * match() lambda takes in two pointers to character arrays: pattern and text.
  * It returns a i8_t obj_t indicating whether the text string matches the pattern string.
  * Note that this implementation assumes that the pattern and text strings do not contain any null characters ('\0').

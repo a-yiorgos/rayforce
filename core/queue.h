@@ -21,30 +21,22 @@
  *   SOFTWARE.
  */
 
-#ifndef SERDE_H
-#define SERDE_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #include "rayforce.h"
-#include "util.h"
 
-#define SERDE_PREFIX 0xcefadefa
-
-typedef struct header_t
+typedef struct queue_t
 {
-    u32_t prefix; // marker
-    u8_t version; // version of the app
-    u8_t flags;   // 0 - no flags
-    u8_t endian;  // 0 - little, 1 - big
-    u8_t msgtype; // used for ipc: 0 - async, 1 - sync, 2 - response
-    u64_t size;   // size of the payload (in bytes)
-} header_t;
+    i64_t size;
+    i64_t head;
+    i64_t tail;
+    nil_t **data;
+} queue_t;
 
-CASSERT(sizeof(header_t) == 16, header_t);
+queue_t queue_new(i64_t size);
+nil_t queue_free(queue_t *queue);
+nil_t queue_push(queue_t *queue, nil_t *val);
+nil_t *queue_pop(queue_t *queue);
 
-obj_t de_raw(u8_t *buf, u64_t len);
-i64_t ser_raw(u8_t **buf, obj_t obj);
-u64_t size_obj(obj_t obj);
-u64_t save_obj(u8_t *buf, u64_t len, obj_t obj);
-obj_t load_obj(u8_t **buf, u64_t len);
-
-#endif // SERDE_H
+#endif // QUEUE_H

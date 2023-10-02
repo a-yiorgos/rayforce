@@ -21,30 +21,24 @@
  *   SOFTWARE.
  */
 
-#ifndef SERDE_H
-#define SERDE_H
+#ifndef COMPOSE_H
+#define COMPOSE_H
 
 #include "rayforce.h"
-#include "util.h"
 
-#define SERDE_PREFIX 0xcefadefa
+obj_t ray_dict(obj_t x, obj_t y);
+obj_t ray_table(obj_t x, obj_t y);
+obj_t ray_rand(obj_t x, obj_t y);
+obj_t ray_cast(obj_t x, obj_t y);
+obj_t ray_enum(obj_t x, obj_t y);
+obj_t ray_vecmap(obj_t x, obj_t y);
+obj_t ray_listmap(obj_t x, obj_t y);
+obj_t ray_concat(obj_t x, obj_t y);
+obj_t ray_til(obj_t x);
+obj_t ray_group(obj_t x);
+obj_t ray_group_remap(obj_t x);
+obj_t ray_guid(obj_t x);
+obj_t ray_list(obj_t *x, u64_t n);
+obj_t ray_enlist(obj_t *x, u64_t n);
 
-typedef struct header_t
-{
-    u32_t prefix; // marker
-    u8_t version; // version of the app
-    u8_t flags;   // 0 - no flags
-    u8_t endian;  // 0 - little, 1 - big
-    u8_t msgtype; // used for ipc: 0 - async, 1 - sync, 2 - response
-    u64_t size;   // size of the payload (in bytes)
-} header_t;
-
-CASSERT(sizeof(header_t) == 16, header_t);
-
-obj_t de_raw(u8_t *buf, u64_t len);
-i64_t ser_raw(u8_t **buf, obj_t obj);
-u64_t size_obj(obj_t obj);
-u64_t save_obj(u8_t *buf, u64_t len, obj_t obj);
-obj_t load_obj(u8_t **buf, u64_t len);
-
-#endif // SERDE_H
+#endif // COMPOSE_H

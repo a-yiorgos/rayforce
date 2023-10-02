@@ -529,12 +529,29 @@ u64_t count(obj_t x)
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 
-str_t get_os_error()
+obj_t sys_error(os_error_type_t type, str_t msg)
 {
-    // TODO!!!! free lpMsgBuf
-    DWORD dw = GetLastError();
+    str_t emsg;
+    obj_t err;
+    DWORD dw;
     LPVOID lpMsgBuf;
-    DWORD bufLen = FormatMessageA(
+
+    switch (type)
+    {
+    case TYPE_STRERROR:
+        emsg = str_fmt(0, "%s: %s", msg, strerror(errno));
+        err = error(ERR_IO, emsg);
+        heap_free(emsg);
+        return err;
+
+    case TYPE_WSAGETLASTERROR:
+        dw = WSAGetLastError();
+        break;
+    default:
+        dw = GetLastError();
+    }
+
+    FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -544,17 +561,27 @@ str_t get_os_error()
         (LPSTR)&lpMsgBuf,
         0, NULL);
 
-    if (bufLen)
-        return (str_t)lpMsgBuf;
-    else
-        return strerror(errno);
+    emsg = str_fmt(0, "%s: %s", msg, lpMsgBuf);
+    err = error(ERR_IO, emsg);
+    heap_free(emsg);
+
+    LocalFree(lpMsgBuf);
+
+    return err;
 }
 
 #else
 
-str_t get_os_error()
+obj_t sys_error(os_error_type_t type, str_t msg)
 {
-    return strerror(errno);
+    unused(type);
+    str_t emsg;
+    obj_t err;
+
+    emsg = str_fmt(0, "%s: %s", msg, strerror(errno));
+    err = error(ERR_IO, emsg);
+    heap_free(emsg);
+    return err;
 }
 
 #endif

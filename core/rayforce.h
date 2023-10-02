@@ -76,9 +76,8 @@ extern "C"
 #define true     (char)1
 #define false    (char)0
 
-typedef char type_t;
+typedef signed char type_t;
 typedef char i8_t;
-typedef char byte_t;
 typedef char char_t;
 typedef char bool_t;
 typedef char *str_t;
@@ -114,7 +113,7 @@ typedef struct obj_t
     union
     {
         bool_t bool;
-        byte_t byte;
+        u8_t u8;
         char_t vchar;
         i64_t i64;
         f64_t f64;
@@ -135,7 +134,7 @@ extern obj_t atom(type_t type);                             // create atom of ty
 extern obj_t list(u64_t len, ...);                          // create list
 extern obj_t vector(type_t type, u64_t len);                // create vector of type
 extern obj_t bool(bool_t val);                              // bool atom
-extern obj_t vbyte(byte_t val);                             // byte atom
+extern obj_t u8(u8_t val);                                  // byte atom
 extern obj_t i64(i64_t val);                                // i64 atom
 extern obj_t f64(f64_t val);                                // f64 atom
 extern obj_t symbol(str_t ptr);                             // symbol
@@ -148,7 +147,7 @@ extern obj_t venum(obj_t sym, obj_t vec);                   // enum
 extern obj_t anymap(obj_t sym, obj_t vec);                  // anymap
 
 #define vector_bool(len)      (vector(TYPE_BOOL,      len)) // bool vector
-#define vector_byte(len)      (vector(TYPE_BYTE,      len)) // byte vector
+#define vector_u8(len)        (vector(TYPE_BYTE,      len)) // byte vector
 #define vector_i64(len)       (vector(TYPE_I64,       len)) // i64 vector
 #define vector_f64(len)       (vector(TYPE_F64,       len)) // f64 vector
 #define vector_symbol(len)    (vector(TYPE_SYMBOL,    len)) // symbol vector
@@ -173,7 +172,7 @@ extern nil_t dropn(u64_t n, ...);
 // Accessors
 #define as_string(obj)    ((str_t)__builtin_assume_aligned((obj + 1), 16))
 #define as_bool(obj)      ((bool_t *)(as_string(obj)))
-#define as_byte(obj)      ((byte_t *)(as_string(obj)))
+#define as_u8(obj)        ((u8_t *)(as_string(obj)))
 #define as_i64(obj)       ((i64_t *)(as_string(obj)))
 #define as_f64(obj)       ((f64_t *)(as_string(obj)))
 #define as_symbol(obj)    ((i64_t *)(as_string(obj)))
@@ -187,26 +186,26 @@ extern bool_t is_null(obj_t obj);
 #define is_atom(obj)   (obj && (obj)->type < 0)
 #define is_vector(obj) (obj && (obj)->type >= 0 && (obj)->type <= TYPE_CHAR)
 
-// Joins
+// Push a value to the end of a list
 extern obj_t push_raw(obj_t *obj, raw_t val); // push raw value into a list
 extern obj_t push_obj(obj_t *obj, obj_t val); // push object to a list
 extern obj_t push_sym(obj_t *obj, str_t str); // push interned string to a symbol vector
 
-// Pop
+// Pop a value from the end of a list
 extern obj_t pop_obj(obj_t *obj); // pop object from a list
 
-// Writes (don't call a destructor)
-extern obj_t write_raw(obj_t *obj, u64_t idx, raw_t val); // write raw value into a list
-extern obj_t write_obj(obj_t *obj, u64_t idx, obj_t val); // write object to a list
-extern obj_t write_sym(obj_t *obj, u64_t idx, str_t str); // write interned string to a symbol vector
+// Insert a value into a list by an index (doesn't call a drop)
+extern obj_t ins_raw(obj_t *obj, i64_t idx, raw_t val); // write raw value into a list
+extern obj_t ins_obj(obj_t *obj, i64_t idx, obj_t val); // write object to a list
+extern obj_t ins_sym(obj_t *obj, i64_t idx, str_t str); // write interned string to a symbol vector
 
 // Read
-extern obj_t at_idx(obj_t obj, u64_t idx); // read raw value from an obj at index
+extern obj_t at_idx(obj_t obj, i64_t idx); // read raw value from an obj at index
 extern obj_t at_obj(obj_t obj, obj_t idx); // read from obj indexed by obj
 extern str_t symtostr(i64_t id);           // return interned string by interned id
 
 // Set
-extern obj_t set_idx(obj_t *obj, u64_t idx, obj_t val); // set obj at index
+extern obj_t set_idx(obj_t *obj, i64_t idx, obj_t val); // set obj at index
 extern obj_t set_obj(obj_t *obj, obj_t idx, obj_t val); // set obj indexed by obj
 
 // Resize
@@ -218,7 +217,7 @@ extern i64_t find_obj(obj_t obj, obj_t val); // find object in a list, return in
 extern i64_t find_sym(obj_t obj, str_t str); // find interned string in a symbol vector, return index (obj->len if not found)
 
 // Cast
-extern obj_t cast(type_t type, obj_t obj);      // cast object x o a type
+extern obj_t cast(type_t type, obj_t obj);   // cast object x o a type
 
 // Comparison
 extern bool_t equal(obj_t a, obj_t b);
@@ -226,6 +225,17 @@ extern bool_t equal(obj_t a, obj_t b);
 // Serialization
 extern obj_t ser(obj_t obj);
 extern obj_t de(obj_t buf);
+
+/* 
+* Evaluate into an instance, drived by handle fd:
+* = 0: self process
+* > 0: sync evaluate string str into an instance, drived by handle fd
+* < 0: async evaluate string str into an instance, drived by handle -fd
+* Moves ownership of an obj, so don't call drop() on it after
+*/
+extern obj_t eval_str(i64_t fd, str_t name, str_t str);
+extern obj_t eval_obj(i64_t fd, str_t name, obj_t obj);
+
 
 #ifdef __cplusplus
 }

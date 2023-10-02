@@ -27,7 +27,10 @@
 #include "rayforce.h"
 #include "heap.h"
 #include "env.h"
+#include "parse.h"
 #include "vm.h"
+#include "select.h"
+#include "sock.h"
 
 /*
  * Runtime structure.
@@ -36,12 +39,18 @@ typedef struct runtime_t
 {
     u16_t slaves;       // Number of slave threads.
     env_t env;          // Environment.
+    parser_t parser;    // Parser.
     vm_t vm;            // Virtual machine.
+    select_t select;    // I/O event loop handle.
+    obj_t args;         // Command line arguments.
     symbols_t *symbols; // vector_symbols pool.
+    sock_addr_t addr;   // Socket address that a process listen.
 } *runtime_t;
 
-extern nil_t runtime_init(u16_t slaves);
+extern nil_t runtime_init(i32_t argc, str_t argv[]);
+extern i32_t runtime_run();
 extern nil_t runtime_cleanup();
 extern runtime_t runtime_get();
+extern obj_t runtime_get_arg(str_t key);
 
 #endif

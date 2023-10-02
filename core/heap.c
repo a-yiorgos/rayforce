@@ -111,11 +111,6 @@ heap_t heap_init()
     return _HEAP;
 }
 
-heap_t heap_get()
-{
-    return _HEAP;
-}
-
 nil_t heap_cleanup()
 {
     i32_t i, order;
@@ -154,6 +149,11 @@ nil_t heap_cleanup()
 
     mmap_free(_HEAP->blocks16, NUM_16_BLOCKS * 16);
     mmap_free(_HEAP, sizeof(struct heap_t));
+}
+
+heap_t heap_get()
+{
+    return _HEAP;
 }
 
 memstat_t heap_memstat()
@@ -254,6 +254,9 @@ nil_t __attribute__((hot)) heap_free(nil_t *block)
     nil_t *buddy;
     node_t *node, **n;
     u32_t order;
+
+    if (block == NULL)
+        return;
 
     // block is a 16 bytes block
     if is16block (block)

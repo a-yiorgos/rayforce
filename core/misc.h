@@ -21,30 +21,15 @@
  *   SOFTWARE.
  */
 
-#ifndef SERDE_H
-#define SERDE_H
+#ifndef MISC_H
+#define MISC_H
 
 #include "rayforce.h"
-#include "util.h"
 
-#define SERDE_PREFIX 0xcefadefa
+obj_t ray_type(obj_t x);
+obj_t ray_count(obj_t x);
+obj_t ray_distinct(obj_t x);
+obj_t ray_parse(obj_t x);
+obj_t ray_read_parse_compile(obj_t x);
 
-typedef struct header_t
-{
-    u32_t prefix; // marker
-    u8_t version; // version of the app
-    u8_t flags;   // 0 - no flags
-    u8_t endian;  // 0 - little, 1 - big
-    u8_t msgtype; // used for ipc: 0 - async, 1 - sync, 2 - response
-    u64_t size;   // size of the payload (in bytes)
-} header_t;
-
-CASSERT(sizeof(header_t) == 16, header_t);
-
-obj_t de_raw(u8_t *buf, u64_t len);
-i64_t ser_raw(u8_t **buf, obj_t obj);
-u64_t size_obj(obj_t obj);
-u64_t save_obj(u8_t *buf, u64_t len, obj_t obj);
-obj_t load_obj(u8_t **buf, u64_t len);
-
-#endif // SERDE_H
+#endif // MISC_H

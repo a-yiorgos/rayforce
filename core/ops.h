@@ -37,6 +37,7 @@
 #define ATTR_ASC 2
 #define ATTR_DESC 4
 #define ATTR_QUOTED 8
+#define ATTR_MULTIEXPR 16
 
 // Memory modes
 #define MMOD_INTERNAL 0xff
@@ -105,6 +106,13 @@ obj_t distinct(obj_t x);
 obj_t group(i64_t values[], i64_t indices[], i64_t len);
 u64_t count(obj_t x);
 
-str_t get_os_error();
+typedef enum
+{
+    TYPE_STRERROR,
+    TYPE_GETLASTERROR,
+    TYPE_WSAGETLASTERROR
+} os_error_type_t;
+
+obj_t sys_error(os_error_type_t, str_t msg);
 
 #endif

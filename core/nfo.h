@@ -27,8 +27,6 @@
 #include "rayforce.h"
 #include "hash.h"
 
-// clang-format off
-
 /*
  * Points to a actual error position in a source code
  */
@@ -41,10 +39,7 @@ typedef struct span_t
 } span_t;
 
 /*
- * Holds a dict with such fields:
- * file: Char
- * lambda: Char
- * spans: Dict of id -- span mappings
+ * Debuginfo structure
  */
 typedef struct nfo_t
 {
@@ -53,10 +48,9 @@ typedef struct nfo_t
     obj_t spans;
 } nfo_t;
 
-nfo_t  nfo_new(str_t filename, str_t lambda);
-nil_t  nfo_free(nfo_t *nfo);
-nil_t  nfo_insert(nfo_t *nfo, i64_t index, span_t span);
+nfo_t nfo_new(str_t filename, str_t lambda);
+nil_t nfo_free(nfo_t *nfo);
+nil_t nfo_insert(nfo_t *nfo, i64_t index, span_t span);
 span_t nfo_get(nfo_t *nfo, i64_t index);
-// clang-format on
 
 #endif

@@ -67,7 +67,7 @@ i64_t mmap_sync(nil_t *addr, u64_t size)
     return FlushViewOfFile(addr, size);
 }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__EMSCRIPTEN__)
 
 nil_t *mmap_stack(u64_t size)
 {

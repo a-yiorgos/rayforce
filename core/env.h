@@ -70,9 +70,10 @@ nil_t free_env(env_t *env);
 i64_t env_get_typename_by_type(env_t *env, type_t type);
 type_t env_get_type_by_typename(env_t *env, i64_t name);
 str_t env_get_typename(type_t type);
+str_t env_get_internal_name(obj_t obj);
+obj_t env_get_internal_function(str_t name);
 obj_t env_set(env_t *env, obj_t key, obj_t val);
 obj_t env_get(env_t *env, obj_t key);
-
 obj_t ray_env();
 obj_t ray_memstat();
 

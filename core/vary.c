@@ -68,17 +68,17 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
     {
     case TYPE_UNARY:
         if (n != 1)
-            raise(ERR_TYPE, "'map': unary call with wrong arguments count");
+            emit(ERR_TYPE, "'map': unary call with wrong arguments count");
         return ray_call_unary(FN_ATOMIC, (unary_f)f->i64, x[0]);
     case TYPE_BINARY:
         if (n != 2)
-            raise(ERR_TYPE, "'map': binary call with wrong arguments count");
+            emit(ERR_TYPE, "'map': binary call with wrong arguments count");
         return ray_call_binary(FN_ATOMIC, (binary_f)f->i64, x[0], x[1]);
     case TYPE_VARY:
         return ray_call_vary(FN_ATOMIC, (vary_f)f->i64, x, n);
     case TYPE_LAMBDA:
         if (n != as_lambda(f)->args->len)
-            raise(ERR_TYPE, "'map': lambda call with wrong arguments count");
+            emit(ERR_TYPE, "'map': lambda call with wrong arguments count");
         l = 0xffffffffffffffff;
         for (i = 0; i < n; i++)
         {
@@ -86,7 +86,7 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
             if ((is_vector(*b) || (*b)->type == TYPE_LISTMAP) && l == 0xffffffffffffffff)
                 l = count(*b);
             else if ((is_vector(*b) || (*b)->type == TYPE_LISTMAP) && count(*b) != l)
-                raise(ERR_LENGTH, "'map': inconsistent arguments lengths")
+                emit(ERR_LENGTH, "'map': inconsistent arguments lengths")
         }
 
         if (l == 0)
@@ -117,7 +117,7 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
 
         res = v->type < 0 ? vector(v->type, l) : vector(TYPE_LIST, l);
 
-        write_obj(&res, 0, v);
+        ins_obj(&res, 0, v);
 
         // drop args
         for (j = 0; j < n; j++)
@@ -150,12 +150,12 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
                 return v;
             }
 
-            write_obj(&res, i, v);
+            ins_obj(&res, i, v);
         }
 
         return res;
     default:
-        raise(ERR_TYPE, "'map': unsupported function type: %d", f->type);
+        emit(ERR_TYPE, "'map': unsupported function type: %d", f->type);
     }
 }
 
@@ -165,33 +165,6 @@ obj_t ray_map_vary(obj_t *x, u64_t n)
         return list(0);
 
     return ray_map_vary_f(x[0], x + 1, n - 1);
-}
-
-obj_t ray_list(obj_t *x, u64_t n)
-{
-    u64_t i;
-    obj_t lst = vector(TYPE_LIST, n);
-
-    for (i = 0; i < n; i++)
-        as_list(lst)[i] = clone(x[i]);
-
-    return lst;
-}
-
-obj_t ray_enlist(obj_t *x, u64_t n)
-{
-    if (n == 0)
-        return list(0);
-
-    u64_t i;
-    obj_t lst;
-
-    lst = vector(x[0]->type, n);
-
-    for (i = 0; i < n; i++)
-        write_obj(&lst, i, clone(x[i]));
-
-    return lst;
 }
 
 obj_t ray_gc(obj_t *x, u64_t n)
@@ -239,4 +212,11 @@ obj_t ray_println(obj_t *x, u64_t n)
     heap_free(s);
 
     return null(0);
+}
+
+obj_t ray_args(obj_t *x, u64_t n)
+{
+    unused(x);
+    unused(n);
+    return clone(runtime_get()->args);
 }

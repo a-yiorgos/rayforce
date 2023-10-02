@@ -21,30 +21,46 @@
  *   SOFTWARE.
  */
 
-#ifndef SERDE_H
-#define SERDE_H
-
-#include "rayforce.h"
+#include "queue.h"
+#include "heap.h"
 #include "util.h"
 
-#define SERDE_PREFIX 0xcefadefa
-
-typedef struct header_t
+queue_t queue_new(i64_t size)
 {
-    u32_t prefix; // marker
-    u8_t version; // version of the app
-    u8_t flags;   // 0 - no flags
-    u8_t endian;  // 0 - little, 1 - big
-    u8_t msgtype; // used for ipc: 0 - async, 1 - sync, 2 - response
-    u64_t size;   // size of the payload (in bytes)
-} header_t;
+    return (queue_t){
+        .size = size,
+        .head = 0,
+        .tail = 0,
+        .data = heap_alloc(size * sizeof(nil_t *)),
+    };
+}
 
-CASSERT(sizeof(header_t) == 16, header_t);
+nil_t queue_free(queue_t *queue)
+{
+    heap_free(queue->data);
+}
 
-obj_t de_raw(u8_t *buf, u64_t len);
-i64_t ser_raw(u8_t **buf, obj_t obj);
-u64_t size_obj(obj_t obj);
-u64_t save_obj(u8_t *buf, u64_t len, obj_t obj);
-obj_t load_obj(u8_t **buf, u64_t len);
+nil_t queue_push(queue_t *queue, nil_t *val)
+{
+    if (queue->tail - queue->head == queue->size)
+    {
+        queue->size *= 2;
+        queue->data = heap_realloc(queue->data, queue->size * sizeof(nil_t *));
+    }
 
-#endif // SERDE_H
+    queue->data[queue->tail % queue->size] = val;
+    queue->tail++;
+}
+
+nil_t *queue_pop(queue_t *queue)
+{
+    nil_t *v;
+
+    if (queue->head == queue->tail)
+        return NULL;
+
+    v = queue->data[queue->head % queue->size];
+    queue->head++;
+
+    return v;
+}

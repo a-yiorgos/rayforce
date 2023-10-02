@@ -281,7 +281,6 @@ nil_t test_heap_free()
 
 i32_t main()
 {
-    runtime_init(0);
     // heap_init();
     // i64_t i, j, r, w;
     // r = 1;
@@ -311,8 +310,4 @@ i32_t main()
     // test_heap_free();
 
     printf("All tests passed!\n");
-
-    runtime_cleanup();
-
-    // heap_cleanup();
 }

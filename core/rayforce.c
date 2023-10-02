@@ -30,11 +30,15 @@
 #include "string.h"
 #include "util.h"
 #include "binary.h"
+#include "unary.h"
 #include "string.h"
 #include "runtime.h"
+#include "items.h"
 #include "ops.h"
 #include "fs.h"
 #include "serde.h"
+#include "cc.h"
+#include "sock.h"
 
 CASSERT(sizeof(struct obj_t) == 16, rayforce_h)
 
@@ -85,10 +89,10 @@ obj_t bool(bool_t val)
     return b;
 }
 
-obj_t vbyte(byte_t val)
+obj_t u8(u8_t val)
 {
     obj_t b = atom(TYPE_BYTE);
-    b->byte = val;
+    b->u8 = val;
     return b;
 }
 
@@ -245,9 +249,14 @@ obj_t anymap(obj_t sym, obj_t vec)
     return e;
 }
 
+/*
+ * Error is a list with the following structure:
+ * (code, message, span, file, content)
+ * code, message are mandatory, others are optional
+ */
 obj_t error(i8_t code, str_t msg)
 {
-    obj_t obj = list(3, i64(code), string_from_str(msg, strlen(msg)), NULL);
+    obj_t obj = list(5, i64(code), string_from_str(msg, strlen(msg)), NULL, NULL, NULL);
 
     obj->mmod = MMOD_INTERNAL;
     obj->refc = 1;
@@ -334,7 +343,7 @@ obj_t push_obj(obj_t *obj, obj_t val)
             return res;
         }
 
-        raise(ERR_TYPE, "join: invalid types: %d, %d", (*obj)->type, val->type);
+        emit(ERR_TYPE, "join: invalid types: %d, %d", (*obj)->type, val->type);
     }
 }
 
@@ -344,16 +353,17 @@ obj_t push_sym(obj_t *obj, str_t str)
     return push_raw(obj, &sym);
 }
 
-obj_t write_raw(obj_t *obj, u64_t idx, raw_t val)
+obj_t ins_raw(obj_t *obj, i64_t idx, raw_t val)
 {
     i32_t size = size_of_type((*obj)->type);
     memcpy((*obj)->arr + idx * size, val, size);
     return *obj;
 }
 
-obj_t write_obj(obj_t *obj, u64_t idx, obj_t val)
+obj_t ins_obj(obj_t *obj, i64_t idx, obj_t val)
 {
-    u64_t i, l;
+    i64_t i;
+    u64_t l;
     obj_t ret;
 
     if (*obj == NULL || !is_vector(*obj))
@@ -380,29 +390,29 @@ obj_t write_obj(obj_t *obj, u64_t idx, obj_t val)
     switch ((*obj)->type)
     {
     case TYPE_BOOL:
-        ret = write_raw(obj, idx, &val->bool);
+        ret = ins_raw(obj, idx, &val->bool);
         drop(val);
         break;
     case TYPE_BYTE:
-        ret = write_raw(obj, idx, &val->byte);
+        ret = ins_raw(obj, idx, &val->u8);
         drop(val);
         break;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        ret = write_raw(obj, idx, &val->i64);
+        ret = ins_raw(obj, idx, &val->i64);
         drop(val);
         break;
     case TYPE_F64:
-        ret = write_raw(obj, idx, &val->f64);
+        ret = ins_raw(obj, idx, &val->f64);
         drop(val);
         break;
     case TYPE_CHAR:
-        ret = write_raw(obj, idx, &val->vchar);
+        ret = ins_raw(obj, idx, &val->vchar);
         drop(val);
         break;
     case TYPE_LIST:
-        ret = write_raw(obj, idx, &val);
+        ret = ins_raw(obj, idx, &val);
         break;
     default:
         throw("write obj: invalid type: %d", (*obj)->type);
@@ -411,65 +421,123 @@ obj_t write_obj(obj_t *obj, u64_t idx, obj_t val)
     return ret;
 }
 
-obj_t write_sym(obj_t *obj, u64_t idx, str_t str)
+obj_t ins_sym(obj_t *obj, i64_t idx, str_t str)
 {
     i64_t sym = intern_symbol(str, strlen(str));
-    return write_raw(obj, idx, &sym);
+    return ins_raw(obj, idx, &sym);
 }
 
-obj_t at_idx(obj_t obj, u64_t idx)
+obj_t at_idx(obj_t obj, i64_t idx)
 {
-    obj_t k, v;
-    byte_t *buf;
+    obj_t k, v, res;
+    u8_t *buf;
+    i64_t *ids;
+    u64_t i, l;
 
     if (!obj)
         return null(0);
 
+dispatch:
     switch (obj->type)
     {
     case TYPE_I64:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)obj->len)
             return i64(as_i64(obj)[idx]);
         return i64(NULL_I64);
     case TYPE_SYMBOL:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)obj->len)
             return symboli64(as_symbol(obj)[idx]);
         return symboli64(NULL_I64);
     case TYPE_TIMESTAMP:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)obj->len)
             return timestamp(as_timestamp(obj)[idx]);
         return timestamp(NULL_I64);
     case TYPE_F64:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx > 0 && idx < (i64_t)obj->len)
             return f64(as_f64(obj)[idx]);
         return f64(NULL_F64);
     case TYPE_CHAR:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)obj->len)
             return vchar(as_string(obj)[idx]);
         return vchar('\0');
     case TYPE_LIST:
-        if (idx < obj->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)obj->len)
             return clone(as_list(obj)[idx]);
         return null(0);
-        // case TYPE_ENUM:
+    case TYPE_ENUM:
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)enum_val(obj)->len)
+        {
+            k = ray_key(obj);
+            if (is_error(k))
+                return k;
+            v = ray_get(k);
+            drop(k);
+            if (is_error(v))
+                return v;
+            idx = as_i64(enum_val(obj))[idx];
+            res = at_idx(v, idx);
+            drop(v);
+            return res;
+        }
+        return symboli64(NULL_I64);
 
     case TYPE_ANYMAP:
         k = anymap_key(obj);
         v = anymap_val(obj);
-        if (idx < v->len)
+        if (idx < 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)v->len)
         {
-            buf = as_byte(k) + as_i64(v)[idx];
+            buf = as_u8(k) + as_i64(v)[idx];
             return load_obj(&buf, k->len);
         }
 
         return null(0);
 
     case TYPE_VECMAP:
-        return at_idx(as_list(obj)[0], (u64_t)as_i64(as_list(obj)[1])[idx]);
+        if (idx < 0 && obj->len > 0)
+            idx = obj->len + idx;
+        if (idx >= 0 && idx < (i64_t)as_list(obj)[1]->len)
+        {
+            idx = (u64_t)as_i64(as_list(obj)[1])[idx];
+            obj = as_list(obj)[0];
+            goto dispatch;
+        }
+
+        return null(0);
 
     case TYPE_LISTMAP:
-        v = as_list(as_list(obj)[1])[idx];
-        return ray_vecmap(as_list(obj)[0], v);
+        k = as_list(as_list(obj)[1])[idx];
+        l = k->len;
+        if (l == 0)
+            return null(0);
+
+        ids = as_i64(k);
+        v = at_idx(as_list(obj)[0], ids[0]);
+        res = v->type < 0 ? vector(v->type, l) : vector(TYPE_LIST, l);
+        ins_obj(&res, 0, v);
+
+        for (i = 1; i < l; i++)
+        {
+            v = at_idx(as_list(obj)[0], ids[i]);
+            ins_obj(&res, i, v);
+        }
+
+        return res;
 
     default:
         throw("at_idx: invalid type: %d", obj->type);
@@ -493,6 +561,8 @@ obj_t at_obj(obj_t obj, obj_t idx)
     case mtype2(TYPE_LIST, -TYPE_I64):
     case mtype2(TYPE_ENUM, -TYPE_I64):
     case mtype2(TYPE_ANYMAP, -TYPE_I64):
+    case mtype2(TYPE_VECMAP, -TYPE_I64):
+    case mtype2(TYPE_LISTMAP, -TYPE_I64):
         return at_idx(obj, idx->i64);
     default:
         if (obj->type == TYPE_DICT || obj->type == TYPE_TABLE)
@@ -508,7 +578,7 @@ obj_t at_obj(obj_t obj, obj_t idx)
     }
 }
 
-obj_t set_idx(obj_t *obj, u64_t idx, obj_t val)
+obj_t set_idx(obj_t *obj, i64_t idx, obj_t val)
 {
     switch (mtype2((*obj)->type, val->type))
     {
@@ -534,7 +604,7 @@ obj_t set_idx(obj_t *obj, u64_t idx, obj_t val)
             return *obj;
         }
 
-        raise(ERR_TYPE, "set_idx: invalid types: %d, %d", (*obj)->type, val->type);
+        emit(ERR_TYPE, "set_idx: invalid types: %d, %d", (*obj)->type, val->type);
     }
 }
 
@@ -575,7 +645,7 @@ obj_t set_obj(obj_t *obj, obj_t idx, obj_t val)
             return *obj;
         }
 
-        raise(ERR_TYPE, "set_obj: invalid types: %d, %d", (*obj)->type, val->type);
+        emit(ERR_TYPE, "set_obj: invalid types: %d, %d", (*obj)->type, val->type);
     }
 }
 
@@ -873,80 +943,64 @@ nil_t __attribute__((hot)) drop(obj_t obj)
         rc = (obj)->rc;
     }
 
+    if (rc)
+        return;
+
     switch (obj->type)
     {
     case TYPE_LIST:
     case TYPE_VECMAP:
     case TYPE_LISTMAP:
-        if (rc == 0)
-        {
-            l = obj->len;
-            for (i = 0; i < l; i++)
-                drop(as_list(obj)[i]);
+        l = obj->len;
+        for (i = 0; i < l; i++)
+            drop(as_list(obj)[i]);
 
-            if (is_external_simple(obj))
-                mmap_free(obj, size_of(obj));
-            else
-                heap_free(obj);
-        }
+        if (is_external_simple(obj))
+            mmap_free(obj, size_of(obj));
+        else
+            heap_free(obj);
         return;
     case TYPE_ENUM:
-        if (rc == 0)
+        if (is_external_compound(obj))
+            mmap_free((str_t)obj - PAGE_SIZE, size_of(obj) + PAGE_SIZE);
+        else
         {
-            if (is_external_compound(obj))
-                mmap_free((str_t)obj - PAGE_SIZE, size_of(obj) + PAGE_SIZE);
-            else
-            {
-                drop(as_list(obj)[0]);
-                drop(as_list(obj)[1]);
-                heap_free(obj);
-            }
+            drop(as_list(obj)[0]);
+            drop(as_list(obj)[1]);
+            heap_free(obj);
         }
         return;
     case TYPE_ANYMAP:
-        if (rc == 0)
-        {
-            mmap_free(anymap_key(obj), size_of(obj));
-            mmap_free((str_t)obj - PAGE_SIZE, size_of(obj) + PAGE_SIZE);
-        }
+        mmap_free(anymap_key(obj), size_of(obj));
+        mmap_free((str_t)obj - PAGE_SIZE, size_of(obj) + PAGE_SIZE);
         return;
     case TYPE_TABLE:
     case TYPE_DICT:
-        if (rc == 0)
-        {
-            drop(as_list(obj)[0]);
-            drop(as_list(obj)[1]);
-            heap_free(obj);
-        }
+        drop(as_list(obj)[0]);
+        drop(as_list(obj)[1]);
+        heap_free(obj);
         return;
     case TYPE_LAMBDA:
-        if (rc == 0)
-        {
-            drop(as_lambda(obj)->constants);
-            drop(as_lambda(obj)->args);
-            drop(as_lambda(obj)->locals);
-            drop(as_lambda(obj)->body);
-            drop(as_lambda(obj)->code);
-            nfo_free(&as_lambda(obj)->nfo);
-            heap_free(obj);
-        }
+        drop(as_lambda(obj)->constants);
+        drop(as_lambda(obj)->args);
+        drop(as_lambda(obj)->locals);
+        drop(as_lambda(obj)->body);
+        drop(as_lambda(obj)->code);
+        nfo_free(&as_lambda(obj)->nfo);
+        heap_free(obj);
         return;
     case TYPE_ERROR:
-        if (rc == 0)
-        {
-            drop(as_list(obj)[0]);
-            drop(as_list(obj)[1]);
-            heap_free(obj);
-        }
+        drop(as_list(obj)[0]);
+        drop(as_list(obj)[1]);
+        drop(as_list(obj)[3]);
+        drop(as_list(obj)[4]);
+        heap_free(obj);
         return;
     default:
-        if (rc == 0)
-        {
-            if (is_external_simple(obj))
-                mmap_free(obj, size_of(obj));
-            else
-                heap_free(obj);
-        }
+        if (is_external_simple(obj))
+            mmap_free(obj, size_of(obj));
+        else
+            heap_free(obj);
     }
 }
 
@@ -983,4 +1037,96 @@ u32_t rc(obj_t obj)
         rc = (obj)->rc;
 
     return rc;
+}
+
+obj_t eval_obj(i64_t fd, str_t name, obj_t obj)
+{
+    obj_t compiled, executed;
+    runtime_t runtime = runtime_get();
+    parser_t *parser = &runtime_get()->parser;
+    vm_t *vm = &runtime->vm;
+    i32_t ip, bp;
+
+    if (name != NULL)
+        parser->nfo.filename = name;
+
+    if (!obj || obj->type != TYPE_LIST)
+        return obj;
+
+    // eval onto self host
+    if (fd == 0)
+    {
+        compiled = cc_compile(obj, &parser->nfo);
+        drop(obj);
+
+        if (is_error(compiled))
+        {
+            as_list(compiled)[3] = string_from_str(parser->nfo.filename, strlen(parser->nfo.filename));
+            as_list(compiled)[4] = string_from_str(parser->input, strlen(parser->input));
+            return compiled;
+        }
+
+        ip = vm->ip;
+        bp = vm->bp;
+        executed = vm_exec(vm, compiled);
+        vm->ip = ip;
+        vm->bp = bp;
+        drop(compiled);
+
+        if (is_error(executed) && (as_list(executed)[3] && strcmp(as_string(as_list(executed)[3]), "stdin") == 0))
+            as_list(executed)[4] = string_from_str(parser->input, strlen(parser->input));
+
+        return executed;
+    }
+
+    emit(ERR_NOT_IMPLEMENTED, "eval: not implemented");
+
+    // sync request
+    if (fd > 0)
+    {
+        // v = ser(y);
+        // r = sock_send(x->i64, as_u8(v), v->len);
+        // drop(v);
+
+        // if (r == -1)
+        //     emit(ERR_IO, "write: failed to write to socket: %s", get_os_error());
+
+        // if (sock_recv(x->i64, (u8_t *)&header, sizeof(header_t)) == -1)
+        //     emit(ERR_IO, "write: failed to read from socket: %s", get_os_error());
+
+        // buf = heap_alloc(header.size + sizeof(header_t));
+        // memcpy(buf, &header, sizeof(header_t));
+
+        // if (sock_recv(x->i64, buf + sizeof(header_t), header.size) == -1)
+        // {
+        //     heap_free(buf);
+        //     emit(ERR_IO, "write: failed to read from socket: %s", get_os_error());
+        // }
+
+        // v = de_raw(buf, header.size + sizeof(header_t));
+        // heap_free(buf);
+
+        // return v;
+    }
+}
+
+obj_t eval_str(i64_t fd, str_t name, str_t str)
+{
+    obj_t parsed, res;
+    parser_t *parser = &runtime_get()->parser;
+
+    parsed = parse(parser, name, str);
+
+    if (is_error(parsed))
+    {
+        as_list(parsed)[3] = string_from_str(name, strlen(name));
+        as_list(parsed)[4] = string_from_str(str, strlen(str));
+        return parsed;
+    }
+
+    res = eval_obj(fd, NULL, parsed);
+    parser->nfo.filename = "";
+    parser->input = "";
+
+    return res;
 }

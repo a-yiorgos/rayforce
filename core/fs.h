@@ -26,6 +26,7 @@
 
 // File attrs
 #if defined(_WIN32) || defined(__CYGWIN__)
+#include <winsock2.h>
 #include <windows.h>
 #define ATTR_RDONLY GENERIC_READ
 #define ATTR_WRONLY GENERIC_WRITE

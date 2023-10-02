@@ -27,6 +27,9 @@
 #include <string.h>
 #include "rayforce.h"
 
+str_t str_chk_from_end(str_t pat);
+bool_t str_starts_with(str_t str, str_t pat);
+bool_t str_ends_with(str_t str, str_t pat);
 bool_t str_match(str_t str, str_t pat);
 obj_t string_from_str(str_t str, i32_t len);
 str_t str_dup(str_t str);

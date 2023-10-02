@@ -35,6 +35,8 @@
 #include "binary.h"
 #include "lambda.h"
 #include "ops.h"
+#include "compose.h"
+#include "items.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define stack_malloc(size) _alloca(size)
@@ -185,7 +187,7 @@ cc_result_t cc_compile_let(bool_t has_consumer, cc_t *cc, obj_t obj, u32_t arity
 
 cc_result_t cc_compile_fn(cc_t *cc, obj_t obj, u32_t arity)
 {
-    obj_t fun;
+    obj_t fun, body;
     lambda_t *func = as_lambda(cc->lambda);
     obj_t *code = &func->code;
 
@@ -193,7 +195,9 @@ cc_result_t cc_compile_fn(cc_t *cc, obj_t obj, u32_t arity)
         cerr(cc, obj, ERR_LENGTH, "'fn' expects vector of symbols with lambda arguments and a list body");
 
     arity -= 1;
-    fun = cc_compile_lambda("anonymous", clone(*(as_list(obj) + 1)), ray_list(as_list(obj) + 2, arity), cc->nfo);
+    body = ray_list(as_list(obj) + 2, arity);
+    body->attrs = ATTR_MULTIEXPR;
+    fun = cc_compile_lambda("anonymous", clone(*(as_list(obj) + 1)), body, cc->nfo);
     if (fun->type == TYPE_ERROR)
     {
         drop(cc->lambda);
@@ -396,7 +400,7 @@ cc_result_t cc_compile_call(cc_t *cc, obj_t car, u8_t arity)
 
         return CC_OK;
     default:
-        cerr(cc, car, ERR_NOT_FOUND, "function not found");
+        cerr(cc, car, ERR_NOT_FOUND, "cc compile call: function not found");
     }
 }
 
@@ -835,19 +839,6 @@ obj_t cc_compile_lambda(str_t name, obj_t args, obj_t body, nfo_t *nfo)
     u64_t i = 0, len;
     lambda_t *func;
 
-    if (body->type != TYPE_LIST)
-    {
-        span = nfo_get(nfo, (i64_t)body);
-        msg = str_fmt(0, "compile '%s': expected list", "top-level");
-        err = error(ERR_TYPE, msg);
-        heap_free(msg);
-        *(span_t *)as_list(err)[2] = span;
-
-        return err;
-    }
-
-    len = body->len;
-
     if (nfo == NULL)
     {
         di = nfo_new("top-level", name);
@@ -858,6 +849,19 @@ obj_t cc_compile_lambda(str_t name, obj_t args, obj_t body, nfo_t *nfo)
         di = nfo_new(nfo->filename, name);
         pi = nfo;
     }
+
+    if (body->type != TYPE_LIST)
+    {
+        span = nfo_get(pi, (i64_t)body);
+        msg = str_fmt(0, "compile '%s': expected list", "top-level");
+        err = error(ERR_TYPE, msg);
+        heap_free(msg);
+        *(span_t *)as_list(err)[2] = span;
+
+        return err;
+    }
+
+    len = body->len;
 
     cc_t cc = {
         .nfo = pi,
@@ -874,21 +878,30 @@ obj_t cc_compile_lambda(str_t name, obj_t args, obj_t body, nfo_t *nfo)
         goto epilogue;
     }
 
-    // Compile all arguments but the last one
-    for (i = 0; i < len - 1; i++)
+    // multiexpr body
+    if (body->attrs & ATTR_MULTIEXPR)
     {
-        // skip const expressions
-        if (as_list(body)[i]->type != TYPE_LIST)
-            continue;
+        // Compile all arguments but the last one
+        for (i = 0; i < len - 1; i++)
+        {
+            // skip const expressions
+            if (as_list(body)[i]->type != TYPE_LIST)
+                continue;
 
-        res = cc_compile_expr(false, &cc, as_list(body)[i]);
+            res = cc_compile_expr(false, &cc, as_list(body)[i]);
 
-        if (res == CC_ERROR)
-            return cc.lambda;
+            if (res == CC_ERROR)
+                return cc.lambda;
+        }
+
+        // Compile last expression
+        res = cc_compile_expr(true, &cc, as_list(body)[i]);
     }
-
-    // Compile last argument
-    res = cc_compile_expr(true, &cc, as_list(body)[i]);
+    // Compile body as a single expression
+    else
+    {
+        res = cc_compile_expr(true, &cc, body);
+    }
 
     if (res == CC_ERROR)
         return cc.lambda;

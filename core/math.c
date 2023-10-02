@@ -21,7 +21,9 @@
  *   SOFTWARE.
  */
 
+#include "math.h"
 #include "util.h"
+#include "heap.h"
 #include "ops.h"
 
 obj_t ray_add(obj_t x, obj_t y)
@@ -37,7 +39,7 @@ dispatch:
     case mtype2(-TYPE_I64, -TYPE_I64):
         return i64(addi64(x->i64, y->i64));
     case mtype2(-TYPE_I64, -TYPE_F64):
-        return i64(addi64(x->i64, (i64_t)y->f64));
+        return f64(addf64(x->i64, y->f64));
     case mtype2(-TYPE_F64, -TYPE_F64):
         return f64(addf64(x->f64, y->f64));
     case mtype2(-TYPE_F64, -TYPE_I64):
@@ -164,7 +166,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -175,7 +177,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -187,7 +189,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -209,7 +211,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -220,7 +222,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -232,7 +234,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -290,7 +292,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -301,7 +303,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -313,7 +315,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -335,7 +337,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -346,7 +348,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -358,7 +360,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -376,7 +378,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "add: vectors must be of the same length");
+                emit(ERR_LENGTH, "add: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -398,7 +400,7 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
     }
 }
 
@@ -542,7 +544,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -553,7 +555,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -565,7 +567,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -587,7 +589,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -598,7 +600,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -610,7 +612,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -668,7 +670,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -679,7 +681,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -691,7 +693,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -713,7 +715,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -724,7 +726,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -736,7 +738,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -754,7 +756,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "sub: vectors must be of the same length");
+                emit(ERR_LENGTH, "sub: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -776,7 +778,7 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "sub: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "sub: unsupported types: %d %d", x->type, y->type);
     }
 }
 
@@ -918,7 +920,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -929,7 +931,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -941,7 +943,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -963,7 +965,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -974,7 +976,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -986,7 +988,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1044,7 +1046,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1055,7 +1057,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1067,7 +1069,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1089,7 +1091,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1100,7 +1102,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1112,7 +1114,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1130,7 +1132,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "mul: vectors must be of the same length");
+                emit(ERR_LENGTH, "mul: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -1152,7 +1154,7 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "mul: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "mul: unsupported types: %d %d", x->type, y->type);
     }
 }
 
@@ -1294,7 +1296,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1305,7 +1307,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1317,7 +1319,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1339,7 +1341,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -1350,7 +1352,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -1362,7 +1364,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1420,7 +1422,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1431,7 +1433,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1443,7 +1445,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1465,7 +1467,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1476,7 +1478,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1488,7 +1490,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1506,7 +1508,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "div: vectors must be of the same length");
+                emit(ERR_LENGTH, "div: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -1528,7 +1530,7 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "div: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "div: unsupported types: %d %d", x->type, y->type);
     }
 }
 
@@ -1670,7 +1672,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1681,7 +1683,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1693,7 +1695,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1715,7 +1717,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -1726,7 +1728,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -1738,7 +1740,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -1796,7 +1798,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1807,7 +1809,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1819,7 +1821,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -1841,7 +1843,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1852,7 +1854,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1864,7 +1866,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -1882,7 +1884,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "fdiv: vectors must be of the same length");
+                emit(ERR_LENGTH, "fdiv: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -1904,7 +1906,7 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
     }
 }
 
@@ -2045,7 +2047,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -2056,7 +2058,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -2068,7 +2070,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -2090,7 +2092,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -2101,7 +2103,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yfvals = as_f64(y);
@@ -2113,7 +2115,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xivals = as_i64(x);
             yivals = as_i64(y);
@@ -2171,7 +2173,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -2182,7 +2184,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -2194,7 +2196,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yfvals = as_f64(y);
@@ -2216,7 +2218,7 @@ dispatch:
         else if (xids)
         {
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -2227,7 +2229,7 @@ dispatch:
         else if (yids)
         {
             if (l != x->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -2239,7 +2241,7 @@ dispatch:
         {
             l = x->len;
             if (l != y->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             xfvals = as_f64(x);
             yivals = as_i64(y);
@@ -2257,7 +2259,7 @@ dispatch:
             x = as_list(x)[0];
 
             if (l != as_list(y)[1]->len)
-                raise(ERR_LENGTH, "mod: vectors must be of the same length");
+                emit(ERR_LENGTH, "mod: vectors must be of the same length");
 
             yids = as_i64(as_list(y)[1]);
             y = as_list(y)[0];
@@ -2279,6 +2281,325 @@ dispatch:
             goto dispatch;
         }
 
-        raise(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
+        emit(ERR_TYPE, "add: unsupported types: %d %d", x->type, y->type);
+    }
+}
+
+obj_t ray_sum(obj_t x)
+{
+    i32_t i;
+    i64_t l = 0, v, isum = 0, *xids = NULL, *xivals = NULL;
+    f64_t fsum = 0.0, *xfvals = NULL;
+
+dispatch:
+    switch (x->type)
+    {
+    case -TYPE_I64:
+        return clone(x);
+    case -TYPE_F64:
+        return clone(x);
+    case TYPE_I64:
+        if (xids)
+        {
+            xivals = as_i64(x);
+            for (i = 0; i < l; i++)
+            {
+                v = xivals[xids[i]];
+                v = (v == NULL_I64) ? 0 : v;
+                isum += v;
+            }
+
+            return i64(isum);
+        }
+
+        l = x->len;
+        xivals = as_i64(x);
+
+        for (i = 0; i < l; i++)
+        {
+            v = (xivals[i] == NULL_I64) ? 0 : xivals[i];
+            isum += v;
+        }
+
+        return i64(isum);
+    case TYPE_F64:
+        if (xids)
+        {
+            xfvals = as_f64(x);
+            for (i = 0; i < l; i++)
+                fsum += xfvals[xids[i]];
+
+            return f64(fsum);
+        }
+
+        l = x->len;
+        xfvals = as_f64(x);
+        for (i = 0; i < l; i++)
+            fsum += xfvals[i];
+
+        return f64(fsum);
+
+    default:
+        if (x->type == TYPE_VECMAP)
+        {
+            xids = as_i64(as_list(x)[1]);
+            l = as_list(x)[1]->len;
+            x = as_list(x)[0];
+            goto dispatch;
+        }
+
+        emit(ERR_TYPE, "sum: unsupported type: %d", x->type);
+    }
+}
+
+obj_t ray_avg(obj_t x)
+{
+    u64_t i, l = 0, n;
+    i64_t isum = 0, *xids = NULL, *xivals = NULL;
+    f64_t fsum = 0.0, *xfvals = NULL;
+
+dispatch:
+    switch (x->type)
+    {
+    case -TYPE_I64:
+    case -TYPE_F64:
+        return clone(x);
+    case TYPE_I64:
+        if (xids)
+        {
+            xivals = as_i64(x);
+            for (i = 0, n = 0; i < l; i++)
+            {
+                if (xivals[xids[i]] != NULL_I64)
+                    isum += xivals[xids[i]];
+                else
+                    n++;
+            }
+
+            return f64((f64_t)isum / (l - n));
+        }
+
+        l = x->len;
+        xivals = as_i64(x);
+
+        for (i = 0, n = 0; i < l; i++)
+        {
+            if (xivals[i] != NULL_I64)
+                isum += xivals[i];
+            else
+                n++;
+        }
+
+        return f64((f64_t)isum / (l - n));
+
+    case TYPE_F64:
+        if (xids)
+        {
+            xfvals = as_f64(x);
+            for (i = 0, n = 0; i < l; i++)
+                fsum += xfvals[xids[i]];
+
+            return f64(fsum / l);
+        }
+
+        l = x->len;
+        xfvals = as_f64(x);
+
+        for (i = 0, n = 0; i < l; i++)
+            fsum += xfvals[i];
+
+        return f64(fsum / l);
+
+    default:
+        if (x->type == TYPE_VECMAP)
+        {
+            xids = as_i64(as_list(x)[1]);
+            l = as_list(x)[1]->len;
+            x = as_list(x)[0];
+            goto dispatch;
+        }
+
+        emit(ERR_TYPE, "avg: unsupported type: %d", x->type);
+    }
+}
+
+obj_t ray_min(obj_t x)
+{
+    u64_t i, l = 0;
+    i64_t imin, iv, *xids = NULL, *xivals = NULL;
+    f64_t fmin = 0.0, *xfvals = NULL;
+    obj_t res;
+
+dispatch:
+    switch (x->type)
+    {
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+        if (xids)
+        {
+            if (!l)
+                return i64(NULL_I64);
+
+            xivals = as_i64(x);
+            imin = xivals[xids[0]];
+
+            for (i = 0; i < l; i++)
+            {
+                iv = (xivals[xids[i]] == NULL_I64) ? MAX_I64 : xivals[xids[i]];
+                imin = iv < imin ? iv : imin;
+            }
+
+            res = i64(imin);
+            res->type = -x->type;
+
+            return res;
+        }
+
+        l = x->len;
+
+        if (!l)
+            return i64(NULL_I64);
+
+        xivals = as_i64(x);
+        imin = xivals[0];
+
+        xivals = as_i64(x);
+        imin = xivals[0];
+
+        for (i = 0; i < l; i++)
+        {
+            iv = (xivals[i] == NULL_I64) ? MAX_I64 : xivals[i];
+            imin = iv < imin ? iv : imin;
+        }
+
+        res = i64(imin);
+        res->type = -x->type;
+
+        return res;
+
+    case TYPE_F64:
+        if (xids)
+        {
+            if (!l)
+                return f64(NULL_F64);
+
+            xfvals = as_f64(x);
+            fmin = xfvals[xids[0]];
+
+            for (i = 0; i < l; i++)
+                fmin = xfvals[xids[i]] < fmin ? xfvals[xids[i]] : fmin;
+
+            return f64(fmin);
+        }
+
+        l = x->len;
+
+        if (!l)
+            return f64(NULL_F64);
+
+        xfvals = as_f64(x);
+        fmin = xfvals[0];
+
+        for (i = 0; i < l; i++)
+            fmin = xfvals[i] < fmin ? xfvals[i] : fmin;
+
+        return f64(fmin);
+
+    default:
+        if (x->type == TYPE_VECMAP)
+        {
+            xids = as_i64(as_list(x)[1]);
+            l = as_list(x)[1]->len;
+            x = as_list(x)[0];
+            goto dispatch;
+        }
+
+        emit(ERR_TYPE, "min: unsupported type: %d", x->type);
+    }
+}
+
+obj_t ray_max(obj_t x)
+{
+    u64_t i, l = 0;
+    i64_t imax = 0, *xids = NULL, *xivals = NULL;
+    f64_t fmax = 0.0, *xfvals = NULL;
+    obj_t res;
+
+dispatch:
+    switch (x->type)
+    {
+    case TYPE_I64:
+    case TYPE_TIMESTAMP:
+        if (xids)
+        {
+            if (!l)
+                return i64(NULL_I64);
+
+            xivals = as_i64(x);
+            imax = xivals[xids[0]];
+
+            for (i = 0; i < l; i++)
+                imax = xivals[xids[i]] > imax ? xivals[xids[i]] : imax;
+
+            res = i64(imax);
+            res->type = -x->type;
+
+            return res;
+        }
+
+        l = x->len;
+
+        if (!l)
+            return i64(NULL_I64);
+
+        xivals = as_i64(x);
+        imax = xivals[0];
+
+        for (i = 0; i < l; i++)
+            imax = xivals[i] > imax ? xivals[i] : imax;
+
+        res = i64(imax);
+        res->type = -x->type;
+
+        return res;
+
+    case TYPE_F64:
+        if (xids)
+        {
+            if (!l)
+                return f64(NULL_F64);
+
+            xfvals = as_f64(x);
+            fmax = xfvals[xids[0]];
+
+            for (i = 0; i < l; i++)
+                fmax = xfvals[xids[i]] > fmax ? xfvals[xids[i]] : fmax;
+
+            return f64(fmax);
+        }
+
+        l = x->len;
+
+        if (!l)
+            return f64(NULL_F64);
+
+        xfvals = as_f64(x);
+        fmax = xfvals[0];
+
+        for (i = 0; i < l; i++)
+            fmax = xfvals[i] > fmax ? xfvals[i] : fmax;
+
+        return f64(fmax);
+
+    default:
+        if (x->type == TYPE_VECMAP)
+        {
+            xids = as_i64(as_list(x)[1]);
+            l = as_list(x)[1]->len;
+            x = as_list(x)[0];
+            goto dispatch;
+        }
+
+        emit(ERR_TYPE, "max: unsupported type: %d", x->type);
     }
 }

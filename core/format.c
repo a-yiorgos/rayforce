@@ -36,8 +36,10 @@
 #include "timestamp.h"
 #include "unary.h"
 #include "binary.h"
+#include "items.h"
+#include "io.h"
 
-#define MAX_ROW_WIDTH 80
+#define MAX_ROW_WIDTH 800
 #define FORMAT_TRAILER_SIZE 4
 #define F64_PRECISION 2
 #define TABLE_MAX_WIDTH 10  // Maximum number of columns
@@ -244,6 +246,158 @@ i32_t guid_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, guid_t *
 
 i32_t error_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t obj)
 {
+    i32_t n = 0;
+    u16_t line_number = 0, i, l;
+    str_t filename, source = NULL, start, end = NULL, error_desc, lf = "", p, msg;
+    span_t span;
+    obj_t file = null(0);
+
+    // there is a filename
+    if (as_list(obj)[3])
+    {
+        filename = as_string(as_list(obj)[3]);
+
+        // There is no source, so try to get it by reading the file
+        if (!as_list(obj)[4])
+        {
+            file = ray_read(as_list(obj)[3]);
+
+            if (is_error(file))
+            {
+                drop(file);
+                goto nosrc;
+            }
+
+            source = as_string(file);
+        }
+        else
+            source = as_string(as_list(obj)[4]);
+
+        start = source;
+        span = *(span_t *)&as_list(obj)[2];
+
+        switch (as_list(obj)[0]->i64)
+        {
+        case ERR_INIT:
+            error_desc = "init";
+            break;
+        case ERR_PARSE:
+            error_desc = "parse";
+            break;
+        case ERR_FORMAT:
+            error_desc = "format";
+            break;
+        case ERR_TYPE:
+            error_desc = "type";
+            break;
+        case ERR_LENGTH:
+            error_desc = "length";
+            break;
+        case ERR_INDEX:
+            error_desc = "index";
+            break;
+        case ERR_HEAP:
+            error_desc = "alloc";
+            break;
+        case ERR_IO:
+            error_desc = "io";
+            break;
+        case ERR_NOT_FOUND:
+            error_desc = "not found";
+            break;
+        case ERR_NOT_EXIST:
+            error_desc = "not exist";
+            break;
+        case ERR_NOT_IMPLEMENTED:
+            error_desc = "not implemented";
+            break;
+        case ERR_STACK_OVERFLOW:
+            error_desc = "stack overflow";
+            break;
+        case ERR_THROW:
+            error_desc = "throw";
+            break;
+        default:
+            error_desc = "unknown";
+        }
+
+        if (!source)
+            return str_fmt_into(dst, len, offset, limit, "%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s %s %s\n", TOMATO, (i32_t)as_list(obj)[0]->i64, RESET,
+                                error_desc, CYAN, RESET, filename, span.end_line + 1, span.end_column + 1, TOMATO, as_string(as_list(obj)[1]), RESET);
+
+        n += str_fmt_into(dst, len, offset, limit, "%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s|%s\n", TOMATO, (i32_t)as_list(obj)[0]->i64, RESET,
+                          error_desc, CYAN, RESET, filename, span.end_line + 1, span.end_column + 1, CYAN, RESET);
+
+        while (1)
+        {
+            end = strchr(start, '\n');
+            if (end == NULL)
+            {
+                end = source + as_list(obj)[4]->len;
+                lf = "\n";
+            }
+
+            u32_t line_len = end - start + 1;
+
+            if (line_number >= span.start_line && line_number <= span.end_line)
+            {
+                n += str_fmt_into(dst, len, offset, limit, "%.3d %s|%s %.*s", line_number + 1, CYAN, RESET, line_len, start);
+
+                // Print the arrow or span for the error
+                if (span.start_line == span.end_line)
+                {
+                    n += str_fmt_into(dst, len, offset, limit, "%s    %s|%s ", lf, CYAN, RESET);
+                    for (i = 0; i < span.start_column; i++)
+                        n += str_fmt_into(dst, len, offset, limit, " ");
+
+                    for (i = span.start_column; i <= span.end_column; i++)
+                        n += str_fmt_into(dst, len, offset, limit, "%s^%s", TOMATO, RESET);
+
+                    l = 0;
+                    msg = as_string(as_list(obj)[1]);
+                    p = strtok(msg, "\n");
+                    while (p != NULL)
+                    {
+                        if (!l)
+                            n += str_fmt_into(dst, len, offset, limit, "%*.*s %s%s%s\n", l, l, PADDING, TOMATO, p, RESET);
+                        else
+                            n += str_fmt_into(dst, len, offset, limit, "%*.*s %s%s%s\n", l, l, PADDING, YELLOW, p, RESET);
+                        p = strtok(NULL, "\n");
+                        l = span.end_column - span.start_column + 8;
+                    }
+                }
+                else
+                {
+                    if (line_number == span.start_line)
+                    {
+                        n += str_fmt_into(dst, len, offset, limit, "    %s|%s ", CYAN, RESET);
+                        for (i = 0; i < span.start_column; i++)
+                            n += str_fmt_into(dst, len, offset, limit, " ");
+
+                        n += str_fmt_into(dst, len, offset, limit, "%s^%s\n", TOMATO, RESET);
+                    }
+                    else if (line_number == span.end_line)
+                    {
+                        for (i = 0; i < span.end_column + 6; i++)
+                            n += str_fmt_into(dst, len, offset, limit, " ");
+
+                        n += str_fmt_into(dst, len, offset, limit, "%s^ %s%s\n", TOMATO, as_string(as_list(obj)[1]), RESET);
+                    }
+                }
+            }
+
+            if (line_number > span.end_line)
+                break;
+
+            line_number++;
+            start = end + 1;
+        }
+
+        drop(file);
+        return n;
+    }
+
+nosrc:
     return str_fmt_into(dst, len, offset, limit, "** [E%.3d] error: %s",
                         (i32_t)as_list(obj)[0]->i64, as_string(as_list(obj)[1]));
 }
@@ -258,7 +412,7 @@ i32_t raw_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t li
     case TYPE_BOOL:
         return bool_fmt_into(dst, len, offset, limit, as_bool(obj)[i]);
     case TYPE_BYTE:
-        return byte_fmt_into(dst, len, offset, limit, as_byte(obj)[i]);
+        return byte_fmt_into(dst, len, offset, limit, as_u8(obj)[i]);
     case TYPE_I64:
         return i64_fmt_into(dst, len, offset, limit, as_i64(obj)[i]);
     case TYPE_F64:
@@ -585,21 +739,7 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, bool_t
 
 i32_t internal_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t limit, obj_t obj)
 {
-    obj_t functions = runtime_get()->env.functions;
-    i64_t sym = 0;
-    u64_t i, l;
-
-    l = as_list(functions)[1]->len;
-    for (i = 0; i < l; i++)
-    {
-        if (as_list(as_list(functions)[1])[i]->i64 == obj->i64)
-        {
-            sym = as_symbol(as_list(functions)[0])[i];
-            break;
-        }
-    }
-
-    return symbol_fmt_into(dst, len, offset, limit, sym);
+    return str_fmt_into(dst, len, offset, limit, "%s", env_get_internal_name(obj));
 }
 
 i32_t lambda_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t limit, obj_t obj)
@@ -623,7 +763,7 @@ i32_t obj_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t li
     case -TYPE_BOOL:
         return bool_fmt_into(dst, len, offset, limit, obj->bool);
     case -TYPE_BYTE:
-        return byte_fmt_into(dst, len, offset, limit, obj->byte);
+        return byte_fmt_into(dst, len, offset, limit, obj->u8);
     case -TYPE_I64:
         return i64_fmt_into(dst, len, offset, limit, obj->i64);
     case -TYPE_F64:
@@ -753,134 +893,4 @@ str_t obj_fmt_n(obj_t *x, u64_t n)
     str_fmt_into(&s, &l, &o, end - start, "%s", start);
 
     return s;
-}
-
-nil_t print_error(obj_t error, str_t filename, str_t source, u32_t len)
-{
-    const str_t PADDING = "                                                  ";
-    u16_t line_number = 0, i, l;
-    str_t start = source;
-    str_t end = NULL;
-    str_t error_desc, lf = "", p, msg;
-    span_t span = *(span_t *)&as_list(error)[2];
-
-    switch (as_list(error)[0]->i64)
-    {
-    case ERR_INIT:
-        error_desc = "init";
-        break;
-    case ERR_PARSE:
-        error_desc = "parse";
-        break;
-    case ERR_FORMAT:
-        error_desc = "format";
-        break;
-    case ERR_TYPE:
-        error_desc = "type";
-        break;
-    case ERR_LENGTH:
-        error_desc = "length";
-        break;
-    case ERR_INDEX:
-        error_desc = "index";
-        break;
-    case ERR_HEAP:
-        error_desc = "alloc";
-        break;
-    case ERR_IO:
-        error_desc = "io";
-        break;
-    case ERR_NOT_FOUND:
-        error_desc = "not found";
-        break;
-    case ERR_NOT_EXIST:
-        error_desc = "not exist";
-        break;
-    case ERR_NOT_IMPLEMENTED:
-        error_desc = "not implemented";
-        break;
-    case ERR_STACK_OVERFLOW:
-        error_desc = "stack overflow";
-        break;
-    case ERR_THROW:
-        error_desc = "throw";
-        break;
-    default:
-        error_desc = "unknown";
-    }
-
-    if (!source)
-    {
-        printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s %s %s\n", TOMATO, (i32_t)as_list(error)[0]->i64, RESET,
-               error_desc, CYAN, RESET, filename, span.end_line, span.end_column, TOMATO, as_string(as_list(error)[1]), RESET);
-        return;
-    }
-
-    printf("%s** [E%.3d] error%s: %s\n %s-->%s %s:%d:%d\n    %s|%s\n", TOMATO, (i32_t)as_list(error)[0]->i64, RESET,
-           error_desc, CYAN, RESET, filename, span.end_line, span.end_column, CYAN, RESET);
-
-    while (1)
-    {
-        end = strchr(start, '\n');
-        if (end == NULL)
-        {
-            end = source + len;
-            lf = "\n";
-        }
-
-        u32_t line_len = end - start + 1;
-
-        if (line_number >= span.start_line && line_number <= span.end_line)
-        {
-            printf("%.3d %s|%s %.*s", line_number + 1, CYAN, RESET, line_len, start);
-
-            // Print the arrow or span for the error
-            if (span.start_line == span.end_line)
-            {
-                printf("%s    %s|%s ", lf, CYAN, RESET);
-                for (i = 0; i < span.start_column; i++)
-                    printf(" ");
-
-                for (i = span.start_column; i <= span.end_column; i++)
-                    printf("%s^%s", TOMATO, RESET);
-
-                l = 0;
-                msg = as_string(as_list(error)[1]);
-                p = strtok(msg, "\n");
-                while (p != NULL)
-                {
-                    if (!l)
-                        printf("%*.*s %s%s%s\n", l, l, PADDING, TOMATO, p, RESET);
-                    else
-                        printf("%*.*s %s%s%s\n", l, l, PADDING, YELLOW, p, RESET);
-                    p = strtok(NULL, "\n");
-                    l = span.end_column - span.start_column + 8;
-                }
-            }
-            else
-            {
-                if (line_number == span.start_line)
-                {
-                    printf("    %s|%s ", CYAN, RESET);
-                    for (i = 0; i < span.start_column; i++)
-                        printf(" ");
-
-                    printf("%s^%s\n", TOMATO, RESET);
-                }
-                else if (line_number == span.end_line)
-                {
-                    for (i = 0; i < span.end_column + 6; i++)
-                        printf(" ");
-
-                    printf("%s^ %s%s\n", TOMATO, as_string(as_list(error)[1]), RESET);
-                }
-            }
-        }
-
-        if (line_number > span.end_line)
-            break;
-
-        line_number++;
-        start = end + 1;
-    }
 }

@@ -94,7 +94,7 @@ bool_t is_op(char_t c)
 
 bool_t at_eof(char_t c)
 {
-    return c == '\0' || c == EOF;
+    return c == '\0' || (signed char)c == EOF;
 }
 
 bool_t at_term(char_t c)
@@ -892,6 +892,8 @@ obj_t parse_program(parser_t *parser)
 
 obj_t parse(parser_t *parser, str_t filename, str_t input)
 {
+    obj_t res;
+
     parser->nfo.lambda = "";
     parser->nfo.filename = filename;
     parser->input = input;
@@ -899,7 +901,14 @@ obj_t parse(parser_t *parser, str_t filename, str_t input)
     parser->line = 0;
     parser->column = 0;
 
-    return parse_program(parser);
+    res = parse_program(parser);
+
+    if (is_error(res))
+        return res;
+
+    res->attrs |= ATTR_MULTIEXPR;
+
+    return res;
 }
 
 parser_t parser_new()

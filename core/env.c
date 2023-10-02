@@ -32,6 +32,14 @@
 #include "format.h"
 #include "ops.h"
 #include "serde.h"
+#include "math.h"
+#include "rel.h"
+#include "logic.h"
+#include "items.h"
+#include "compose.h"
+#include "order.h"
+#include "misc.h"
+#include "io.h"
 
 #define regf(r, n, t, f, o)                      \
     {                                            \
@@ -89,13 +97,15 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "avg",       TYPE_UNARY,    FN_NONE,           ray_avg);
     regf(functions,  "min",       TYPE_UNARY,    FN_ATOMIC,         ray_min);
     regf(functions,  "max",       TYPE_UNARY,    FN_ATOMIC,         ray_max);
+    regf(functions,  "first",     TYPE_UNARY,    FN_NONE,           ray_first);
+    regf(functions,  "last",      TYPE_UNARY,    FN_NONE,           ray_last);
     regf(functions,  "count",     TYPE_UNARY,    FN_NONE,           ray_count);
     regf(functions,  "not",       TYPE_UNARY,    FN_ATOMIC,         ray_not);
     regf(functions,  "iasc",      TYPE_UNARY,    FN_ATOMIC,         ray_iasc);
     regf(functions,  "idesc",     TYPE_UNARY,    FN_ATOMIC,         ray_idesc);
     regf(functions,  "asc",       TYPE_UNARY,    FN_ATOMIC,         ray_asc);
     regf(functions,  "desc",      TYPE_UNARY,    FN_ATOMIC,         ray_desc);
-    regf(functions,  "guid",      TYPE_UNARY,    FN_ATOMIC,         ray_guid_generate);
+    regf(functions,  "guid",      TYPE_UNARY,    FN_ATOMIC,         ray_guid);
     regf(functions,  "neg",       TYPE_UNARY,    FN_ATOMIC,         ray_neg);
     regf(functions,  "where",     TYPE_UNARY,    FN_ATOMIC,         ray_where);
     regf(functions,  "key",       TYPE_UNARY,    FN_NONE,           ray_key);
@@ -103,10 +113,12 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "parse",     TYPE_UNARY,    FN_NONE,           ray_parse);
     regf(functions,  "ser",       TYPE_UNARY,    FN_NONE,           ser);
     regf(functions,  "de",        TYPE_UNARY,    FN_NONE,           de);
+    regf(functions,  "hopen",     TYPE_UNARY,    FN_NONE,           ray_hopen);
+    regf(functions,  "hclose",    TYPE_UNARY,    FN_NONE,           ray_hclose);
     
     // Binary           
     regf(functions,  "write",     TYPE_BINARY,   FN_NONE,           ray_write);
-    regf(functions,  "at",        TYPE_BINARY,   FN_NONE,           ray_at);
+    regf(functions,  "at",        TYPE_BINARY,   FN_RIGHT_ATOMIC,   ray_at);
     regf(functions,  "==",        TYPE_BINARY,   FN_ATOMIC,         ray_eq);
     regf(functions,  "<",         TYPE_BINARY,   FN_ATOMIC,         ray_lt);
     regf(functions,  ">",         TYPE_BINARY,   FN_ATOMIC,         ray_gt);
@@ -147,6 +159,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "print",     TYPE_VARY,     FN_NONE,         ray_print);
     regf(functions,  "println",   TYPE_VARY,     FN_NONE,         ray_println);
     regf(functions,  "map",       TYPE_VARY,     FN_NONE,         ray_map_vary);
+    regf(functions,  "args",      TYPE_VARY,     FN_NONE,         ray_args);
 }    
     
 nil_t init_typenames(obj_t typenames)    
@@ -267,4 +280,38 @@ str_t env_get_typename(type_t type)
     i64_t name = env_get_typename_by_type(env, type);
 
     return symtostr(name);
+}
+
+str_t env_get_internal_name(obj_t obj)
+{
+    obj_t functions = runtime_get()->env.functions;
+    i64_t sym = 0;
+    u64_t i, l;
+
+    l = as_list(functions)[1]->len;
+    for (i = 0; i < l; i++)
+    {
+        if (as_list(as_list(functions)[1])[i]->i64 == obj->i64)
+        {
+            sym = as_symbol(as_list(functions)[0])[i];
+            break;
+        }
+    }
+
+    if (sym)
+        return symtostr(sym);
+
+    return "unknown internal function";
+}
+
+obj_t env_get_internal_function(str_t name)
+{
+    i64_t i;
+
+    i = find_sym(as_list(runtime_get()->env.functions)[0], name);
+
+    if (i < (i64_t)as_list(runtime_get()->env.functions)[0]->len)
+        return clone(as_list(as_list(runtime_get()->env.functions)[1])[i]);
+
+    return null(0);
 }

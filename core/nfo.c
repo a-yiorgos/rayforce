@@ -48,11 +48,11 @@ nil_t nfo_insert(nfo_t *nfo, i64_t index, span_t span)
 span_t nfo_get(nfo_t *nfo, i64_t index)
 {
     i64_t i = ht_tab_next(&nfo->spans, index);
+    span_t span = {0};
 
     if (as_i64(as_list(nfo->spans)[0])[i] == NULL_I64)
-        return (span_t){0};
+        return span;
 
-    span_t span;
     memcpy(&span, &as_i64(as_list(nfo->spans)[1])[i], sizeof(span_t));
 
     return span;

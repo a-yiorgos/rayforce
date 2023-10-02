@@ -21,30 +21,24 @@
  *   SOFTWARE.
  */
 
-#ifndef SERDE_H
-#define SERDE_H
+#ifndef SOCK_H
+#define SOCK_H
 
 #include "rayforce.h"
-#include "util.h"
 
-#define SERDE_PREFIX 0xcefadefa
-
-typedef struct header_t
+typedef struct sock_addr_t
 {
-    u32_t prefix; // marker
-    u8_t version; // version of the app
-    u8_t flags;   // 0 - no flags
-    u8_t endian;  // 0 - little, 1 - big
-    u8_t msgtype; // used for ipc: 0 - async, 1 - sync, 2 - response
-    u64_t size;   // size of the payload (in bytes)
-} header_t;
+    char_t ip[16]; // For IPv4 addresses
+    i64_t port;
+} sock_addr_t;
 
-CASSERT(sizeof(header_t) == 16, header_t);
+i64_t sock_addr_from_str(str_t addr_str, sock_addr_t *addr);
+i64_t sock_set_nonblocking(i64_t fd, bool_t flag);
+i64_t sock_open(sock_addr_t *addr);
+i64_t sock_close(i64_t fd);
+i64_t sock_listen(i64_t port);
+i64_t sock_accept(i64_t fd);
+i64_t sock_recv(i64_t fd, u8_t *buf, i64_t size);
+i64_t sock_send(i64_t fd, u8_t *buf, i64_t size);
 
-obj_t de_raw(u8_t *buf, u64_t len);
-i64_t ser_raw(u8_t **buf, obj_t obj);
-u64_t size_obj(obj_t obj);
-u64_t save_obj(u8_t *buf, u64_t len, obj_t obj);
-obj_t load_obj(u8_t **buf, u64_t len);
-
-#endif // SERDE_H
+#endif
