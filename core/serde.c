@@ -305,6 +305,7 @@ obj_t load_obj(u8_t **buf, u64_t len)
         obj = i64(0);
         memcpy(&obj->i64, *buf, sizeof(i64_t));
         *buf += sizeof(i64_t);
+        obj->type = type;
         return obj;
 
     case -TYPE_SYMBOL:
@@ -353,6 +354,7 @@ obj_t load_obj(u8_t **buf, u64_t len)
         obj = vector_i64(l);
         memcpy(as_i64(obj), *buf, l * sizeof(i64_t));
         *buf += l * sizeof(i64_t);
+        obj->type = type;
         return obj;
 
     case TYPE_F64:
@@ -394,6 +396,7 @@ obj_t load_obj(u8_t **buf, u64_t len)
         }
         return obj;
 
+    case TYPE_TABLE:
     case TYPE_DICT:
         k = load_obj(buf, len);
 
@@ -408,7 +411,10 @@ obj_t load_obj(u8_t **buf, u64_t len)
             return v;
         }
 
-        return dict(k, v);
+        if (type == TYPE_TABLE)
+            return table(k, v);
+        else
+            return dict(k, v);
 
     case TYPE_LAMBDA:
         k = load_obj(buf, len);
