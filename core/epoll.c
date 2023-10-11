@@ -236,7 +236,8 @@ poll_result_t _recv(poll_t poll, selector_t selector)
     {
         while (selector->rx.bytes_transfered < (i64_t)sizeof(struct header_t))
         {
-            size = sock_recv(selector->fd, &selector->rx.buf[selector->rx.bytes_transfered], sizeof(struct header_t) - selector->rx.bytes_transfered);
+            size = sock_recv(selector->fd, &selector->rx.buf[selector->rx.bytes_transfered],
+                             sizeof(struct header_t) - selector->rx.bytes_transfered);
             if (size == -1)
                 return POLL_ERROR;
             else if (size == 0)
@@ -253,7 +254,8 @@ poll_result_t _recv(poll_t poll, selector_t selector)
 
     while (selector->rx.bytes_transfered < selector->rx.size)
     {
-        size = sock_recv(selector->fd, &selector->rx.buf[selector->rx.bytes_transfered], selector->rx.size - selector->rx.bytes_transfered);
+        size = sock_recv(selector->fd, &selector->rx.buf[selector->rx.bytes_transfered],
+                         selector->rx.size - selector->rx.bytes_transfered);
         if (size == -1)
             return POLL_ERROR;
         else if (size == 0)
@@ -276,7 +278,8 @@ poll_result_t _send(poll_t poll, selector_t selector)
 send:
     while (selector->tx.bytes_transfered < selector->tx.size)
     {
-        size = sock_send(selector->fd, &selector->tx.buf[selector->tx.bytes_transfered], selector->tx.size - selector->tx.bytes_transfered);
+        size = sock_send(selector->fd, &selector->tx.buf[selector->tx.bytes_transfered],
+                         selector->tx.size - selector->tx.bytes_transfered);
         if (size == -1)
             return POLL_ERROR;
         else if (size == 0)
