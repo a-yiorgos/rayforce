@@ -65,22 +65,20 @@ obj_t ray_env()
 
 obj_t ray_memstat()
 {
-    // obj_t keys, vals;
-    // memstat_t stat = heap_memstat();
+    obj_t keys, vals;
+    memstat_t stat = heap_memstat();
 
-    // keys = vector_symbol(3);
-    // as_symbol(&keys)[0] = symbol("total").i64;
-    // as_symbol(&keys)[1] = symbol("used ").i64;
-    // as_symbol(&keys)[2] = symbol("free ").i64;
+    keys = vector_symbol(3);
+    ins_sym(&keys, 0, "total");
+    ins_sym(&keys, 1, "used ");
+    ins_sym(&keys, 2, "free ");
 
-    // vals = list(3);
-    // as_list(&vals)[0] = i64(stat.total);
-    // as_list(&vals)[1] = i64(stat.used);
-    // as_list(&vals)[2] = i64(stat.free);
+    vals = vector(TYPE_LIST, 3);
+    as_list(&vals)[0] = i64(stat.total);
+    as_list(&vals)[1] = i64(stat.used);
+    as_list(&vals)[2] = i64(stat.free);
 
-    // return dict(keys, vals);
-
-    return null(0);
+    return dict(keys, vals);
 }
 
 // clang-format off
@@ -150,17 +148,17 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "xdesc",     TYPE_BINARY,   FN_NONE,           ray_xdesc);
     regf(functions,  "enum",      TYPE_BINARY,   FN_NONE,           ray_enum);
     
-    // Lambdas       
-    // regf(function s, "env",        ray_env);
-    // regf(function s, "memstat",    ray_memstat);
-    regf(functions,  "gc",        TYPE_VARY,     FN_NONE,         ray_gc);
-    regf(functions,  "list",      TYPE_VARY,     FN_NONE,         ray_list);
-    regf(functions,  "enlist",    TYPE_VARY,     FN_NONE,         ray_enlist);
-    regf(functions,  "format",    TYPE_VARY,     FN_NONE,         ray_format);
-    regf(functions,  "print",     TYPE_VARY,     FN_NONE,         ray_print);
-    regf(functions,  "println",   TYPE_VARY,     FN_NONE,         ray_println);
-    regf(functions,  "map",       TYPE_VARY,     FN_NONE,         ray_map_vary);
-    regf(functions,  "args",      TYPE_VARY,     FN_NONE,         ray_args);
+    // Vary       
+    regf(functions,  "env",       TYPE_VARY,     FN_NONE,           ray_env);
+    regf(functions,  "memstat",   TYPE_VARY,     FN_NONE,           ray_memstat);
+    regf(functions,  "gc",        TYPE_VARY,     FN_NONE,           ray_gc);
+    regf(functions,  "list",      TYPE_VARY,     FN_NONE,           ray_list);
+    regf(functions,  "enlist",    TYPE_VARY,     FN_NONE,           ray_enlist);
+    regf(functions,  "format",    TYPE_VARY,     FN_NONE,           ray_format);
+    regf(functions,  "print",     TYPE_VARY,     FN_NONE,           ray_print);
+    regf(functions,  "println",   TYPE_VARY,     FN_NONE,           ray_println);
+    regf(functions,  "map",       TYPE_VARY,     FN_NONE,           ray_map_vary);
+    regf(functions,  "args",      TYPE_VARY,     FN_NONE,           ray_args);
 }    
     
 nil_t init_typenames(obj_t typenames)    
