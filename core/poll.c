@@ -25,6 +25,26 @@
 #include "format.h"
 #include "cc.h"
 #include "sock.h"
+#include "heap.h"
+
+nil_t prompt()
+{
+    printf("%s%s%s", GREEN, PROMPT, RESET);
+    fflush(stdout);
+}
+
+obj_t read_obj(selector_t selector)
+{
+    obj_t res;
+
+    res = de_raw(selector->rx.buf, selector->rx.size);
+    heap_free(selector->rx.buf);
+    selector->rx.buf = NULL;
+    selector->rx.bytes_transfered = 0;
+    selector->rx.size = 0;
+
+    return res;
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include "iocp.c"
@@ -37,9 +57,3 @@
 #else
 #error "Unsupported platform"
 #endif
-
-nil_t prompt()
-{
-    printf("%s%s%s", GREEN, PROMPT, RESET);
-    fflush(stdout);
-}

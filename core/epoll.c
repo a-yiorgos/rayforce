@@ -38,10 +38,9 @@
 #include "format.h"
 #include "util.h"
 #include "sock.h"
-#include "heap.h"
 
 __thread i32_t __EVENT_FD; // eventfd to notify epoll loop of shutdown
-__thread u8_t __STDIN_BUF[BUF_SIZE];
+__thread u8_t __STDIN_BUF[BUF_SIZE + 1];
 
 nil_t sigint_handler(i32_t signo)
 {
@@ -336,6 +335,38 @@ send:
     return POLL_DONE;
 }
 
+nil_t process_request(poll_t poll, selector_t selector)
+{
+    poll_result_t poll_result;
+    obj_t v, res;
+
+    res = read_obj(selector);
+
+    if (is_error(res))
+    {
+        v = res;
+    }
+    else if (res->type == TYPE_CHAR)
+    {
+        v = eval_str(0, "ipc", as_string(res));
+        drop(res);
+    }
+    else
+        v = eval_obj(0, "ipc", res);
+
+    // sync request
+    if (selector->rx.msgtype == MSG_TYPE_SYNC)
+    {
+        queue_push(&selector->tx.queue, (nil_t *)((i64_t)v | ((i64_t)MSG_TYPE_RESP << 61)));
+        poll_result = _send(poll, selector);
+
+        if (poll_result == POLL_ERROR)
+            poll_deregister(poll, selector->id);
+    }
+    else
+        drop(v);
+}
+
 i64_t poll_run(poll_t poll)
 {
     i64_t epoll_fd = poll->poll_fd, listen_fd = poll->ipc_fd,
@@ -378,10 +409,8 @@ i64_t poll_run(poll_t poll)
             else if (ev.data.fd == listen_fd)
             {
                 sock = sock_accept(listen_fd);
-                if (sock == -1)
-                    continue;
-
-                poll_register(poll, sock, 0);
+                if (sock != -1)
+                    poll_register(poll, sock, 0);
             }
             // shutdown
             else if (ev.data.fd == __EVENT_FD)
@@ -411,35 +440,7 @@ i64_t poll_run(poll_t poll)
                         continue;
                     }
 
-                    res = de_raw(selector->rx.buf, selector->rx.size);
-                    heap_free(selector->rx.buf);
-                    selector->rx.buf = NULL;
-                    selector->rx.bytes_transfered = 0;
-                    selector->rx.size = 0;
-
-                    if (is_error(res))
-                    {
-                        v = res;
-                    }
-                    else if (res->type == TYPE_CHAR)
-                    {
-                        v = eval_str(0, "ipc", as_string(res));
-                        drop(res);
-                    }
-                    else
-                        v = eval_obj(0, "ipc", res);
-
-                    // sync request
-                    if (selector->rx.msgtype == MSG_TYPE_SYNC)
-                    {
-                        queue_push(&selector->tx.queue, (nil_t *)((i64_t)v | ((i64_t)MSG_TYPE_RESP << 61)));
-                        poll_result = _send(poll, selector);
-
-                        if (poll_result == POLL_ERROR)
-                            poll_deregister(poll, selector->id);
-                    }
-                    else
-                        drop(v);
+                    process_request(poll, selector);
                 }
 
                 // ipc out
@@ -527,17 +528,14 @@ recv:
         emit(ERR_IO, "ipc_send_sync: error receiving message");
     }
 
-    res = de_raw(selector->rx.buf, selector->rx.size);
-    heap_free(selector->rx.buf);
-    selector->rx.buf = NULL;
-    selector->rx.bytes_transfered = 0;
-    selector->rx.size = 0;
-
     // recv until we get response
-    if (selector->rx.msgtype != MSG_TYPE_RESP)
+    switch (selector->rx.msgtype)
     {
-        drop(res);
-        poll_result = POLL_PENDING;
+    case MSG_TYPE_RESP:
+        res = read_obj(selector);
+        break;
+    default:
+        process_request(poll, selector);
         goto recv;
     }
 

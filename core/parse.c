@@ -968,6 +968,7 @@ parser_t parser_new()
 {
     parser_t parser = {
         .nfo = nfo_new("", ""),
+        .input = "",
     };
 
     return parser;

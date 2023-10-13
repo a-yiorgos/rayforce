@@ -40,12 +40,13 @@
 #include "hash.h"
 #include "format.h"
 #include "util.h"
-#include "heap.h"
 
 // Definitions and globals
 #define STDIN_WAKER_ID ~0ull
-#define STDIN_BUFFER_SIZE 256
 #define MAX_IOCP_RESULTS 64
+
+__thread char_t __STDIN_BUF[BUF_SIZE + 1];
+__thread listener_t __LISTENER;
 
 #define _recv_op(poll, selector)                                                                      \
     {                                                                                                 \
@@ -86,9 +87,6 @@ typedef struct listener_t
     SOCKET hAccepted;
 } *listener_t;
 
-char_t __STDIN_BUF[STDIN_BUFFER_SIZE];
-listener_t __LISTENER;
-
 DWORD WINAPI StdinThread(LPVOID lpParam)
 {
     HANDLE hCompletionPort = (HANDLE)lpParam;
@@ -98,7 +96,7 @@ DWORD WINAPI StdinThread(LPVOID lpParam)
     while (true)
     {
         // Blocking read from stdin
-        if (ReadFile(hStdin, __STDIN_BUF, STDIN_BUFFER_SIZE, &bytesRead, NULL))
+        if (ReadFile(hStdin, __STDIN_BUF, BUF_SIZE, &bytesRead, NULL))
         {
             __STDIN_BUF[bytesRead] = '\0';
             // Check for CTRL+C (ASCII code 3)
@@ -480,7 +478,7 @@ i64_t poll_run(poll_t poll)
     OVERLAPPED *overlapped;
     HANDLE hPollFd = (HANDLE)poll->poll_fd;
     SOCKET hAccepted;
-    OVERLAPPED_ENTRY events[MAX_IOCP_RESULTS];
+    OVERLAPPED_ENTRY events[MAX_EVENTS];
     BOOL success;
     i64_t key, poll_result, idx;
     obj_t res, v;

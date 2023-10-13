@@ -123,8 +123,6 @@ typedef struct poll_t
     freelist_t selectors; // freelist of selectors
 } *poll_t;
 
-nil_t prompt();
-
 poll_t poll_init(i64_t port);
 nil_t poll_cleanup(poll_t poll);
 i64_t poll_run(poll_t poll);

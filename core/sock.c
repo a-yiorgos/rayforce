@@ -305,11 +305,16 @@ i64_t sock_close(i64_t fd)
 
 i64_t sock_recv(i64_t fd, u8_t *buf, i64_t size)
 {
-    i64_t sz = recv(fd, (str_t)buf, size, MSG_NOSIGNAL);
+    i64_t sz;
+
+recv:
+    sz = recv(fd, (str_t)buf, size, MSG_NOSIGNAL);
 
     switch (sz)
     {
     case -1:
+        if (errno == EINTR)
+            goto recv;
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return 0;
         else
