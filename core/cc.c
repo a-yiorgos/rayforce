@@ -796,7 +796,9 @@ cc_result_t cc_compile_expr(bool_t has_consumer, cc_t *cc, obj_t obj)
         if ((as_list(obj)[0]->type != -TYPE_SYMBOL) &&
             (as_list(obj)[0]->type != TYPE_UNARY) &&
             (as_list(obj)[0]->type != TYPE_BINARY) &&
-            (as_list(obj)[0]->type != TYPE_VARY))
+            (as_list(obj)[0]->type != TYPE_VARY) &&
+            (as_list(obj)[0]->type != TYPE_LAMBDA) &&
+            (as_list(obj)[0]->type != TYPE_LIST))
             cerr(cc, obj, ERR_LENGTH, "car is not callable");
 
         arity = obj->len - 1;
