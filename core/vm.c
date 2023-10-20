@@ -112,7 +112,7 @@ obj_t __attribute__((hot)) vm_exec(vm_t *vm, obj_t fun)
 
     // The indices of labels in the dispatch_table are the relevant opcodes
     static nil_t *dispatch_table[] = {
-        &&op_ret, &&op_push, &&op_push_const, &&op_pop, &&op_swap, &&op_dup, &&op_jne, &&op_jmp, &&op_call1,
+        &&op_ret, &&op_push, &&op_cc_push_const, &&op_pop, &&op_swap, &&op_dup, &&op_jne, &&op_jmp, &&op_call1,
         &&op_call2, &&op_calln, &&op_calld, &&op_timer_set, &&op_timer_get, &&op_store, &&op_load,
         &&op_lset, &&op_lget, &&op_lpush, &&op_lpop, &&op_try, &&op_catch, &&op_throw, &&op_trace};
 
@@ -169,7 +169,7 @@ op_push:
     arg[0] = clone(load_const(vm));
     stack_push(arg[0]);
     dispatch();
-op_push_const:
+op_cc_push_const:
     vm->ip++;
     n = code[vm->ip++];
     arg[0] = clone(as_list(f->constants)[n]);
