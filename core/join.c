@@ -66,6 +66,29 @@ obj_t lj_column(obj_t left_col, obj_t right_col, i64_t ids[])
     return res;
 }
 
+u64_t as_u64(obj_t obj, i64_t idx)
+{
+    switch (obj->type)
+    {
+    case TYPE_BOOL:
+        return (u64_t)as_bool(obj)[idx];
+    case TYPE_BYTE:
+        return (u64_t)as_u8(obj)[idx];
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        return (u64_t)as_i64(obj)[idx];
+    case TYPE_F64:
+        return (u64_t)as_f64(obj)[idx];
+    case TYPE_GUID:
+        return *(u64_t *)&as_guid(obj)[idx];
+    case TYPE_CHAR:
+        return (u64_t)as_string(obj)[idx];
+    default:
+        return (u64_t)as_list(obj)[idx];
+    }
+}
+
 u64_t hash_row(i64_t row, nil_t *seed)
 {
     u64_t i, n, res;
@@ -78,7 +101,7 @@ u64_t hash_row(i64_t row, nil_t *seed)
 
     for (i = 0; i < n; i++)
     {
-        val = as_i64(as_list(cols)[i])[row] * 2654435761 % (1ll << 32);
+        val = as_u64(as_list(cols)[i], row) * 2654435761 % (1ll << 32);
         res ^= val;
     }
 
@@ -96,7 +119,7 @@ i32_t cmp_row(i64_t row1, i64_t row2, nil_t *seed)
     l = lcols->len;
 
     for (i = 0; i < l; i++)
-        result |= as_i64(as_list(lcols)[i])[row1] != as_i64(as_list(rcols)[i])[row2];
+        result |= as_u64(as_list(lcols)[i], row1) != as_u64(as_list(rcols)[i], row2);
 
     return result;
 }
