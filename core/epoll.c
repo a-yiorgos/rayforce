@@ -45,10 +45,13 @@ __thread u8_t __STDIN_BUF[BUF_SIZE + 1];
 
 nil_t sigint_handler(i32_t signo)
 {
-    unused(signo);
     u64_t val = 1;
+    i32_t res;
+
+    unused(signo);
     // Write to the eventfd to wake up the epoll loop.
-    write(__EVENT_FD, &val, sizeof(val));
+    res = write(__EVENT_FD, &val, sizeof(val));
+    unused(res);
 }
 
 poll_t poll_init(i64_t port)

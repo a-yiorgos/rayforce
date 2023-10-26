@@ -67,13 +67,13 @@ obj_t lj_column(obj_t left_col, obj_t right_col, i64_t ids[], u64_t len)
     return res;
 }
 
-u64_t as_u64(obj_t obj, i64_t idx)
+inline __attribute__((always_inline)) u64_t as_u64(obj_t obj, i64_t idx)
 {
     switch (obj->type)
     {
     case TYPE_BOOL:
-        return (u64_t)as_bool(obj)[idx];
     case TYPE_BYTE:
+    case TYPE_CHAR:
         return (u64_t)as_u8(obj)[idx];
     case TYPE_I64:
     case TYPE_SYMBOL:
@@ -83,8 +83,6 @@ u64_t as_u64(obj_t obj, i64_t idx)
         return (u64_t)as_f64(obj)[idx];
     case TYPE_GUID:
         return *(u64_t *)&as_guid(obj)[idx];
-    case TYPE_CHAR:
-        return (u64_t)as_string(obj)[idx];
     default:
         return (u64_t)as_list(obj)[idx];
     }
