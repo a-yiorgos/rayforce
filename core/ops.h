@@ -75,6 +75,7 @@
 #define maxf64(x, y) ((x) > (y) ? (x) : (y))
 #define mini64(x, y) (((y) == NULL_I64) || (((x) != NULL_I64) && ((x) < (y))) ? (x) : (y))
 #define minf64(x, y) ((x) < (y) ? (x) : (y))
+#define roti64(x, y) (((x) << (y)) | ((x) >> (64 - (y))))
 
 // Function types
 typedef u64_t (*hash_f)(i64_t, nil_t *);

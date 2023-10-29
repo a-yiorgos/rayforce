@@ -70,17 +70,32 @@ obj_t lj_column(obj_t left_col, obj_t right_col, i64_t ids[], u64_t len)
 
 u64_t hash_row(i64_t row, nil_t *seed)
 {
-    u64_t i, n, res;
+    u64_t i, n, h, k;
     lj_ctx_t *ctx = (lj_ctx_t *)seed;
     obj_t cols = ctx->rcols;
 
     n = cols->len;
-    res = 0;
+    h = 0;
 
     for (i = 0; i < n; i++)
-        res ^= (hash_idx(as_list(cols)[i], row) * 2654435761ll) & 0xFFFFFFFF;
+    {
+        k = hash_idx(as_list(cols)[i], row);
+        k *= 0x87c37b91114253d5ull;
+        k = roti64(k, 31);
+        k *= 0x4cf5ad432745937full;
+        h ^= k;
+        h = roti64(h, 27);
+        h = h * 5 + 0x52dce729;
+    }
 
-    return res;
+    h ^= n;
+    h ^= h >> 33;
+    h *= 0xff51afd7ed558ccdULL;
+    h ^= h >> 33;
+    h *= 0xc4ceb9fe1a85ec53ULL;
+    h ^= h >> 33;
+
+    return h;
 }
 
 i32_t cmp_row(i64_t row1, i64_t row2, nil_t *seed)

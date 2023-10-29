@@ -127,10 +127,11 @@ i64_t ht_tab_next_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp, nil_t *see
     while (true)
     {
         size = as_list(*obj)[0]->len;
-
         for (i = hash(key, seed) & (size - 1); i < size; i++)
+        {
             if (as_i64(as_list(*obj)[0])[i] == NULL_I64 || cmp(as_i64(as_list(*obj)[0])[i], key, seed) == 0)
                 return i;
+        }
 
         rehash(obj, hash, seed);
     }
