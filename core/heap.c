@@ -270,13 +270,13 @@ nil_t __attribute__((hot)) heap_free(nil_t *block)
     block = (nil_t *)node;
     order = orderof(node->size);
 
-    // return to the system large blocks
-    if (order >= MAX_ORDER)
-    {
-        __HEAP->memstat.system -= blocksize(order);
-        mmap_free(block, blocksize(order));
-        return;
-    }
+    // return large blocks back to the system
+    // if (order >= MAX_ORDER)
+    // {
+    //     __HEAP->memstat.system -= blocksize(order);
+    //     mmap_free(block, blocksize(order));
+    //     return;
+    // }
 
     for (;; order++)
     {
