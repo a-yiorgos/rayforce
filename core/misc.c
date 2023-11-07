@@ -66,9 +66,9 @@ obj_t ray_distinct(obj_t x)
 
 obj_t ray_group(obj_t x)
 {
-    obj_t g, k, v, vals, *vi, res;
+    obj_t g, k, v, res;
     u64_t i, l;
-    i64_t j, *offsets, *indices = NULL;
+    i64_t *indices = NULL;
 
 dispatch:
     switch (x->type)
@@ -79,7 +79,7 @@ dispatch:
         l = indices == NULL ? x->len : l;
         g = ops_group(as_i64(x), indices, l);
         as_list(g)[0]->type = x->type;
-        break;
+        return g;
     case TYPE_ENUM:
         l = indices == NULL ? ops_count(x) : l;
         k = ray_key(x);
@@ -105,25 +105,6 @@ dispatch:
     default:
         throw(ERR_TYPE, "group: invalid type: '%s", typename(x->type));
     }
-
-    l = as_list(g)[0]->len;
-    offsets = as_i64(as_list(g)[1]);
-    indices = as_i64(as_list(g)[2]);
-
-    vals = vector(TYPE_LIST, l);
-    vi = as_list(vals);
-
-    for (i = 0, j = 0; i < l; i++)
-    {
-        vi[i] = vector_i64(offsets[i] - j);
-        memcpy(as_u8(vi[i]), indices + j, (offsets[i] - j) * sizeof(i64_t));
-        j = offsets[i];
-    }
-
-    res = dict(clone(as_list(g)[0]), vals);
-    drop(g);
-
-    return res;
 }
 
 obj_t ray_rc(obj_t x)

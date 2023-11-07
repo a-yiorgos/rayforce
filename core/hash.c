@@ -47,7 +47,7 @@ obj_t ht_tab(u64_t size, type_t vals)
     for (i = 0; i < size; i++)
         as_i64(k)[i] = NULL_I64;
 
-    return list(2, k, v);
+    return dict(k, v);
 }
 
 nil_t rehash(obj_t *obj, hash_f hash, nil_t *seed)
