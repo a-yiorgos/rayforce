@@ -371,7 +371,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -385,14 +385,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -749,7 +749,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -763,14 +763,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -1125,7 +1125,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -1139,14 +1139,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -1501,7 +1501,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -1515,14 +1515,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -1877,7 +1877,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -1891,14 +1891,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -2252,7 +2252,7 @@ dispatch:
 
         return vec;
     default:
-        if ((x->type == TYPE_VECMAP) && (y->type == TYPE_VECMAP))
+        if ((x->type == TYPE_FILTERMAP) && (y->type == TYPE_FILTERMAP))
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2266,14 +2266,14 @@ dispatch:
 
             goto dispatch;
         }
-        else if (x->type == TYPE_VECMAP)
+        else if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
             x = as_list(x)[0];
             goto dispatch;
         }
-        else if (y->type == TYPE_VECMAP)
+        else if (y->type == TYPE_FILTERMAP)
         {
             yids = as_i64(as_list(y)[1]);
             l = as_list(y)[1]->len;
@@ -2340,7 +2340,7 @@ dispatch:
         return f64(fsum);
 
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2411,7 +2411,7 @@ dispatch:
         return f64(fsum / l);
 
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2506,7 +2506,7 @@ dispatch:
         return f64(fmin);
 
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2592,7 +2592,7 @@ dispatch:
         return f64(fmax);
 
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2640,7 +2640,7 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2688,7 +2688,7 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;
@@ -2736,7 +2736,7 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_VECMAP)
+        if (x->type == TYPE_FILTERMAP)
         {
             xids = as_i64(as_list(x)[1]);
             l = as_list(x)[1]->len;

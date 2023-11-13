@@ -77,9 +77,9 @@ u64_t args_height(obj_t *x, u64_t n)
     for (i = 0; i < n; i++)
     {
         b = x + i;
-        if ((is_vector(*b) || (*b)->type == TYPE_LISTMAP) && l == __NULL_ARG)
+        if ((is_vector(*b) || (*b)->type == TYPE_GROUPMAP) && l == __NULL_ARG)
             l = ops_count(*b);
-        else if ((is_vector(*b) || (*b)->type == TYPE_LISTMAP) && ops_count(*b) != l)
+        else if ((is_vector(*b) || (*b)->type == TYPE_GROUPMAP) && ops_count(*b) != l)
             return __NULL_ARG;
     }
 
@@ -121,7 +121,7 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
         for (j = 0; j < n; j++)
         {
             b = x + j;
-            v = (is_vector(*b) || (*b)->type == TYPE_LISTMAP) ? at_idx(*b, 0) : clone(*b);
+            v = (is_vector(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, 0) : clone(*b);
             vm->stack[vm->sp++] = v;
         }
 
@@ -145,7 +145,7 @@ obj_t ray_map_vary_f(obj_t f, obj_t *x, u64_t n)
             for (j = 0; j < n; j++)
             {
                 b = x + j;
-                v = (is_vector(*b) || (*b)->type == TYPE_LISTMAP) ? at_idx(*b, i) : clone(*b);
+                v = (is_vector(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, i) : clone(*b);
                 vm->stack[vm->sp++] = v;
             }
 

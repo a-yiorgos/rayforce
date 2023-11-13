@@ -548,7 +548,7 @@ dispatch:
 
         return null(0);
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         if (idx < 0 && obj->len > 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)as_list(obj)[1]->len)
@@ -560,7 +560,7 @@ dispatch:
 
         return null(0);
 
-    case TYPE_LISTMAP:
+    case TYPE_GROUPMAP:
         k = as_list(as_list(obj)[1])[idx];
         l = k->len;
         if (l == 0)
@@ -586,7 +586,10 @@ dispatch:
 
 obj_t at_obj(obj_t obj, obj_t idx)
 {
-    u64_t i;
+    u64_t i, l;
+    i64_t *iinp, *iout, *ids;
+    f64_t *finp, *fout;
+    obj_t res;
 
     if (obj == NULL)
         return null(0);
@@ -601,9 +604,33 @@ obj_t at_obj(obj_t obj, obj_t idx)
     case mtype2(TYPE_LIST, -TYPE_I64):
     case mtype2(TYPE_ENUM, -TYPE_I64):
     case mtype2(TYPE_ANYMAP, -TYPE_I64):
-    case mtype2(TYPE_VECMAP, -TYPE_I64):
-    case mtype2(TYPE_LISTMAP, -TYPE_I64):
+    case mtype2(TYPE_FILTERMAP, -TYPE_I64):
+    case mtype2(TYPE_GROUPMAP, -TYPE_I64):
         return at_idx(obj, idx->i64);
+    case mtype2(TYPE_I64, TYPE_I64):
+    case mtype2(TYPE_SYMBOL, TYPE_I64):
+    case mtype2(TYPE_TIMESTAMP, TYPE_I64):
+        l = idx->len;
+        res = vector(obj->type, l);
+        iinp = as_i64(obj);
+        iout = as_i64(res);
+        ids = as_i64(idx);
+        for (i = 0; i < l; i++)
+            iout[i] = iinp[ids[i]];
+
+        return res;
+
+    case mtype2(TYPE_F64, TYPE_I64):
+        l = idx->len;
+        res = vector_f64(l);
+        finp = as_f64(obj);
+        fout = as_f64(res);
+        ids = as_i64(idx);
+        for (i = 0; i < l; i++)
+            fout[i] = finp[ids[i]];
+
+        return res;
+
     default:
         if (obj->type == TYPE_DICT || obj->type == TYPE_TABLE)
         {
@@ -1031,8 +1058,8 @@ nil_t __attribute__((hot)) drop(obj_t obj)
     switch (obj->type)
     {
     case TYPE_LIST:
-    case TYPE_VECMAP:
-    case TYPE_LISTMAP:
+    case TYPE_FILTERMAP:
+    case TYPE_GROUPMAP:
         l = obj->len;
         for (i = 0; i < l; i++)
             drop(as_list(obj)[i]);

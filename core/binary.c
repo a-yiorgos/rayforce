@@ -46,7 +46,7 @@ obj_t call_binary(binary_f f, obj_t x, obj_t y)
     xt = x->type;
     yt = y->type;
 
-    if (xt == TYPE_LISTMAP && yt == TYPE_LISTMAP)
+    if (xt == TYPE_GROUPMAP && yt == TYPE_GROUPMAP)
     {
         l = ops_count(x);
 
@@ -83,7 +83,7 @@ obj_t call_binary(binary_f f, obj_t x, obj_t y)
 
         return res;
     }
-    else if (xt == TYPE_LISTMAP)
+    else if (xt == TYPE_GROUPMAP)
     {
         l = ops_count(x);
         a = ray_vecmap(as_list(x)[0], as_list(as_list(x)[1])[0]);
@@ -114,7 +114,7 @@ obj_t call_binary(binary_f f, obj_t x, obj_t y)
 
         return res;
     }
-    else if (yt == TYPE_LISTMAP)
+    else if (yt == TYPE_GROUPMAP)
     {
         l = ops_count(y);
         b = ray_vecmap(as_list(y)[0], as_list(as_list(y)[1])[0]);
@@ -216,7 +216,7 @@ obj_t ray_call_binary_left_atomic(binary_f f, obj_t x, obj_t y)
 
         return res;
 
-    case TYPE_LISTMAP:
+    case TYPE_GROUPMAP:
         l = ops_count(x);
         a = ray_vecmap(as_list(x)[0], as_list(as_list(x)[1])[0]);
         item = ray_call_binary_left_atomic(f, a, y);
@@ -317,7 +317,7 @@ obj_t ray_call_binary_right_atomic(binary_f f, obj_t x, obj_t y)
 
         return res;
 
-    case TYPE_LISTMAP:
+    case TYPE_GROUPMAP:
         l = ops_count(y);
         b = ray_vecmap(as_list(y)[0], as_list(as_list(y)[1])[0]);
         item = ray_call_binary_right_atomic(f, x, b);
@@ -363,8 +363,8 @@ obj_t ray_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
     xt = x->type;
     yt = y->type;
-    if (((xt == TYPE_LIST || xt == TYPE_ANYMAP || xt == TYPE_LISTMAP) && is_vector(y)) ||
-        ((yt == TYPE_LIST || yt == TYPE_ANYMAP || yt == TYPE_LISTMAP) && is_vector(x)))
+    if (((xt == TYPE_LIST || xt == TYPE_ANYMAP || xt == TYPE_GROUPMAP) && is_vector(y)) ||
+        ((yt == TYPE_LIST || yt == TYPE_ANYMAP || yt == TYPE_GROUPMAP) && is_vector(x)))
     {
         l = ops_count(x);
 
@@ -410,7 +410,7 @@ obj_t ray_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         return res;
     }
-    else if (xt == TYPE_LIST || xt == TYPE_ANYMAP || xt == TYPE_LISTMAP)
+    else if (xt == TYPE_LIST || xt == TYPE_ANYMAP || xt == TYPE_GROUPMAP)
     {
         l = ops_count(x);
         a = xt == TYPE_LIST ? as_list(x)[0] : at_idx(x, 0);
@@ -444,7 +444,7 @@ obj_t ray_call_binary_atomic(binary_f f, obj_t x, obj_t y)
 
         return res;
     }
-    else if (yt == TYPE_LIST || yt == TYPE_ANYMAP || yt == TYPE_LISTMAP)
+    else if (yt == TYPE_LIST || yt == TYPE_ANYMAP || yt == TYPE_GROUPMAP)
     {
         l = ops_count(y);
         b = yt == TYPE_LIST ? as_list(y)[0] : at_idx(y, 0);

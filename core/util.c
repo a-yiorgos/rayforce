@@ -62,7 +62,7 @@ bool_t is_valid(obj_t obj)
            || obj->type == TYPE_LAMBDA      || obj->type == TYPE_UNARY 
            || obj->type == TYPE_BINARY      || obj->type == TYPE_VARY   
            || obj->type == TYPE_ENUM        || obj->type == TYPE_ANYMAP       
-           || obj->type == TYPE_VECMAP      || obj->type == TYPE_LISTMAP 
+           || obj->type == TYPE_FILTERMAP      || obj->type == TYPE_GROUPMAP 
            || obj->type == TYPE_ERROR;
     // clang-format on
 }

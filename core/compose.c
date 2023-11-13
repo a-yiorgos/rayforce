@@ -196,7 +196,7 @@ obj_t ray_table(obj_t x, obj_t y)
             cl = j;
             break;
         case TYPE_ENUM:
-        case TYPE_VECMAP:
+        case TYPE_FILTERMAP:
             synergy = false;
             j = as_list(as_list(y)[i])[1]->len;
             if (cl != 0 && j != cl)
@@ -204,7 +204,7 @@ obj_t ray_table(obj_t x, obj_t y)
 
             cl = j;
             break;
-        case TYPE_LISTMAP:
+        case TYPE_GROUPMAP:
             synergy = false;
             j = as_list(as_list(y)[i])[1]->len;
             if (cl != 0 && j != cl)
@@ -242,9 +242,9 @@ obj_t ray_table(obj_t x, obj_t y)
             as_list(lst)[i] = ray_take(c, as_list(y)[i]);
             drop(c);
             break;
-        case TYPE_VECMAP:
+        case TYPE_FILTERMAP:
         case TYPE_ENUM:
-        case TYPE_LISTMAP:
+        case TYPE_GROUPMAP:
             as_list(lst)[i] = ray_value(as_list(y)[i]);
             break;
         default:
@@ -357,7 +357,7 @@ obj_t ray_vecmap(obj_t x, obj_t y)
 
     default:
         res = list(2, clone(x), clone(y));
-        res->type = TYPE_VECMAP;
+        res->type = TYPE_FILTERMAP;
         return res;
     }
 }
@@ -377,7 +377,7 @@ obj_t ray_listmap(obj_t x, obj_t y)
             v = as_list(as_list(x)[1])[i];
             switch (v->type)
             {
-            case TYPE_VECMAP:
+            case TYPE_FILTERMAP:
                 as_list(res)[i] = ray_listmap(as_list(v)[0], y);
                 break;
             default:
@@ -390,7 +390,7 @@ obj_t ray_listmap(obj_t x, obj_t y)
 
     default:
         res = list(2, clone(x), clone(y));
-        res->type = TYPE_LISTMAP;
+        res->type = TYPE_GROUPMAP;
         return res;
     }
 }

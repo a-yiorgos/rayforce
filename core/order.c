@@ -37,7 +37,7 @@ obj_t ray_iasc(obj_t x)
     case TYPE_I64:
         return ray_sort_asc(x);
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         v = ray_value(x);
         res = ray_iasc(v);
         drop(v);
@@ -57,7 +57,7 @@ obj_t ray_idesc(obj_t x)
     case TYPE_I64:
         return ray_sort_desc(x);
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         v = ray_value(x);
         res = ray_idesc(v);
         drop(v);
@@ -85,7 +85,7 @@ obj_t ray_asc(obj_t x)
 
         return idx;
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         v = ray_value(x);
         res = ray_asc(v);
         drop(v);
@@ -116,7 +116,7 @@ obj_t ray_desc(obj_t x)
 
         return idx;
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         v = ray_value(x);
         res = ray_desc(v);
         drop(v);

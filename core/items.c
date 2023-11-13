@@ -824,7 +824,7 @@ obj_t ray_take(obj_t x, obj_t y)
 
         return table(clone(as_list(y)[0]), res);
 
-    case mtype2(-TYPE_I64, TYPE_VECMAP):
+    case mtype2(-TYPE_I64, TYPE_FILTERMAP):
         idxs = as_i64(as_list(y)[1]); // idxs
         l = as_list(y)[1]->len;       // idxs len
         v = as_list(y)[0];            // vals
@@ -965,7 +965,7 @@ obj_t ray_first(obj_t x)
         return clone(x);
     if (is_vector(x))
         return at_idx(x, 0);
-    if (x->type == TYPE_ANYMAP || x->type == TYPE_VECMAP || x->type == TYPE_LISTMAP)
+    if (x->type == TYPE_ANYMAP || x->type == TYPE_FILTERMAP || x->type == TYPE_GROUPMAP)
         return at_idx(x, 0);
 
     return clone(x);
@@ -979,7 +979,7 @@ obj_t ray_last(obj_t x)
         return clone(x);
     if (is_vector(x))
         return at_idx(x, -1);
-    if (x->type == TYPE_ANYMAP || x->type == TYPE_VECMAP || x->type == TYPE_LISTMAP)
+    if (x->type == TYPE_ANYMAP || x->type == TYPE_FILTERMAP || x->type == TYPE_GROUPMAP)
         return at_idx(x, -1);
 
     return clone(x);
@@ -996,8 +996,8 @@ obj_t ray_key(obj_t x)
         return symbol(enum_key(x));
     case TYPE_ANYMAP:
         return clone(anymap_key(x));
-    case TYPE_VECMAP:
-    case TYPE_LISTMAP:
+    case TYPE_FILTERMAP:
+    case TYPE_GROUPMAP:
         return clone(as_list(x)[0]);
     default:
         return clone(x);
@@ -1102,33 +1102,20 @@ obj_t ray_value(obj_t x)
     case TYPE_DICT:
         return clone(as_list(x)[1]);
 
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         xl = as_list(x)[1]->len;
         if (xl == 0)
             return null(0);
 
-        ids = as_i64(as_list(x)[1]);
-        v = at_idx(as_list(x)[0], ids[0]);
-        res = v->type < 0 ? vector(v->type, xl) : vector(TYPE_LIST, xl);
-        ins_obj(&res, 0, v);
+        return at_obj(as_list(x)[0], as_list(x)[1]);
 
-        for (i = 1; i < xl; i++)
-        {
-            v = at_idx(as_list(x)[0], ids[i]);
-            ins_obj(&res, i, v);
-        }
-
-        return res;
-
-    case TYPE_LISTMAP:
+    case TYPE_GROUPMAP:
         xl = as_list(x)[1]->len;
         res = vector(TYPE_LIST, xl);
 
         for (i = 0; i < xl; i++)
         {
-            k = ray_vecmap(as_list(x)[0], as_list(as_list(x)[1])[i]);
-            v = ray_value(k);
-            drop(k);
+            v = at_obj(as_list(x)[0], as_list(as_list(x)[1])[i]);
             ins_obj(&res, i, v);
         }
 

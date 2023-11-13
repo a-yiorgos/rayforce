@@ -46,7 +46,7 @@ obj_t call_unary(u8_t attrs, unary_f f, obj_t x)
     u64_t i, l;
     obj_t res, item, vmap;
 
-    if (x->type == TYPE_LISTMAP)
+    if (x->type == TYPE_GROUPMAP)
     {
         l = as_list(x)[1]->len;
 
@@ -54,7 +54,7 @@ obj_t call_unary(u8_t attrs, unary_f f, obj_t x)
             return null(0);
 
         vmap = list(2, as_list(x)[0], as_list(as_list(x)[1])[0]);
-        vmap->type = TYPE_VECMAP;
+        vmap->type = TYPE_FILTERMAP;
 
         item = f(vmap);
 

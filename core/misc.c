@@ -72,7 +72,7 @@ dispatch:
         l = indices == NULL ? ops_count(x) : l;
         res = ops_distinct_obj(as_list(x), indices, l);
         return res;
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         l = as_list(x)[1]->len;
         indices = as_i64(as_list(x)[1]);
         x = as_list(x)[0];
@@ -103,7 +103,7 @@ dispatch:
         res = ops_group_raw(as_i64(enum_val(x)), indices, l);
         as_list(res)[0] = venum(ray_key(x), as_list(res)[0]);
         return res;
-    case TYPE_VECMAP:
+    case TYPE_FILTERMAP:
         l = as_list(x)[1]->len;
         indices = as_i64(as_list(x)[1]);
         x = as_list(x)[0];
