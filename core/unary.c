@@ -42,6 +42,7 @@
 #include "compose.h"
 #include "error.h"
 #include "query.h"
+#include "index.h"
 
 // Atomic unary functions (iterates through list of argument items down to atoms)
 obj_t call_unary_atomic(u8_t attrs, unary_f f, obj_t x)
@@ -302,21 +303,21 @@ obj_t ray_bins(obj_t x)
     case TYPE_BOOL:
     case TYPE_BYTE:
     case TYPE_CHAR:
-        bins = ops_bins_i8((i8_t *)as_u8(x), NULL, x->len);
+        bins = index_bins_i8((i8_t *)as_u8(x), NULL, x->len);
         break;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        bins = ops_bins_i64(as_i64(x), NULL, x->len);
+        bins = index_bins_i64(as_i64(x), NULL, x->len);
         break;
     case TYPE_F64:
-        bins = ops_bins_i64((i64_t *)as_f64(x), NULL, x->len);
+        bins = index_bins_i64((i64_t *)as_f64(x), NULL, x->len);
         break;
     case TYPE_LIST:
-        bins = ops_bins_obj(as_list(x), NULL, x->len);
+        bins = index_bins_obj(as_list(x), NULL, x->len);
         break;
     case TYPE_GUID:
-        bins = ops_bins_guid(as_guid(x), NULL, x->len);
+        bins = index_bins_guid(as_guid(x), NULL, x->len);
         break;
     default:
         throw(ERR_TYPE, "bins: unsupported type: '%s", typename(x->type));

@@ -94,24 +94,8 @@ typedef enum
 bool_t ops_as_bool(obj_t x);
 bool_t ops_is_nan(f64_t x);
 u64_t ops_rand_u64();
-i64_t i64_cmp(i64_t a, i64_t b, nil_t *seed);
-i64_t ops_range(i64_t *pmin, i64_t *pmax, i64_t values[], i64_t indices[], u64_t len);
-obj_t ops_bins_i8(i8_t values[], i64_t indices[], u64_t len);
-obj_t ops_bins_i64(i64_t values[], i64_t indices[], u64_t len);
-obj_t ops_bins_guid(guid_t values[], i64_t indices[], u64_t len);
-obj_t ops_bins_obj(obj_t values[], i64_t indices[], u64_t len);
-obj_t ops_distinct_i8(i8_t values[], i64_t indices[], u64_t len);
-obj_t ops_distinct_i64(i64_t values[], i64_t indices[], u64_t len);
-obj_t ops_distinct_guid(guid_t values[], i64_t indices[], u64_t len);
-obj_t ops_distinct_obj(obj_t values[], i64_t indices[], u64_t len);
-obj_t ops_group_i8(i8_t values[], i64_t indices[], u64_t len);
-obj_t ops_group_i64(i64_t values[], i64_t indices[], u64_t len);
-obj_t ops_group_guid(guid_t values[], i64_t indices[], u64_t len);
-obj_t ops_group_obj(obj_t values[], i64_t indices[], u64_t len);
 u64_t ops_count(obj_t x);
 bool_t ops_eq_idx(obj_t a, i64_t ai, obj_t b, i64_t bi);
-u64_t ops_hash_obj(obj_t obj);
-nil_t ops_hash_list(obj_t obj, u64_t *out, u64_t len, u64_t seed);
 obj_t ops_find(i64_t x[], u64_t xl, i64_t y[], u64_t yl);
 obj_t sys_error(os_error_type_t, str_t msg);
 

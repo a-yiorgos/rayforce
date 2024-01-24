@@ -30,6 +30,7 @@
 #include "items.h"
 #include "unary.h"
 #include "error.h"
+#include "index.h"
 
 obj_t ray_type(obj_t x)
 {
@@ -61,21 +62,21 @@ dispatch:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         l = indices == NULL ? x->len : l;
-        res = ops_distinct_i64(as_i64(x), indices, l);
+        res = index_distinct_i64(as_i64(x), indices, l);
         res->type = x->type;
         return res;
     case TYPE_ENUM:
         l = indices == NULL ? ops_count(x) : l;
-        res = ops_distinct_i64(as_i64(enum_val(x)), indices, l);
+        res = index_distinct_i64(as_i64(enum_val(x)), indices, l);
         res = venum(ray_key(x), res);
         return res;
     case TYPE_LIST:
         l = indices == NULL ? ops_count(x) : l;
-        res = ops_distinct_obj(as_list(x), indices, l);
+        res = index_distinct_obj(as_list(x), indices, l);
         return res;
     case TYPE_GUID:
         l = indices == NULL ? x->len : l;
-        res = ops_distinct_guid(as_guid(x), indices, l);
+        res = index_distinct_guid(as_guid(x), indices, l);
         return res;
     case TYPE_FILTERMAP:
         l = as_list(x)[1]->len;
@@ -97,7 +98,7 @@ obj_t ray_group(obj_t x)
     case TYPE_BYTE:
     case TYPE_BOOL:
     case TYPE_CHAR:
-        g = ops_group_i8((i8_t *)as_u8(x), NULL, ops_count(x));
+        g = index_group_i8((i8_t *)as_u8(x), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = vector(x->type, l);
         v = list(l);
@@ -118,7 +119,7 @@ obj_t ray_group(obj_t x)
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        g = ops_group_i64(as_i64(x), NULL, ops_count(x));
+        g = index_group_i64(as_i64(x), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = vector(x->type, l);
         v = list(l);
@@ -138,7 +139,7 @@ obj_t ray_group(obj_t x)
         return dict(k, v);
 
     case TYPE_F64:
-        g = ops_group_i64((i64_t *)as_f64(x), NULL, ops_count(x));
+        g = index_group_i64((i64_t *)as_f64(x), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = vector_f64(l);
         v = list(l);
@@ -158,7 +159,7 @@ obj_t ray_group(obj_t x)
         return dict(k, v);
 
     case TYPE_ENUM:
-        g = ops_group_i64(as_i64(enum_val(x)), NULL, ops_count(x));
+        g = index_group_i64(as_i64(enum_val(x)), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = vector_i64(l);
         v = list(l);
@@ -177,7 +178,7 @@ obj_t ray_group(obj_t x)
 
         return dict(k, v);
     case TYPE_GUID:
-        g = ops_group_guid(as_guid(x), NULL, ops_count(x));
+        g = index_group_guid(as_guid(x), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = vector_guid(l);
         v = list(l);
@@ -196,7 +197,7 @@ obj_t ray_group(obj_t x)
 
         return dict(k, v);
     case TYPE_LIST:
-        g = ops_group_obj(as_list(x), NULL, ops_count(x));
+        g = index_group_obj(as_list(x), NULL, ops_count(x));
         l = as_list(g)[0]->len; // count groups
         k = list(l);
         v = list(l);

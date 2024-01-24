@@ -65,5 +65,7 @@ obj_t *stack_peek(i64_t n);
 obj_t stack_at(i64_t n);
 bool_t stack_enough(u64_t n);
 obj_t unwrap(obj_t obj, i64_t id);
+ctx_t *ctx_push(obj_t lambda);
+ctx_t *ctx_pop();
 
 #endif // EVAL_H

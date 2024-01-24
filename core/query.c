@@ -34,6 +34,7 @@
 #include "math.h"
 #include "aggr.h"
 #include "iter.h"
+#include "index.h"
 
 obj_t get_param(obj_t obj, str_t name)
 {
@@ -55,33 +56,6 @@ obj_t get_symbols(obj_t obj)
     drop(keywords);
 
     return symbols;
-}
-
-obj_t build_group_idx(obj_t x, obj_t y)
-{
-    u64_t l;
-    i64_t *ids;
-
-    if (y)
-    {
-        l = y->len;
-        ids = as_i64(y);
-    }
-    else
-    {
-        l = x->len;
-        ids = NULL;
-    }
-
-    switch (x->type)
-    {
-    case TYPE_I64:
-    case TYPE_SYMBOL:
-    case TYPE_TIMESTAMP:
-        return ops_group_i64(as_i64(x), ids, l);
-    default:
-        throw(ERR_TYPE, "'by' unable to group by: %s", typename(x->type));
-    }
 }
 
 /*
@@ -137,21 +111,21 @@ obj_t group_by(obj_t x, obj_t y, obj_t z)
     case TYPE_BOOL:
     case TYPE_BYTE:
     case TYPE_CHAR:
-        bins = ops_bins_i8((i8_t *)as_u8(x), ids, l);
+        bins = index_bins_i8((i8_t *)as_u8(x), ids, l);
         break;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        bins = ops_bins_i64(as_i64(x), ids, l);
+        bins = index_bins_i64(as_i64(x), ids, l);
         break;
     case TYPE_F64:
-        bins = ops_bins_i64((i64_t *)as_f64(x), ids, l);
+        bins = index_bins_i64((i64_t *)as_f64(x), ids, l);
         break;
     case TYPE_GUID:
-        bins = ops_bins_guid(as_guid(x), ids, l);
+        bins = index_bins_guid(as_guid(x), ids, l);
         break;
     case TYPE_LIST:
-        bins = ops_bins_obj(as_list(x), ids, l);
+        bins = index_bins_obj(as_list(x), ids, l);
         break;
     default:
         throw(ERR_TYPE, "'by' unable to group by: %s", typename(x->type));
@@ -493,7 +467,7 @@ obj_t ray_select(obj_t obj)
 {
     u64_t i, l, tablen;
     obj_t keys = NULL, vals = NULL, filters = NULL, groupby = NULL,
-          bycol = NULL, bysym = NULL, group_counts = NULL, tab, sym, prm, val;
+          bycol = NULL, bysym = NULL, tab, sym, prm, val;
 
     if (obj->type != TYPE_DICT)
         throw(ERR_LENGTH, "'select' takes dict of params");
@@ -602,7 +576,7 @@ obj_t ray_select(obj_t obj)
         sym = at_idx(keys, i);
         prm = at_obj(obj, sym);
         drop(sym);
-        val = field_eval(prm, &group_counts);
+        val = eval(prm);
         drop(prm);
 
         if (!val || is_error(val))
@@ -611,7 +585,6 @@ obj_t ray_select(obj_t obj)
             drop(vals);
             drop(tab);
             drop(keys);
-            drop(group_counts);
             drop(bysym);
             drop(bycol);
             return val;
@@ -637,8 +610,6 @@ obj_t ray_select(obj_t obj)
 
     unmount_env(tablen);
     drop(tab);
-
-    drop(group_counts);
 
     return table(keys, vals);
 }

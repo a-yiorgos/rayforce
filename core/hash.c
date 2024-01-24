@@ -188,13 +188,60 @@ i64_t ht_tab_get_with(obj_t obj, i64_t key, hash_f hash, cmp_f cmp, nil_t *seed)
     return NULL_I64;
 }
 
-u64_t kmh_hash(i64_t key, nil_t *seed)
+inline __attribute__((always_inline)) u64_t index_hash_u64(u64_t h, u64_t k)
+{
+    u64_t a, b;
+
+    a = (h ^ k) * 0x9ddfea08eb382d69ull;
+    a ^= (a >> 47);
+    b = (roti64(k, 31) ^ a) * 0x9ddfea08eb382d69ull;
+    b ^= (b >> 47);
+    b *= 0x9ddfea08eb382d69ull;
+
+    return b;
+}
+
+u64_t index_hash_obj(obj_t obj)
+{
+    u64_t hash, len, i, c;
+    str_t str;
+
+    switch (obj->type)
+    {
+    case -TYPE_I64:
+    case -TYPE_SYMBOL:
+    case -TYPE_TIMESTAMP:
+        return (u64_t)obj->i64;
+    case -TYPE_F64:
+        return (u64_t)obj->f64;
+    case -TYPE_GUID:
+        return index_hash_u64(*(u64_t *)as_guid(obj), *((u64_t *)as_guid(obj) + 1));
+    case TYPE_CHAR:
+        str = as_string(obj);
+        hash = 5381;
+        while ((c = *str++))
+            hash = ((hash << 5) + hash) + c;
+
+        return hash;
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        len = obj->len;
+        for (i = 0, hash = 0xcbf29ce484222325ull; i < len; i++)
+            hash = index_hash_u64((u64_t)as_i64(obj)[i], hash);
+        return hash;
+    default:
+        panic("hash: unsupported type: %d", obj->type);
+    }
+}
+
+u64_t hash_kmh(i64_t key, nil_t *seed)
 {
     unused(seed);
     return (key * 6364136223846793005ull) >> 32;
 }
 
-u64_t fnv1a_hash_64(i64_t key, nil_t *seed)
+u64_t hash_fnv1a(i64_t key, nil_t *seed)
 {
     unused(seed);
     u64_t hash = 14695981039346656037ull;
@@ -208,4 +255,53 @@ u64_t fnv1a_hash_64(i64_t key, nil_t *seed)
     }
 
     return hash;
+}
+
+u64_t hash_guid(i64_t a, nil_t *seed)
+{
+    unused(seed);
+    guid_t *g = (guid_t *)a;
+    u64_t upper_part, lower_part;
+
+    // Cast the first and second halves of the GUID to u64_t
+    memcpy(&upper_part, g->buf, sizeof(u64_t));
+    memcpy(&lower_part, g->buf + 8, sizeof(u64_t));
+
+    // Combine the two parts
+    return upper_part ^ lower_part;
+}
+
+u64_t hash_obj(i64_t a, nil_t *seed)
+{
+    unused(seed);
+    return index_hash_obj((obj_t)a);
+}
+
+i64_t cmp_i64(i64_t a, i64_t b, nil_t *seed)
+{
+    unused(seed);
+    return a - b;
+}
+
+i64_t cmp_obj(i64_t a, i64_t b, nil_t *seed)
+{
+    unused(seed);
+    return objcmp((obj_t)a, (obj_t)b);
+}
+
+i64_t cmp_guid(i64_t a, i64_t b, nil_t *seed)
+{
+    unused(seed);
+    guid_t *g1 = (guid_t *)a, *g2 = (guid_t *)b;
+    i64_t i;
+
+    for (i = 0; i < 16; i++)
+    {
+        if (g1->buf[i] < g2->buf[i])
+            return -1;
+        if (g1->buf[i] > g2->buf[i])
+            return 1;
+    }
+
+    return 0;
 }

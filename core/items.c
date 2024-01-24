@@ -390,7 +390,7 @@ obj_t ray_find(obj_t x, obj_t y)
         res = vector_i64(maxi64(xl, yl));
         ht = ht_tab(maxi64(xl, yl) * 2, -1);
 
-        ops_hash_list(x, (u64_t *)as_i64(res), xl, 0xa5b6c7d8e9f01234ull);
+        index_hash_list(x, (u64_t *)as_i64(res), xl, 0xa5b6c7d8e9f01234ull);
         ctx = (__items_find_ctx_t){.lobj = x, .robj = x, .hashes = (u64_t *)as_i64(res)};
         for (i = 0; i < xl; i++)
         {
@@ -399,7 +399,7 @@ obj_t ray_find(obj_t x, obj_t y)
                 as_i64(as_list(ht)[0])[idx] = i;
         }
 
-        ops_hash_list(y, (u64_t *)as_i64(res), yl, 0xa5b6c7d8e9f01234ull);
+        index_hash_list(y, (u64_t *)as_i64(res), yl, 0xa5b6c7d8e9f01234ull);
         ctx = (__items_find_ctx_t){.lobj = x, .robj = y, .hashes = (u64_t *)as_i64(res)};
         for (i = 0; i < yl; i++)
         {
@@ -868,7 +868,7 @@ obj_t ray_in(obj_t x, obj_t y)
 
             for (i = 0; i < yl; i++)
             {
-                // p = ht_tab_next_with(&set, as_i64(y)[i], &i64_hash, &i64_cmp);
+                // p = ht_tab_next_with(&set, as_i64(y)[i], &hash_i64, &cmp_i64);
                 p = ht_tab_next(&set, as_i64(y)[i]);
                 if (as_i64(as_list(set)[0])[p] == NULL_I64)
                     as_i64(as_list(set)[0])[p] = as_i64(y)[i];
@@ -878,7 +878,7 @@ obj_t ray_in(obj_t x, obj_t y)
 
             for (i = 0; i < xl; i++)
             {
-                // p = ht_tab_next_with(&set, as_i64(x)[i], &i64_hash, &i64_cmp);
+                // p = ht_tab_next_with(&set, as_i64(x)[i], &hash_i64, &cmp_i64);
                 p = ht_tab_get(set, as_i64(x)[i]);
                 as_bool(vec)[i] = (p != NULL_I64);
             }

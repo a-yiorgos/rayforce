@@ -63,13 +63,6 @@ inline __attribute__((always_inline)) obj_t stack_pop()
     return __INTERPRETER->stack[--__INTERPRETER->sp];
 }
 
-inline __attribute__((always_inline)) ctx_t *ctx_push(obj_t lambda)
-{
-    ctx_t *ctx = &__INTERPRETER->ctxstack[__INTERPRETER->cp++];
-    ctx->lambda = lambda;
-    return ctx;
-}
-
 inline __attribute__((always_inline)) obj_t *stack_peek(i64_t n)
 {
     return &__INTERPRETER->stack[__INTERPRETER->sp - n - 1];
@@ -78,6 +71,13 @@ inline __attribute__((always_inline)) obj_t *stack_peek(i64_t n)
 inline __attribute__((always_inline)) obj_t stack_at(i64_t n)
 {
     return __INTERPRETER->stack[__INTERPRETER->sp - n - 1];
+}
+
+inline __attribute__((always_inline)) ctx_t *ctx_push(obj_t lambda)
+{
+    ctx_t *ctx = &__INTERPRETER->ctxstack[__INTERPRETER->cp++];
+    ctx->lambda = lambda;
+    return ctx;
 }
 
 inline __attribute__((always_inline)) ctx_t *ctx_pop()

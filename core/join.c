@@ -30,6 +30,7 @@
 #include "binary.h"
 #include "compose.h"
 #include "error.h"
+#include "index.h"
 
 typedef struct __join_ctx_t
 {
@@ -74,10 +75,10 @@ nil_t precalc_hash(obj_t cols, u64_t *out, u64_t ncols, u64_t nrows)
 {
     u64_t i;
 
-    ops_hash_list(as_list(cols)[0], out, nrows, 0xa5b6c7d8e9f01234ull);
+    index_hash_list(as_list(cols)[0], out, nrows, 0xa5b6c7d8e9f01234ull);
 
     for (i = 1; i < ncols; i++)
-        ops_hash_list(as_list(cols)[i], out, nrows, 0);
+        index_hash_list(as_list(cols)[i], out, nrows, 0);
 
     return;
 }

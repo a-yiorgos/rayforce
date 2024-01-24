@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Anton Kundenko <singaraiona@gmail.com>
+ *   Copyright (c) 2024 Anton Kundenko <singaraiona@gmail.com>
  *   All rights reserved.
 
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,35 +21,23 @@
  *   SOFTWARE.
  */
 
-#ifndef HASH_H
-#define HASH_H
+#ifndef INDEX_H
+#define INDEX_H
 
 #include "rayforce.h"
-#include "ops.h"
 
-obj_t ht_tab(u64_t size, type_t vals);
-obj_t ht_set(u64_t size);
-i64_t ht_tab_next(obj_t *obj, i64_t key);
-i64_t ht_tab_next_with(obj_t *obj, i64_t key, hash_f hash, cmp_f cmp, nil_t *seed);
-i64_t ht_tab_get(obj_t obj, i64_t key);
-i64_t ht_tab_get_with(obj_t obj, i64_t key, hash_f hash, cmp_f cmp, nil_t *seed);
+obj_t index_bins_i8(i8_t values[], i64_t indices[], u64_t len);
+obj_t index_bins_i64(i64_t values[], i64_t indices[], u64_t len);
+obj_t index_bins_guid(guid_t values[], i64_t indices[], u64_t len);
+obj_t index_bins_obj(obj_t values[], i64_t indices[], u64_t len);
+i64_t index_range(i64_t *pmin, i64_t *pmax, i64_t values[], i64_t indices[], u64_t len);
+obj_t index_distinct_i8(i8_t values[], i64_t indices[], u64_t len);
+obj_t index_distinct_i64(i64_t values[], i64_t indices[], u64_t len);
+obj_t index_distinct_guid(guid_t values[], i64_t indices[], u64_t len);
+obj_t index_distinct_obj(obj_t values[], i64_t indices[], u64_t len);
+obj_t index_group_i8(i8_t values[], i64_t indices[], u64_t len);
+obj_t index_group_i64(i64_t values[], i64_t indices[], u64_t len);
+obj_t index_group_guid(guid_t values[], i64_t indices[], u64_t len);
+obj_t index_group_obj(obj_t values[], i64_t indices[], u64_t len);
 
-// Knuth's multiplicative hash
-u64_t hash_kmh(i64_t key, nil_t *seed);
-// FNV-1a hash
-u64_t hash_fnv1a(i64_t key, nil_t *seed);
-// Identity
-u64_t hash_i64(i64_t a, nil_t *seed);
-u64_t hash_obj(i64_t a, nil_t *seed);
-u64_t hash_guid(i64_t a, nil_t *seed);
-
-i64_t cmp_obj(i64_t a, i64_t b, nil_t *seed);
-i64_t cmp_guid(i64_t a, i64_t b, nil_t *seed);
-i64_t cmp_i64(i64_t a, i64_t b, nil_t *seed);
-
-// Special hashes
-u64_t index_hash_u64(u64_t h, u64_t k);
-u64_t index_hash_obj(obj_t obj);
-nil_t index_hash_list(obj_t obj, u64_t *out, u64_t len, u64_t seed);
-
-#endif
+#endif // INDEX_H
