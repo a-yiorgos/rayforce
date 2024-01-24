@@ -236,9 +236,7 @@ obj_t ray_table(obj_t x, obj_t y)
             as_list(lst)[i] = ray_take(c, as_list(y)[i]);
             drop(c);
             break;
-        case TYPE_FILTERMAP:
         case TYPE_ENUM:
-        case TYPE_GROUPMAP:
             as_list(lst)[i] = ray_value(as_list(y)[i]);
             break;
         default:
@@ -331,28 +329,6 @@ obj_t ray_enum(obj_t x, obj_t y)
         return venum(clone(x), v);
     default:
         throw(ERR_TYPE, "enum: unsupported types: '%s '%s", typename(x->type), typename(y->type));
-    }
-}
-
-obj_t ray_filtermap(obj_t x, obj_t y)
-{
-    u64_t i, l;
-    obj_t res;
-
-    switch (x->type)
-    {
-    case TYPE_TABLE:
-        l = as_list(x)[1]->len;
-        res = list(l);
-        for (i = 0; i < l; i++)
-            as_list(res)[i] = ray_filtermap(as_list(as_list(x)[1])[i], y);
-
-        return table(clone(as_list(x)[0]), res);
-
-    default:
-        res = vn_list(3, clone(x), clone(y), NULL);
-        res->type = TYPE_FILTERMAP;
-        return res;
     }
 }
 

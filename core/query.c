@@ -36,6 +36,7 @@
 #include "iter.h"
 #include "index.h"
 #include "group.h"
+#include "filter.h"
 
 obj_t get_param(obj_t obj, str_t name)
 {
@@ -222,32 +223,6 @@ obj_t get_symbols(obj_t obj)
 //     }
 // }
 
-// obj_t field_eval(obj_t x, obj_t *group_counts)
-// {
-//     obj_t res, v;
-
-//     switch (x->type)
-//     {
-//     case TYPE_LIST:
-//         if (x->len == 0)
-//             return NULL;
-
-//         v = eval(as_list(x)[0]);
-//         res = field_map(v, as_list(x) + 1, x->len - 1, group_counts);
-//         drop(v);
-//         return res;
-//     default:
-//         res = eval(x);
-//         if (res->type == TYPE_GROUPMAP)
-//         {
-//             v = collect_group(as_list(res)[0], as_list(res)[1], group_counts);
-//             drop(res);
-//             res = v;
-//         }
-//         return res;
-//     }
-// }
-
 obj_t ray_select(obj_t obj)
 {
     u64_t i, l, tablen;
@@ -347,7 +322,7 @@ obj_t ray_select(obj_t obj)
         // Unmount table columns from a local env
         unmount_env(tablen);
         // Create filtermaps over table
-        val = ray_filtermap(tab, filters);
+        val = filter_map(tab, filters);
         drop(filters);
         mount_env(val);
         drop(val);
@@ -382,6 +357,12 @@ obj_t ray_select(obj_t obj)
         if (val->type == TYPE_GROUPMAP)
         {
             prm = group_collect(val);
+            drop(val);
+            val = prm;
+        }
+        else if (val->type == TYPE_FILTERMAP)
+        {
+            prm = filter_collect(val);
             drop(val);
             val = prm;
         }

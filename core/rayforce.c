@@ -497,7 +497,6 @@ obj_t at_idx(obj_t obj, i64_t idx)
     if (!obj)
         return null(0);
 
-dispatch:
     switch (obj->type)
     {
     case TYPE_I64:
@@ -574,21 +573,6 @@ dispatch:
 
         return null(0);
 
-    case TYPE_FILTERMAP:
-        if (idx < 0 && obj->len > 0)
-            idx = obj->len + idx;
-        if (idx >= 0 && idx < (i64_t)as_list(obj)[1]->len)
-        {
-            idx = (u64_t)as_i64(as_list(obj)[1])[idx];
-            obj = as_list(obj)[0];
-            goto dispatch;
-        }
-
-        return null(0);
-
-    case TYPE_GROUPMAP:
-        return at_obj(as_list(obj)[0], as_list(as_list(obj)[1])[idx]);
-
     default:
         throw(ERR_TYPE, "at_idx: invalid type: '%s", typename(obj->type));
     }
@@ -652,8 +636,6 @@ obj_t at_obj(obj_t obj, obj_t idx)
     case mtype2(TYPE_LIST, -TYPE_I64):
     case mtype2(TYPE_ENUM, -TYPE_I64):
     case mtype2(TYPE_ANYMAP, -TYPE_I64):
-    case mtype2(TYPE_FILTERMAP, -TYPE_I64):
-    case mtype2(TYPE_GROUPMAP, -TYPE_I64):
         return at_idx(obj, idx->i64);
     case mtype2(TYPE_I64, TYPE_I64):
     case mtype2(TYPE_SYMBOL, TYPE_I64):
@@ -1080,6 +1062,7 @@ nil_t __attribute__((hot)) drop(obj_t obj)
     switch (obj->type)
     {
     case TYPE_LIST:
+    case TYPE_FILTERMAP:
     case TYPE_GROUPMAP:
         l = obj->len;
         for (i = 0; i < l; i++)
@@ -1115,12 +1098,6 @@ nil_t __attribute__((hot)) drop(obj_t obj)
         drop(as_lambda(obj)->args);
         drop(as_lambda(obj)->body);
         drop(as_lambda(obj)->nfo);
-        heap_free(obj);
-        return;
-    case TYPE_FILTERMAP:
-        drop(as_list(obj)[0]);
-        drop(as_list(obj)[1]);
-        drop(as_list(obj)[2]);
         heap_free(obj);
         return;
     case TYPE_ERROR:

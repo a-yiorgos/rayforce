@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Anton Kundenko <singaraiona@gmail.com>
+ *   Copyright (c) 2024 Anton Kundenko <singaraiona@gmail.com>
  *   All rights reserved.
 
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,22 +21,40 @@
  *   SOFTWARE.
  */
 
-#ifndef COMPOSE_H
-#define COMPOSE_H
+#include "filter.h"
+#include "error.h"
+#include "util.h"
+#include "ops.h"
 
-#include "rayforce.h"
+/*
+ *  filter_map is a list:
+ *  [0] - indexed object
+ *  [1] - vector of indices
+ */
 
-obj_t ray_dict(obj_t x, obj_t y);
-obj_t ray_table(obj_t x, obj_t y);
-obj_t ray_rand(obj_t x, obj_t y);
-obj_t ray_as(obj_t x, obj_t y);
-obj_t ray_enum(obj_t x, obj_t y);
-obj_t ray_concat(obj_t x, obj_t y);
-obj_t ray_til(obj_t x);
-obj_t ray_reverse(obj_t x);
-obj_t ray_group(obj_t x);
-obj_t ray_guid(obj_t x);
-obj_t ray_list(obj_t *x, u64_t n);
-obj_t ray_enlist(obj_t *x, u64_t n);
+obj_t filter_map(obj_t x, obj_t y)
+{
+    u64_t i, l;
+    obj_t res;
 
-#endif // COMPOSE_H
+    switch (x->type)
+    {
+    case TYPE_TABLE:
+        l = as_list(x)[1]->len;
+        res = list(l);
+        for (i = 0; i < l; i++)
+            as_list(res)[i] = filter_map(as_list(as_list(x)[1])[i], y);
+
+        return table(clone(as_list(x)[0]), res);
+
+    default:
+        res = vn_list(2, clone(x), clone(y));
+        res->type = TYPE_FILTERMAP;
+        return res;
+    }
+}
+
+obj_t filter_collect(obj_t x)
+{
+    return at_obj(as_list(x)[0], as_list(x)[1]);
+}

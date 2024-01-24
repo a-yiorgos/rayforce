@@ -31,18 +31,10 @@
 
 obj_t ray_iasc(obj_t x)
 {
-    obj_t v, res;
-
     switch (x->type)
     {
     case TYPE_I64:
         return ray_sort_asc(x);
-
-    case TYPE_FILTERMAP:
-        v = ray_value(x);
-        res = ray_iasc(v);
-        drop(v);
-        return res;
 
     default:
         throw(ERR_TYPE, "iasc: unsupported type: '%s", typename(x->type));
@@ -51,18 +43,10 @@ obj_t ray_iasc(obj_t x)
 
 obj_t ray_idesc(obj_t x)
 {
-    obj_t v, res;
-
     switch (x->type)
     {
     case TYPE_I64:
         return ray_sort_desc(x);
-
-    case TYPE_FILTERMAP:
-        v = ray_value(x);
-        res = ray_idesc(v);
-        drop(v);
-        return res;
 
     default:
         throw(ERR_TYPE, "idesc: unsupported type: '%s", typename(x->type));
@@ -71,7 +55,7 @@ obj_t ray_idesc(obj_t x)
 
 obj_t ray_asc(obj_t x)
 {
-    obj_t idx, v, res;
+    obj_t idx;
     i64_t l, i;
 
     switch (x->type)
@@ -86,15 +70,6 @@ obj_t ray_asc(obj_t x)
 
         return idx;
 
-    case TYPE_FILTERMAP:
-        v = ray_value(x);
-        res = ray_asc(v);
-        drop(v);
-
-        res->attrs |= ATTR_ASC;
-
-        return res;
-
     default:
         throw(ERR_TYPE, "asc: unsupported type: '%s", typename(x->type));
     }
@@ -102,7 +77,7 @@ obj_t ray_asc(obj_t x)
 
 obj_t ray_desc(obj_t x)
 {
-    obj_t idx, v, res;
+    obj_t idx;
     i64_t l, i;
 
     switch (x->type)
@@ -116,15 +91,6 @@ obj_t ray_desc(obj_t x)
         idx->attrs |= ATTR_DESC;
 
         return idx;
-
-    case TYPE_FILTERMAP:
-        v = ray_value(x);
-        res = ray_desc(v);
-        drop(v);
-
-        res->attrs |= ATTR_DESC;
-
-        return res;
 
     default:
         throw(ERR_TYPE, "desc: unsupported type: '%s", typename(x->type));

@@ -927,35 +927,14 @@ obj_t ray_avg(obj_t x)
 obj_t ray_min(obj_t x)
 {
     u64_t i, l = 0;
-    i64_t imin, iv, *xids = NULL, *xivals = NULL;
+    i64_t imin, iv, *xivals = NULL;
     f64_t fmin = 0.0, *xfvals = NULL;
     obj_t res;
 
-dispatch:
     switch (x->type)
     {
     case TYPE_I64:
     case TYPE_TIMESTAMP:
-        if (xids)
-        {
-            if (!l)
-                return i64(NULL_I64);
-
-            xivals = as_i64(x);
-            imin = xivals[xids[0]];
-
-            for (i = 0; i < l; i++)
-            {
-                iv = (xivals[xids[i]] == NULL_I64) ? MAX_I64 : xivals[xids[i]];
-                imin = iv < imin ? iv : imin;
-            }
-
-            res = i64(imin);
-            res->type = -x->type;
-
-            return res;
-        }
-
         l = x->len;
 
         if (!l)
@@ -979,20 +958,6 @@ dispatch:
         return res;
 
     case TYPE_F64:
-        if (xids)
-        {
-            if (!l)
-                return f64(NULL_F64);
-
-            xfvals = as_f64(x);
-            fmin = xfvals[xids[0]];
-
-            for (i = 0; i < l; i++)
-                fmin = xfvals[xids[i]] < fmin ? xfvals[xids[i]] : fmin;
-
-            return f64(fmin);
-        }
-
         l = x->len;
 
         if (!l)
@@ -1007,14 +972,6 @@ dispatch:
         return f64(fmin);
 
     default:
-        if (x->type == TYPE_FILTERMAP)
-        {
-            xids = as_i64(as_list(x)[1]);
-            l = as_list(x)[1]->len;
-            x = as_list(x)[0];
-            goto dispatch;
-        }
-
         throw(ERR_TYPE, "min: unsupported type: '%s", typename(x->type));
     }
 }
@@ -1022,32 +979,14 @@ dispatch:
 obj_t ray_max(obj_t x)
 {
     u64_t i, l = 0;
-    i64_t imax = 0, *xids = NULL, *xivals = NULL;
+    i64_t imax = 0, *xivals = NULL;
     f64_t fmax = 0.0, *xfvals = NULL;
     obj_t res;
 
-dispatch:
     switch (x->type)
     {
     case TYPE_I64:
     case TYPE_TIMESTAMP:
-        if (xids)
-        {
-            if (!l)
-                return i64(NULL_I64);
-
-            xivals = as_i64(x);
-            imax = xivals[xids[0]];
-
-            for (i = 0; i < l; i++)
-                imax = xivals[xids[i]] > imax ? xivals[xids[i]] : imax;
-
-            res = i64(imax);
-            res->type = -x->type;
-
-            return res;
-        }
-
         l = x->len;
 
         if (!l)
@@ -1065,20 +1004,6 @@ dispatch:
         return res;
 
     case TYPE_F64:
-        if (xids)
-        {
-            if (!l)
-                return f64(NULL_F64);
-
-            xfvals = as_f64(x);
-            fmax = xfvals[xids[0]];
-
-            for (i = 0; i < l; i++)
-                fmax = xfvals[xids[i]] > fmax ? xfvals[xids[i]] : fmax;
-
-            return f64(fmax);
-        }
-
         l = x->len;
 
         if (!l)
@@ -1093,14 +1018,6 @@ dispatch:
         return f64(fmax);
 
     default:
-        if (x->type == TYPE_FILTERMAP)
-        {
-            xids = as_i64(as_list(x)[1]);
-            l = as_list(x)[1]->len;
-            x = as_list(x)[0];
-            goto dispatch;
-        }
-
         throw(ERR_TYPE, "max: unsupported type: '%s", typename(x->type));
     }
 }
@@ -1108,28 +1025,15 @@ dispatch:
 obj_t ray_round(obj_t x)
 {
     u64_t i, l = 0;
-    i64_t *xids = NULL, *rvals;
+    i64_t *rvals;
     f64_t *xfvals;
     obj_t res;
 
-dispatch:
     switch (x->type)
     {
     case -TYPE_F64:
         return i64(roundf64(x->f64));
     case TYPE_F64:
-        if (xids)
-        {
-            res = vector_i64(l);
-            rvals = as_i64(res);
-            xfvals = as_f64(x);
-
-            for (i = 0; i < l; i++)
-                rvals[i] = roundf64(xfvals[xids[i]]);
-
-            return res;
-        }
-
         l = x->len;
 
         res = vector_f64(l);
@@ -1141,14 +1045,6 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_FILTERMAP)
-        {
-            xids = as_i64(as_list(x)[1]);
-            l = as_list(x)[1]->len;
-            x = as_list(x)[0];
-            goto dispatch;
-        }
-
         throw(ERR_TYPE, "round: unsupported type: '%s", typename(x->type));
     }
 }
@@ -1156,28 +1052,15 @@ dispatch:
 obj_t ray_floor(obj_t x)
 {
     u64_t i, l = 0;
-    i64_t *xids = NULL, *rvals;
+    i64_t *rvals;
     f64_t *xfvals;
     obj_t res;
 
-dispatch:
     switch (x->type)
     {
     case -TYPE_F64:
         return i64(floorf64(x->f64));
     case TYPE_F64:
-        if (xids)
-        {
-            res = vector_i64(l);
-            rvals = as_i64(res);
-            xfvals = as_f64(x);
-
-            for (i = 0; i < l; i++)
-                rvals[i] = floorf64(xfvals[xids[i]]);
-
-            return res;
-        }
-
         l = x->len;
 
         res = vector_f64(l);
@@ -1189,14 +1072,6 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_FILTERMAP)
-        {
-            xids = as_i64(as_list(x)[1]);
-            l = as_list(x)[1]->len;
-            x = as_list(x)[0];
-            goto dispatch;
-        }
-
         throw(ERR_TYPE, "floor: unsupported type: '%s", typename(x->type));
     }
 }
@@ -1204,28 +1079,15 @@ dispatch:
 obj_t ray_ceil(obj_t x)
 {
     u64_t i, l = 0;
-    i64_t *xids = NULL, *rvals;
+    i64_t *rvals;
     f64_t *xfvals;
     obj_t res;
 
-dispatch:
     switch (x->type)
     {
     case -TYPE_F64:
         return i64(ceilf64(x->f64));
     case TYPE_F64:
-        if (xids)
-        {
-            res = vector_i64(l);
-            rvals = as_i64(res);
-            xfvals = as_f64(x);
-
-            for (i = 0; i < l; i++)
-                rvals[i] = ceilf64(xfvals[xids[i]]);
-
-            return res;
-        }
-
         l = x->len;
 
         res = vector_f64(l);
@@ -1237,14 +1099,6 @@ dispatch:
 
         return res;
     default:
-        if (x->type == TYPE_FILTERMAP)
-        {
-            xids = as_i64(as_list(x)[1]);
-            l = as_list(x)[1]->len;
-            x = as_list(x)[0];
-            goto dispatch;
-        }
-
         throw(ERR_TYPE, "ceil: unsupported type: '%s", typename(x->type));
     }
 }

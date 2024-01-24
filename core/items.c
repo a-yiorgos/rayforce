@@ -555,7 +555,6 @@ obj_t ray_filter(obj_t x, obj_t y)
 
 obj_t ray_take(obj_t x, obj_t y)
 {
-    i64_t *idxs;
     u64_t i, l, m, n;
     obj_t k, s, v, res;
     u8_t *buf;
@@ -826,27 +825,6 @@ obj_t ray_take(obj_t x, obj_t y)
 
         return table(clone(as_list(y)[0]), res);
 
-    case mtype2(-TYPE_I64, TYPE_FILTERMAP):
-        idxs = as_i64(as_list(y)[1]); // idxs
-        l = as_list(y)[1]->len;       // idxs len
-        v = as_list(y)[0];            // vals
-        n = absi64(x->i64);           // take len
-
-        res = vector(v->type, n);
-
-        if (x->i64 >= 0)
-        {
-            for (i = 0; i < n; i++)
-                ins_obj(&res, i, at_idx(v, idxs[i % l]));
-        }
-        else
-        {
-            for (i = 0; i < n; i++)
-                ins_obj(&res, i, at_idx(v, idxs[l - 1 - (i % l)]));
-        }
-
-        return res;
-
     default:
         throw(ERR_TYPE, "take: unsupported types: '%s, %s", typename(x->type), typename(y->type));
     }
@@ -967,7 +945,7 @@ obj_t ray_first(obj_t x)
         return clone(x);
     if (is_vector(x))
         return at_idx(x, 0);
-    if (x->type == TYPE_ANYMAP || x->type == TYPE_FILTERMAP)
+    if (x->type == TYPE_ANYMAP)
         return at_idx(x, 0);
     if (x->type == TYPE_GROUPMAP)
         return aggr_first(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
@@ -983,7 +961,7 @@ obj_t ray_last(obj_t x)
         return clone(x);
     if (is_vector(x))
         return at_idx(x, -1);
-    if (x->type == TYPE_ANYMAP || x->type == TYPE_FILTERMAP)
+    if (x->type == TYPE_ANYMAP)
         return at_idx(x, -1);
     if (x->type == TYPE_GROUPMAP)
         return aggr_last(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
@@ -1002,9 +980,6 @@ obj_t ray_key(obj_t x)
         return symbol(enum_key(x));
     case TYPE_ANYMAP:
         return clone(anymap_key(x));
-    case TYPE_FILTERMAP:
-    case TYPE_GROUPMAP:
-        return clone(as_list(x)[0]);
     default:
         return clone(x);
     }
@@ -1107,19 +1082,6 @@ obj_t ray_value(obj_t x)
 
     case TYPE_DICT:
         return clone(as_list(x)[1]);
-
-    case TYPE_FILTERMAP:
-        if (as_list(x)[2])
-            return clone(as_list(x)[2]);
-
-        xl = as_list(x)[1]->len;
-        if (xl == 0)
-            return null(0);
-
-        v = at_obj(as_list(x)[0], as_list(x)[1]);
-        as_list(x)[2] = v;
-
-        return clone(v);
 
     default:
         return clone(x);

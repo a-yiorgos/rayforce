@@ -493,8 +493,6 @@ i32_t raw_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, i32_t li
         return char_fmt_into(dst, len, offset, limit, true, as_string(obj)[i]);
     case TYPE_LIST:
         return obj_fmt_into(dst, len, offset, indent, limit, false, as_list(obj)[i]);
-    case TYPE_FILTERMAP:
-        return raw_fmt_into(dst, len, offset, indent, limit, as_list(obj)[0], as_i64(as_list(obj)[1])[i]);
     case TYPE_ENUM:
     case TYPE_ANYMAP:
         idx = i64(i);
