@@ -737,9 +737,12 @@ i32_t table_fmt_into(str_t *dst, i32_t *len, i32_t *offset, i32_t indent, bool_t
         return n;
     }
 
+    table_width = (as_list(obj)[0])->len;
+    if (table_width == 0)
+        return str_fmt_into(dst, len, offset, 0, "@table");
+
     n = str_fmt_into(dst, len, offset, 0, "|");
 
-    table_width = (as_list(obj)[0])->len;
     if (table_width > TABLE_MAX_WIDTH)
         table_width = TABLE_MAX_WIDTH;
 
