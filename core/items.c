@@ -1093,22 +1093,22 @@ obj_t ray_where(obj_t x)
     u64_t i, j, l;
     obj_t res;
     i64_t *cur;
+    bool_t *bcur;
 
     switch (x->type)
     {
     case TYPE_BOOL:
         l = x->len;
+        bcur = as_bool(x);
         for (i = 0, j = 0; i < l; i++)
-            j += as_bool(x)[i];
+            j += bcur[i];
 
         res = vector_i64(j);
         cur = as_i64(res);
 
-        for (i = 0; i < l; i++)
-        {
-            *cur = i;             // Always assign the value
-            cur += as_bool(x)[i]; // Move the pointer only if value is 1
-        }
+        for (i = 0, j = 0; i < l; i++)
+            if (bcur[i])
+                cur[j++] = i;
 
         return res;
 

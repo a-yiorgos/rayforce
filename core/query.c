@@ -296,6 +296,7 @@ obj_t ray_select(obj_t obj)
             bysym = symbol("x");
             drop(prm);
         }
+
         unmount_env(tablen);
 
         if (is_error(groupby))
