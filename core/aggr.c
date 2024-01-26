@@ -27,6 +27,8 @@
 #include "error.h"
 #include "hash.h"
 #include "util.h"
+#include "items.h"
+#include "unary.h"
 
 u64_t handle_filters(i64_t **ids, obj_t by, obj_t filter)
 {
@@ -103,16 +105,16 @@ obj_t aggr_sum(obj_t val, obj_t bins, obj_t filter)
         }
         return res;
     default:
-        return error(ERR_TYPE, "aggr_sum: unsupported type: '%s'", typename(val->type));
+        return error(ERR_TYPE, "sum: unsupported type: '%s'", typename(val->type));
     }
 }
 
 obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
 {
     u64_t i, l, n;
-    i64_t *xi, *xb, *xo, *ids;
+    i64_t *xi, *ei, *xb, *xo, *ids;
     f64_t *xf, *fo;
-    obj_t *oi, *oo, res;
+    obj_t *oi, *oo, k, v, res;
     guid_t *xg, *og;
 
     n = as_list(bins)[0]->i64;
@@ -242,8 +244,59 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
 
         return res;
 
+    case TYPE_ENUM:
+        k = ray_key(val);
+        if (is_error(k))
+            return k;
+
+        v = ray_get(k);
+        drop(k);
+
+        if (is_error(v))
+            return v;
+
+        xb = as_i64(as_list(bins)[1]);
+        res = vector_symbol(n);
+        xo = as_i64(res);
+        for (i = 0; i < n; i++)
+            xo[i] = NULL_I64;
+
+        if (v->type != TYPE_SYMBOL)
+            return error(ERR_TYPE, "enum: '%s' is not a 'Symbol'", typename(v->type));
+
+        xi = as_i64(v);
+        ei = as_i64(enum_val(val));
+
+        if (filter)
+        {
+            ids = as_i64(filter);
+            for (i = 0; i < l; i++)
+            {
+                n = xb[i];
+                if (xo[n] == NULL_I64)
+                    xo[n] = xi[ei[ids[i]]];
+            }
+        }
+        else
+        {
+            for (i = 0; i < l; i++)
+            {
+                n = xb[i];
+                if (xo[n] == NULL_I64)
+                    xo[n] = xi[ei[i]];
+            }
+        }
+
+        drop(v);
+
+        return res;
+    case TYPE_ANYMAP:
+        v = ray_value(val);
+        res = aggr_first(v, bins, filter);
+        drop(v);
+        return res;
     default:
-        return error(ERR_TYPE, "aggr_first: unsupported type: '%s'", typename(val->type));
+        return error(ERR_TYPE, "first: unsupported type: '%s'", typename(val->type));
     }
 }
 
@@ -288,7 +341,7 @@ obj_t aggr_last(obj_t val, obj_t bins, obj_t filter)
         return res;
 
     default:
-        return error(ERR_TYPE, "aggr_last: unsupported type: '%s'", typename(val->type));
+        return error(ERR_TYPE, "last: unsupported type: '%s'", typename(val->type));
     }
 }
 
@@ -371,6 +424,6 @@ obj_t aggr_avg(obj_t val, obj_t bins, obj_t filter)
 
         return res;
     default:
-        return error(ERR_TYPE, "aggr_avg: unsupported type: '%s'", typename(val->type));
+        return error(ERR_TYPE, "avg: unsupported type: '%s'", typename(val->type));
     }
 }

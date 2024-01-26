@@ -27,6 +27,7 @@
 #include "util.h"
 #include "index.h"
 #include "aggr.h"
+#include "items.h"
 
 /*
  * group index is a list:
@@ -107,6 +108,11 @@ obj_t group_map(obj_t *aggr, obj_t x, obj_t y, obj_t z)
         break;
     case TYPE_LIST:
         bins = index_group_obj(as_list(x), ids, l);
+        break;
+    case TYPE_ANYMAP:
+        v = ray_value(x);
+        bins = index_group_obj(as_list(v), ids, l);
+        drop(v);
         break;
     default:
         throw(ERR_TYPE, "'by' unable to group by: %s", typename(x->type));

@@ -419,7 +419,8 @@ obj_t load_obj(u8_t **buf, u64_t len)
     case TYPE_CHAR:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = string_from_str((str_t)*buf, l);
+        obj = string(l);
+        memcpy(as_string(obj), *buf, l * sizeof(char_t));
         *buf += l * sizeof(char_t);
         return obj;
 
