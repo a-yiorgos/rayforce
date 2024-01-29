@@ -75,7 +75,7 @@ obj_t ray_hclose(obj_t x)
 {
     poll_deregister(runtime_get()->poll, x->i64);
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_read(obj_t x)
@@ -117,7 +117,7 @@ obj_t io_write(i64_t fd, u8_t msg_type, obj_t obj)
     str_t fmt;
 
     if (!obj)
-        return null(0);
+        return NULL_OBJ;
 
     // don't write to a stdin
     switch (fd)
@@ -131,12 +131,12 @@ obj_t io_write(i64_t fd, u8_t msg_type, obj_t obj)
         fmt = obj_fmt(obj);
         fprintf(stdout, "%s\n", fmt);
         heap_free(fmt);
-        return null(0);
+        return NULL_OBJ;
     case 2:
         fmt = obj_fmt(obj);
         fprintf(stderr, "%s\n", fmt);
         heap_free(fmt);
-        return null(0);
+        return NULL_OBJ;
     default:
         // send ipc msg
         switch (msg_type)
@@ -241,7 +241,7 @@ obj_t parse_csv_field(type_t type, str_t start, str_t end, i64_t row, obj_t out)
         throw(ERR_TYPE, "csv: unsupported type: '%s", typename(type));
     }
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t parse_csv_line(type_t types[], i64_t cnt, str_t start, str_t end, i64_t row, obj_t cols, char_t sep)
@@ -309,7 +309,7 @@ obj_t parse_csv_line(type_t types[], i64_t cnt, str_t start, str_t end, i64_t ro
         pos++;
     }
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_csv(obj_t *x, i64_t n)

@@ -774,5 +774,5 @@ obj_t ipc_send_async(poll_t poll, i64_t id, obj_t msg)
     if (_send(poll, selector) == POLL_ERROR)
         throw(ERR_IO, "ipc_send_async: error sending message");
 
-    return null(0);
+    return NULL_OBJ;
 }

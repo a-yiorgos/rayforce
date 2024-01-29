@@ -50,7 +50,7 @@ obj_t lambda_map(obj_t f, u64_t l, obj_t *x, u64_t n)
     obj_t v, res;
 
     if (n == 0 || l == 0)
-        return null(0);
+        return NULL_OBJ;
 
     for (j = 0; j < n; j++)
         stack_push(at_idx(x[j], 0));

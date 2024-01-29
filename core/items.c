@@ -43,7 +43,7 @@ obj_t ray_at(obj_t x, obj_t y)
     u8_t *buf;
 
     if (!x || !y)
-        return null(0);
+        return NULL_OBJ;
 
     switch (mtype2(x->type, y->type))
     {
@@ -138,7 +138,7 @@ obj_t ray_at(obj_t x, obj_t y)
         for (i = 0; i < yl; i++)
         {
             if (as_i64(y)[i] >= (i64_t)xl)
-                as_list(res)[i] = null(0);
+                as_list(res)[i] = NULL_OBJ;
             else
                 as_list(res)[i] = clone(as_list(x)[(i32_t)as_i64(y)[i]]);
         }
@@ -173,7 +173,7 @@ obj_t ray_at(obj_t x, obj_t y)
         xl = as_list(x)[1]->len;
         yl = y->len;
         if (yl == 0)
-            return null(0);
+            return NULL_OBJ;
         if (yl == 1)
         {
             for (j = 0; j < xl; j++)
@@ -869,7 +869,7 @@ obj_t ray_in(obj_t x, obj_t y)
             throw(ERR_TYPE, "in: unsupported types: '%s, '%s", typename(x->type), typename(y->type));
         }
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_sect(obj_t x, obj_t y)
@@ -889,7 +889,7 @@ obj_t ray_sect(obj_t x, obj_t y)
         throw(ERR_TYPE, "sect: unsupported types: '%s, '%s", typename(x->type), typename(y->type));
     }
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_except(obj_t x, obj_t y)
@@ -940,7 +940,7 @@ obj_t ray_union(obj_t x, obj_t y)
 obj_t ray_first(obj_t x)
 {
     if (!x)
-        return null(0);
+        return NULL_OBJ;
     if (x->type < 0)
         return clone(x);
     if (is_vector(x))
@@ -956,7 +956,7 @@ obj_t ray_first(obj_t x)
 obj_t ray_last(obj_t x)
 {
     if (!x)
-        return null(0);
+        return NULL_OBJ;
     if (x->type < 0)
         return clone(x);
     if (is_vector(x))

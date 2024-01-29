@@ -41,7 +41,7 @@ obj_t vary_call_atomic(vary_f f, obj_t *x, u64_t n)
     obj_t v, res;
 
     if (n == 0)
-        return null(0);
+        return NULL_OBJ;
 
     l = ops_rank(x, n);
     if (l == -1)
@@ -140,7 +140,7 @@ obj_t ray_print(obj_t *x, u64_t n)
     printf("%s", s);
     heap_free(s);
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_println(obj_t *x, u64_t n)
@@ -153,7 +153,7 @@ obj_t ray_println(obj_t *x, u64_t n)
     printf("%s\n", s);
     heap_free(s);
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t ray_args(obj_t *x, u64_t n)
@@ -174,5 +174,5 @@ obj_t ray_exit(obj_t *x, u64_t n)
 
     poll_exit(runtime_get()->poll, code);
 
-    return null(0);
+    return NULL_OBJ;
 }

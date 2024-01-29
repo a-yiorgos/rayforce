@@ -226,6 +226,7 @@ nil_t init_typenames(obj_t typenames)
     regt(typenames,    TYPE_BINARY,     "Binary");
     regt(typenames,    TYPE_VARY,       "Vary");
     regt(typenames,    TYPE_LAMBDA,     "Lambda");
+    regt(typenames,    TYPE_NULL,       "Null");
     regt(typenames,    TYPE_ERROR,      "Error");
 }
 
@@ -349,7 +350,7 @@ obj_t env_get_internal_function(str_t name)
     if (i < (i64_t)as_list(runtime_get()->env.functions)[0]->len)
         return clone(as_list(as_list(runtime_get()->env.functions)[1])[i]);
 
-    return null(0);
+    return NULL_OBJ;
 }
 
 obj_t env_get_internal_function_by_id(i64_t id)
@@ -361,5 +362,5 @@ obj_t env_get_internal_function_by_id(i64_t id)
     if (i < (i64_t)as_list(runtime_get()->env.functions)[0]->len)
         return clone(as_list(as_list(runtime_get()->env.functions)[1])[i]);
 
-    return null(0);
+    return NULL_OBJ;
 }

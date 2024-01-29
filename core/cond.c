@@ -42,7 +42,7 @@ obj_t ray_cond(obj_t *x, u64_t n)
             return eval(x[1]);
         }
         drop(res);
-        return null(0);
+        return NULL_OBJ;
     case 3:
         res = eval(x[0]);
         if (ops_as_bool(res))

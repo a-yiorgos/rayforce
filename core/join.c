@@ -221,8 +221,8 @@ obj_t ray_lj(obj_t *x, u64_t n)
     // process each column
     for (i = 0; i < l; i++)
     {
-        c1 = null(0);
-        c2 = null(0);
+        c1 = NULL_OBJ;
+        c2 = NULL_OBJ;
 
         for (j = 0; j < (i64_t)as_list(x[1])[0]->len; j++)
         {

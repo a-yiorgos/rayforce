@@ -495,7 +495,7 @@ obj_t at_idx(obj_t obj, i64_t idx)
     u8_t *buf;
 
     if (!obj)
-        return null(0);
+        return NULL_OBJ;
 
     switch (obj->type)
     {
@@ -534,13 +534,13 @@ obj_t at_idx(obj_t obj, i64_t idx)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
             return clone(as_list(obj)[idx]);
-        return null(0);
+        return NULL_OBJ;
     case TYPE_GUID:
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
             return guid(as_guid(obj)[idx].buf);
-        return null(0);
+        return NULL_OBJ;
     case TYPE_ENUM:
         if (idx < 0)
             idx = obj->len + idx;
@@ -571,7 +571,7 @@ obj_t at_idx(obj_t obj, i64_t idx)
             return load_obj(&buf, k->len);
         }
 
-        return null(0);
+        return NULL_OBJ;
 
     default:
         return clone(obj);
@@ -586,7 +586,7 @@ obj_t at_ids(obj_t obj, i64_t ids[], u64_t len)
     obj_t k, v, res;
 
     if (obj == NULL)
-        return null(0);
+        return NULL_OBJ;
 
     switch (obj->type)
     {
@@ -654,7 +654,7 @@ obj_t at_obj(obj_t obj, obj_t idx)
     u64_t i;
 
     if (obj == NULL)
-        return null(0);
+        return NULL_OBJ;
 
     switch (mtype2(obj->type, idx->type))
     {
@@ -763,7 +763,7 @@ obj_t set_obj(obj_t *obj, obj_t idx, obj_t val)
 obj_t pop_obj(obj_t *obj)
 {
     if (obj == NULL || (*obj)->len == 0)
-        return null(0);
+        return NULL_OBJ;
 
     switch ((*obj)->type)
     {
@@ -1060,7 +1060,7 @@ obj_t __attribute__((hot)) clone(obj_t obj)
     debug_assert(is_valid(obj), "invalid object type: %d", obj->type);
 
     if (obj == NULL)
-        return null(0);
+        return NULL_OBJ;
 
     if (!__RC_SYNC)
         (obj)->rc += 1;

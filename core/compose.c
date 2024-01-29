@@ -145,7 +145,7 @@ obj_t ray_table(obj_t x, obj_t y)
 {
     bool_t synergy = true;
     u64_t i, j, len, cl = 0;
-    obj_t lst, c, l = null(0);
+    obj_t lst, c, l = NULL_OBJ;
 
     if (x->type != TYPE_SYMBOL)
         return error_str(ERR_TYPE, "table: keys must be a symbol vector");

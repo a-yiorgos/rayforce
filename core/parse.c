@@ -75,7 +75,7 @@ obj_t parse_error(parser_t *parser, i64_t id, str_t msg)
                                       vn_list(4,
                                               i64(span.id),                   // span
                                               clone(as_list(parser->nfo)[0]), // file
-                                              null(0),                        // function
+                                              NULL_OBJ,                       // function
                                               clone(as_list(parser->nfo)[1])  // source
                                               ));
     }
@@ -187,11 +187,11 @@ obj_t parse_timestamp(parser_t *parser)
         current += 4;
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // skip dot
     if (*current != '.')
-        return null(0);
+        return NULL_OBJ;
 
     current++;
 
@@ -213,11 +213,11 @@ obj_t parse_timestamp(parser_t *parser)
         }
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // skip dot
     if (*current != '.')
-        return null(0);
+        return NULL_OBJ;
 
     current++;
 
@@ -239,7 +239,7 @@ obj_t parse_timestamp(parser_t *parser)
         }
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // just date passed
     if (*current != 'D')
@@ -273,11 +273,11 @@ obj_t parse_timestamp(parser_t *parser)
         }
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // skip colon
     if (*current != ':')
-        return null(0);
+        return NULL_OBJ;
 
     current++;
 
@@ -299,11 +299,11 @@ obj_t parse_timestamp(parser_t *parser)
         }
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // skip colon
     if (*current != ':')
-        return null(0);
+        return NULL_OBJ;
 
     current++;
 
@@ -325,11 +325,11 @@ obj_t parse_timestamp(parser_t *parser)
         }
     }
     else
-        return null(0);
+        return NULL_OBJ;
 
     // skip dot
     if (*current != '.')
-        return null(0);
+        return NULL_OBJ;
 
     current++;
 
@@ -337,7 +337,7 @@ obj_t parse_timestamp(parser_t *parser)
     nanos = strtoul(current, &end, 10);
 
     if (end == current)
-        return null(0);
+        return NULL_OBJ;
 
     ts.nanos = nanos;
     shift(parser, end - parser->current);
@@ -588,7 +588,7 @@ obj_t parse_symbol(parser_t *parser)
     {
         shift(parser, 4);
         span_extend(parser, &span);
-        res = null(0);
+        res = NULL_OBJ;
         nfo_insert(parser->nfo, (i64_t)res, span);
 
         return res;
@@ -961,7 +961,7 @@ obj_t parse_command(parser_t *parser)
     {
         shift(parser, 1);
         printf("%s** Commands list:\n%s%s\n", YELLOW, COMMANDS_LIST, RESET);
-        return null(0);
+        return NULL_OBJ;
     }
     if ((*parser->current) == 't')
     {

@@ -57,7 +57,7 @@ obj_t unary_call_atomic(unary_f f, obj_t x)
         l = ops_count(x);
 
         if (l == 0)
-            return null(0);
+            return NULL_OBJ;
 
         v = as_list(x);
         item = unary_call_atomic(f, v[0]);
@@ -88,7 +88,7 @@ obj_t unary_call_atomic(unary_f f, obj_t x)
     case TYPE_ANYMAP:
         l = ops_count(x);
         if (l == 0)
-            return null(0);
+            return NULL_OBJ;
 
         a = at_idx(x, 0);
         item = unary_call_atomic(f, a);
@@ -127,7 +127,7 @@ obj_t unary_call_atomic(unary_f f, obj_t x)
 obj_t unary_call(u8_t attrs, unary_f f, obj_t x)
 {
     if (!x)
-        return null(0);
+        return NULL_OBJ;
 
     if (attrs & FN_ATOMIC)
         return unary_call_atomic(f, x);

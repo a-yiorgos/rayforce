@@ -33,7 +33,7 @@ obj_t error_obj(i8_t code, obj_t msg)
 
     e->code = code;
     e->msg = msg;
-    e->locs = null(0);
+    e->locs = NULL_OBJ;
 
     obj->rc = 1;
     obj->type = TYPE_ERROR;

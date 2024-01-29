@@ -27,7 +27,7 @@
 obj_t myfn(obj_t a, obj_t b)
 {
     if (!a || !b)
-        return null(0);
+        return NULL_OBJ;
 
     if (a->type != -TYPE_I64 || b->type != -TYPE_I64)
         return error(ERR_TYPE, "Expected two i64 arguments, found: '%s, '%s",

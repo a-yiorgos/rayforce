@@ -174,5 +174,5 @@ obj_t runtime_get_arg(str_t key)
     i64_t i = find_sym(as_list(__RUNTIME->args)[0], key);
     if (i < (i64_t)as_list(__RUNTIME->args)[0]->len)
         return at_idx(as_list(__RUNTIME->args)[1], i);
-    return null(0);
+    return NULL_OBJ;
 }
