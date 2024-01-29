@@ -96,7 +96,7 @@ obj_t vary_call(u8_t attrs, vary_f f, obj_t *x, u64_t n)
 obj_t ray_do(obj_t *x, u64_t n)
 {
     u64_t i;
-    obj_t res = NULL;
+    obj_t res = NULL_OBJ;
 
     for (i = 0; i < n; i++)
     {

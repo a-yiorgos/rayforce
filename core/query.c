@@ -63,8 +63,8 @@ obj_t get_symbols(obj_t obj)
 obj_t ray_select(obj_t obj)
 {
     u64_t i, l, tablen;
-    obj_t keys = NULL, vals = NULL, filters = NULL, groupby = NULL,
-          bycol = NULL, bysym = NULL, tab, sym, prm, val;
+    obj_t keys = NULL_OBJ, vals = NULL_OBJ, filters = NULL_OBJ, groupby = NULL_OBJ,
+          bycol = NULL_OBJ, bysym = NULL_OBJ, tab, sym, prm, val;
 
     if (obj->type != TYPE_DICT)
         throw(ERR_LENGTH, "'select' takes dict of params");
@@ -96,7 +96,7 @@ obj_t ray_select(obj_t obj)
 
     // Apply filters
     prm = get_param(obj, "where");
-    if (prm)
+    if (prm != NULL_OBJ)
     {
         val = eval(prm);
         drop(prm);
@@ -117,7 +117,7 @@ obj_t ray_select(obj_t obj)
 
     // Apply groupping
     prm = get_param(obj, "by");
-    if (prm)
+    if (prm != NULL_OBJ)
     {
         groupby = eval(prm);
         if (prm->type == -TYPE_SYMBOL)
@@ -159,7 +159,7 @@ obj_t ray_select(obj_t obj)
             return bycol;
         }
     }
-    else if (filters)
+    else if (filters != NULL_OBJ)
     {
         // Unmount table columns from a local env
         unmount_env(tablen);
@@ -186,7 +186,7 @@ obj_t ray_select(obj_t obj)
             val = eval(prm);
             drop(prm);
 
-            if (!val || is_error(val))
+            if (is_error(val))
             {
                 vals->len = i;
                 drop(vals);
@@ -236,7 +236,7 @@ obj_t ray_select(obj_t obj)
         drop(keys);
 
         // Groupings
-        if (bysym)
+        if (bysym != NULL_OBJ)
         {
             keys = ray_except(as_list(tab)[0], bysym);
             l = keys->len;
@@ -304,7 +304,7 @@ obj_t ray_select(obj_t obj)
     }
 
     // Prepare result table
-    if (bysym)
+    if (bysym != NULL_OBJ)
     {
         val = ray_concat(bysym, keys);
         drop(keys);

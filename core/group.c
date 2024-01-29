@@ -72,7 +72,7 @@ obj_t group_map(obj_t *aggr, obj_t x, obj_t y, obj_t z)
     i64_t *ids;
     obj_t bins, v, res;
 
-    if (z)
+    if (z != NULL_OBJ)
     {
         l = z->len;
         ids = as_i64(z);

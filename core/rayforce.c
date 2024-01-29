@@ -63,7 +63,7 @@ obj_t atom(type_t type)
     obj_t a = (obj_t)heap_alloc(sizeof(struct obj_t));
 
     if (!a)
-        throw(ERR_HEAP, "oom");
+        panic("oom");
 
     a->mmod = MMOD_INTERNAL;
     a->type = -type;
@@ -90,7 +90,7 @@ obj_t null(type_t type)
     case TYPE_TIMESTAMP:
         return timestamp(NULL_I64);
     default:
-        return &__NULL_OBJECT;
+        return NULL_OBJ;
     }
 }
 
@@ -156,6 +156,7 @@ obj_t vchar(char_t c)
 {
     obj_t s = atom(TYPE_CHAR);
     s->vchar = c;
+
     return s;
 }
 
@@ -163,6 +164,7 @@ obj_t timestamp(i64_t val)
 {
     obj_t t = atom(TYPE_TIMESTAMP);
     t->i64 = val;
+
     return t;
 }
 
@@ -188,7 +190,7 @@ obj_t vector(type_t type, u64_t len)
     vec = (obj_t)heap_alloc(sizeof(struct obj_t) + len * size_of_type(t));
 
     if (!vec)
-        throw(ERR_HEAP, "oom");
+        panic("oom");
 
     vec->mmod = MMOD_INTERNAL;
     vec->refc = 1;
@@ -246,9 +248,6 @@ obj_t vn_list(u64_t len, ...)
 
     l = (obj_t)heap_alloc(sizeof(struct obj_t) + sizeof(obj_t) * len);
 
-    if (!l)
-        throw(ERR_HEAP, "oom");
-
     l->mmod = MMOD_INTERNAL;
     l->refc = 1;
     l->type = TYPE_LIST;
@@ -268,25 +267,19 @@ obj_t vn_list(u64_t len, ...)
 
 obj_t dict(obj_t keys, obj_t vals)
 {
-    obj_t dict;
+    obj_t d;
 
-    dict = vn_list(2, keys, vals);
+    d = vn_list(2, keys, vals);
+    d->type = TYPE_DICT;
 
-    if (!dict)
-        throw(ERR_HEAP, "oom");
-
-    dict->type = TYPE_DICT;
-
-    return dict;
+    return d;
 }
 
 obj_t table(obj_t keys, obj_t vals)
 {
-    obj_t t = vn_list(2, keys, vals);
+    obj_t t;
 
-    if (!t)
-        throw(ERR_HEAP, "oom");
-
+    t = vn_list(2, keys, vals);
     t->type = TYPE_TABLE;
 
     return t;
@@ -294,11 +287,9 @@ obj_t table(obj_t keys, obj_t vals)
 
 obj_t venum(obj_t sym, obj_t vec)
 {
-    obj_t e = vn_list(2, sym, vec);
+    obj_t e;
 
-    if (!e)
-        throw(ERR_HEAP, "oom");
-
+    e = vn_list(2, sym, vec);
     e->type = TYPE_ENUM;
 
     return e;
@@ -306,11 +297,9 @@ obj_t venum(obj_t sym, obj_t vec)
 
 obj_t anymap(obj_t sym, obj_t vec)
 {
-    obj_t e = vn_list(2, sym, vec);
+    obj_t e;
 
-    if (!e)
-        throw(ERR_HEAP, "oom");
-
+    e = vn_list(2, sym, vec);
     e->type = TYPE_ANYMAP;
 
     return e;
@@ -425,7 +414,7 @@ obj_t ins_obj(obj_t *obj, i64_t idx, obj_t val)
     u64_t l;
     obj_t ret;
 
-    if (*obj == NULL || !is_vector(*obj))
+    if (!is_vector(*obj))
         return *obj;
 
     if (!val)
@@ -1050,9 +1039,6 @@ obj_t __attribute__((hot)) clone(obj_t obj)
 {
     debug_assert(is_valid(obj), "invalid object type: %d", obj->type);
 
-    if (obj->type == TYPE_NULL)
-        return NULL_OBJ;
-
     if (!__RC_SYNC)
         (obj)->rc += 1;
     else
@@ -1064,9 +1050,6 @@ obj_t __attribute__((hot)) clone(obj_t obj)
 nil_t __attribute__((hot)) drop(obj_t obj)
 {
     debug_assert(is_valid(obj), "invalid object type: %d", obj->type);
-
-    if (obj->type == TYPE_NULL)
-        return;
 
     u32_t rc;
     u64_t i, l;
@@ -1124,6 +1107,8 @@ nil_t __attribute__((hot)) drop(obj_t obj)
         drop(as_lambda(obj)->nfo);
         heap_free(obj);
         return;
+    case TYPE_NULL:
+        return;
     case TYPE_ERROR:
         drop(as_error(obj)->msg);
         drop(as_error(obj)->locs);
@@ -1154,6 +1139,9 @@ obj_t cow(obj_t obj)
     u32_t rc;
     i64_t size;
     obj_t id, fd, res;
+
+    if (obj == NULL_OBJ)
+        return NULL_OBJ;
 
     if (!is_internal(obj))
     {

@@ -44,7 +44,7 @@ obj_t ht_tab(u64_t size, type_t vals)
     if (vals >= 0)
         v = vector(vals, size);
     else
-        v = NULL;
+        v = NULL_OBJ;
 
     for (i = 0; i < size; i++)
         as_i64(k)[i] = NULL_I64;
@@ -68,9 +68,6 @@ nil_t rehash(obj_t *obj, hash_f hash, nil_t *seed)
         orig_vals = as_i64(as_list(*obj)[1]);
 
     new_obj = ht_tab(size * 2, type);
-
-    if (new_obj == NULL)
-        panic("ht rehash: oom");
 
     factor = as_list(new_obj)[0]->len - 1;
     new_keys = as_i64(as_list(new_obj)[0]);

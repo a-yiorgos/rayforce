@@ -32,24 +32,6 @@
 #include "unary.h"
 #include "group.h"
 
-u64_t handle_filters(i64_t **ids, obj_t by, obj_t filter)
-{
-    u64_t l;
-
-    if (filter)
-    {
-        l = filter->len;
-        *ids = as_i64(filter);
-    }
-    else
-    {
-        l = by->len;
-        *ids = NULL;
-    }
-
-    return l;
-}
-
 obj_t aggr_sum(obj_t val, obj_t bins, obj_t filter)
 {
     u64_t i, l, n;
@@ -72,7 +54,7 @@ obj_t aggr_sum(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             xo[i] = 0;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -94,7 +76,7 @@ obj_t aggr_sum(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             fo[i] = 0;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -134,7 +116,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             bo[i] = 0;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -165,7 +147,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             xo[i] = NULL_I64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -194,7 +176,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             fo[i] = NULL_F64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -225,7 +207,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
 
         oo = as_list(res);
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -255,7 +237,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             memcpy(og + i, NULL_GUID, sizeof(guid_t));
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -300,7 +282,7 @@ obj_t aggr_first(obj_t val, obj_t bins, obj_t filter)
         xi = as_i64(v);
         ei = as_i64(enum_val(val));
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -354,7 +336,7 @@ obj_t aggr_last(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             xo[i] = NULL_I64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -400,7 +382,7 @@ obj_t aggr_avg(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -423,7 +405,7 @@ obj_t aggr_avg(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -467,7 +449,7 @@ obj_t aggr_max(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             xo[i] = NULL_I64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -495,7 +477,7 @@ obj_t aggr_max(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             fo[i] = NULL_F64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -542,7 +524,7 @@ obj_t aggr_min(obj_t val, obj_t bins, obj_t filter)
         for (i = 0; i < n; i++)
             xo[i] = NULL_I64;
 
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -622,7 +604,7 @@ obj_t aggr_med(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -645,7 +627,7 @@ obj_t aggr_med(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -685,7 +667,7 @@ obj_t aggr_dev(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)
@@ -708,7 +690,7 @@ obj_t aggr_dev(obj_t val, obj_t bins, obj_t filter)
         res = vector_f64(n);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        if (filter)
+        if (filter != NULL_OBJ)
         {
             ids = as_i64(filter);
             for (i = 0; i < l; i++)

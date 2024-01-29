@@ -248,7 +248,7 @@ obj_t index_group_i8(i8_t values[], i64_t indices[], u64_t len)
 
     drop(keys);
 
-    return vn_list(3, i64(j), vals, NULL);
+    return vn_list(3, i64(j), vals, NULL_OBJ);
 }
 
 obj_t index_group_i64(i64_t values[], i64_t indices[], u64_t len)
@@ -297,7 +297,7 @@ obj_t index_group_i64(i64_t values[], i64_t indices[], u64_t len)
 
         drop(keys);
 
-        return vn_list(3, i64(j), vals, NULL);
+        return vn_list(3, i64(j), vals, NULL_OBJ);
     }
 
     // use hash table if range is large
@@ -359,7 +359,7 @@ obj_t index_group_i64(i64_t values[], i64_t indices[], u64_t len)
 
     drop(ht);
 
-    return vn_list(3, i64(j), vals, NULL);
+    return vn_list(3, i64(j), vals, NULL_OBJ);
 }
 
 obj_t index_group_guid(guid_t values[], i64_t indices[], u64_t len)
@@ -424,7 +424,7 @@ obj_t index_group_guid(guid_t values[], i64_t indices[], u64_t len)
 
     drop(ht);
 
-    return vn_list(3, i64(j), vals, NULL);
+    return vn_list(3, i64(j), vals, NULL_OBJ);
 }
 
 obj_t index_group_obj(obj_t values[], i64_t indices[], u64_t len)
@@ -491,7 +491,7 @@ obj_t index_group_obj(obj_t values[], i64_t indices[], u64_t len)
 
     drop(ht);
 
-    return vn_list(3, i64(j), vals, NULL);
+    return vn_list(3, i64(j), vals, NULL_OBJ);
 }
 
 nil_t index_hash_list(obj_t obj, u64_t out[], u64_t len, u64_t seed)
