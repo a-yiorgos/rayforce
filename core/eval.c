@@ -430,7 +430,7 @@ obj_t get_symbol(obj_t sym)
 
     // search locals
     env = __INTERPRETER->stack[bp + l];
-    if (env)
+    if (env != NULL_OBJ)
     {
         n = as_list(env)[0]->len;
         // search in a reverse order
@@ -470,7 +470,7 @@ obj_t set_symbol(obj_t sym, obj_t val)
     bp = ctx->sp;
     env = &__INTERPRETER->stack[bp + as_lambda(lambda)->args->len];
 
-    if (*env)
+    if (*env != NULL_OBJ)
         set_obj(&as_list(*env)[0], sym, clone(val));
     else
     {
@@ -495,7 +495,7 @@ obj_t mount_env(obj_t obj)
     bp = ctx->sp;
     env = &__INTERPRETER->stack[bp + as_lambda(lambda)->args->len];
 
-    if (*env)
+    if (*env != NULL_OBJ)
     {
         l1 = as_list(*env)[0]->len;
         l2 = as_list(obj)[0]->len;

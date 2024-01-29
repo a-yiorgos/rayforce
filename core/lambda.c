@@ -33,7 +33,7 @@ obj_t lambda(obj_t args, obj_t body, obj_t nfo)
     obj_t obj = heap_alloc(sizeof(struct obj_t) + sizeof(lambda_t));
     lambda_t *f = (lambda_t *)obj->arr;
 
-    f->name = NULL;
+    f->name = NULL_OBJ;
     f->args = args;
     f->body = body;
     f->nfo = nfo;

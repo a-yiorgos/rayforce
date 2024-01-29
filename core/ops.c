@@ -211,9 +211,6 @@ obj_t ops_find(i64_t x[], u64_t xl, i64_t y[], u64_t yl)
 
 u64_t ops_count(obj_t x)
 {
-    if (!x)
-        return 0;
-
     switch (x->type)
     {
     case TYPE_CHAR:
