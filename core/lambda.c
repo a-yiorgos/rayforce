@@ -44,15 +44,17 @@ obj_t lambda(obj_t args, obj_t body, obj_t nfo)
     return obj;
 }
 
-obj_t lambda_map(obj_t f, u64_t l, obj_t *x, u64_t n)
+obj_t lambda_map(obj_t f, obj_t *x, u64_t n)
 {
-    u64_t i, j;
+    i64_t i, j, l;
     obj_t v, res;
 
-    if (n == 0 || l == 0)
+    l = ops_rank(x, n);
+
+    if (n == 0 || l < 1)
         return NULL_OBJ;
 
-    for (j = 0; j < n; j++)
+    for (j = 0; j < (i64_t)n; j++)
         stack_push(at_idx(x[j], 0));
 
     v = call(f, n);
@@ -69,7 +71,7 @@ obj_t lambda_map(obj_t f, u64_t l, obj_t *x, u64_t n)
 
     for (i = 1; i < l; i++)
     {
-        for (j = 0; j < n; j++)
+        for (j = 0; j < (i64_t)n; j++)
             stack_push(at_idx(x[j], i));
 
         v = call(f, n);
@@ -87,7 +89,7 @@ obj_t lambda_map(obj_t f, u64_t l, obj_t *x, u64_t n)
 
 // cleanup stack
 cleanup:
-    for (j = 0; j < n; j++)
+    for (j = 0; j < (i64_t)n; j++)
         drop(stack_pop());
 
     return res;
@@ -95,26 +97,8 @@ cleanup:
 
 obj_t lambda_call(u8_t attrs, obj_t f, obj_t *x, u64_t n)
 {
-    u64_t i, l;
-    obj_t v;
-
-    l = ops_count(x[0]);
-
-    // Collect groups and map lambda over each group
     if (attrs & FN_GROUP_MAP)
-    {
-        for (i = 0; i < n; i++)
-        {
-            v = x[i];
-            if (v->type == TYPE_GROUPMAP)
-            {
-                x[i] = group_collect(v);
-                drop(v);
-            }
-        }
-
-        return lambda_map(f, l, x, n);
-    }
+        return lambda_map(f, x, n);
 
     return call(f, n);
 }
