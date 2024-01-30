@@ -109,4 +109,4 @@ bool_t ops_eq_idx(obj_t a, i64_t ai, obj_t b, i64_t bi);
 obj_t ops_find(i64_t x[], u64_t xl, i64_t y[], u64_t yl);
 obj_t sys_error(os_error_type_t, str_t msg);
 
-#endif
+#endif // OPS_H

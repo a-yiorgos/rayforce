@@ -42,7 +42,7 @@ __thread nil_t *__HEAP_16_BLOCKS_END = NULL;
 #define blockorder(p) ((u64_t)(p) >> 56)
 #define blockaddr(p) ((nil_t *)((u64_t)(p) & BLOCK_ADDR_MASK))
 #define blocksize(i) (1ull << (i))
-#define buddyof(p, b, i) ((nil_t *)(((u64_t)(p - b) ^ blocksize(i)) + b))
+#define buddyof(p, b, i) ((nil_t *)((((u64_t)p - (u64_t)b) ^ blocksize(i)) + (u64_t)b))
 #define orderof(s) (64ull - __builtin_clzll(s - 1))
 #define is16block(b) (((b) >= __HEAP_16_BLOCKS_START) && ((b) < __HEAP_16_BLOCKS_END))
 
@@ -60,16 +60,16 @@ memstat_t heap_memstat() { return (memstat_t){0}; }
 
 nil_t heap_print_blocks()
 {
-    i32_t i = 0;
+    u64_t i = 0;
     node_t *node;
 
     for (; i <= MAX_POOL_ORDER; i++)
     {
         node = __HEAP->freelist[i];
-        printf("-- order: %d [", i);
+        printf("-- order: %lld [", i);
         while (node)
         {
-            printf("%p, ", node);
+            printf("%p, ", (raw_t)node);
             node = node->next;
         }
         printf("]\n");
@@ -109,20 +109,20 @@ heap_t heap_init()
     // fill linked list of 16 bytes blocks
     for (i = NUM_16_BLOCKS - 1; i >= 0; i--)
     {
-        block16 = __HEAP->blocks16 + i * 16;
+        block16 = (nil_t *)((str_t)__HEAP->blocks16 + i * 16);
         *(nil_t **)block16 = __HEAP->freelist16;
         __HEAP->freelist16 = block16;
     }
 
     __HEAP_16_BLOCKS_START = __HEAP->blocks16;
-    __HEAP_16_BLOCKS_END = __HEAP->blocks16 + NUM_16_BLOCKS * 16;
+    __HEAP_16_BLOCKS_END = (nil_t *)((str_t)__HEAP->blocks16 + NUM_16_BLOCKS * 16);
 
     return __HEAP;
 }
 
 nil_t heap_cleanup()
 {
-    i32_t i, order;
+    u64_t i, order;
     node_t *node, *next;
 
     // check if all small blocks are freed
@@ -130,7 +130,7 @@ nil_t heap_cleanup()
     {
         if (__HEAP->freelist16 == NULL)
         {
-            debug("blocks16 leak\n");
+            debug("blocks16 leak: %p", __HEAP->blocks16);
             return;
         }
 
@@ -147,7 +147,7 @@ nil_t heap_cleanup()
             order = blockorder(node->base);
             if (order != i)
             {
-                debug("order: %d node: %p\n", i, node);
+                debug("order: %lld node: %p\n", i, (raw_t)node);
                 return;
             }
 

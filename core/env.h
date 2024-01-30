@@ -77,4 +77,4 @@ obj_t env_get(env_t *env, obj_t key);
 obj_t ray_env();
 obj_t ray_memstat();
 
-#endif
+#endif // ENV_H

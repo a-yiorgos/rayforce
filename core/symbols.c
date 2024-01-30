@@ -176,7 +176,8 @@ i64_t intern_symbol(str_t s, i64_t len)
 
         // insert id into id_to_str
         idx = ht_tab_next(&symbols->id_to_str, symbols->next_sym_id);
-        debug_assert(as_i64(as_list(symbols->id_to_str)[0])[idx] == NULL_I64, "Symbol id already exists");
+        debug_assert(as_i64(as_list(symbols->id_to_str)[0])[idx] == NULL_I64, "Symbol id: '%lld' already exists",
+                     symbols->next_sym_id);
         as_i64(as_list(symbols->id_to_str)[0])[idx] = symbols->next_sym_id;
         as_i64(as_list(symbols->id_to_str)[1])[idx] = (i64_t)p;
 

@@ -55,4 +55,4 @@ extern str_t obj_fmt(obj_t obj);
 extern i64_t obj_fmt_into(str_t *dst, i64_t *len, i64_t *offset, i64_t indent, i64_t limit, bool_t full, obj_t obj);
 extern str_t obj_fmt_n(obj_t *obj, u64_t n);
 
-#endif
+#endif // FORMAT_H

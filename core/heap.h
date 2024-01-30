@@ -21,8 +21,8 @@
  *   SOFTWARE.
  */
 
-#ifndef ALLOC_H
-#define ALLOC_H
+#ifndef HEAP_H
+#define HEAP_H
 
 #include "rayforce.h"
 #include "symbols.h"
@@ -68,4 +68,4 @@ extern i64_t heap_gc();
 extern nil_t heap_cleanup();
 extern memstat_t heap_memstat();
 
-#endif
+#endif // HEAP_H

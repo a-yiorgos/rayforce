@@ -39,7 +39,7 @@ typedef struct header_t
     u64_t size;   // size of the payload (in bytes)
 } header_t;
 
-CASSERT(sizeof(header_t) == 16, header_t);
+CASSERT(sizeof(header_t) == 16, header_t)
 
 obj_t de_raw(u8_t *buf, u64_t len);
 i64_t ser_raw(u8_t **buf, obj_t obj);

@@ -41,4 +41,4 @@ i64_t  mmap_free(nil_t *addr, u64_t size);
 i64_t  mmap_sync(nil_t *addr, u64_t size);
 // clang-format on
 
-#endif
+#endif // MMAP_H

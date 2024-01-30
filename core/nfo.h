@@ -47,4 +47,4 @@ obj_t nfo(obj_t filename, obj_t source);
 nil_t nfo_insert(obj_t nfo, i64_t index, span_t span);
 span_t nfo_get(obj_t nfo, i64_t index);
 
-#endif
+#endif // NFO_H

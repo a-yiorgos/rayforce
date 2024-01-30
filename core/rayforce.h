@@ -107,6 +107,14 @@ typedef struct guid_t {
 /*
 * Generic type
 */ 
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpedantic"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 typedef struct obj_t
 {
     u8_t mmod;       // memory model (0 - internal, 1 - memmapped)
@@ -128,6 +136,11 @@ typedef struct obj_t
         };
     };
 } *obj_t;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
 
 // Version
 extern u8_t version(); // get version as u8_t (major - 5 bits, minor - 3 bits)
@@ -255,4 +268,4 @@ extern obj_t try_obj(obj_t obj, obj_t catch);
 }
 #endif
 
-#endif
+#endif // RAYFORCE_H

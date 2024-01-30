@@ -28,4 +28,4 @@
 
 nil_t guid_generate(guid_t *g);
 
-#endif
+#endif // GUID_H

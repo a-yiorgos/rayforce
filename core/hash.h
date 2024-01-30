@@ -52,4 +52,4 @@ u64_t index_hash_u64(u64_t h, u64_t k);
 u64_t index_hash_obj(obj_t obj);
 nil_t index_hash_list(obj_t obj, u64_t *out, u64_t len, u64_t seed);
 
-#endif
+#endif // HASH_H

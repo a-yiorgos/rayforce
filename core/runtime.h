@@ -51,4 +51,4 @@ extern nil_t runtime_cleanup();
 extern runtime_t runtime_get();
 extern obj_t runtime_get_arg(str_t key);
 
-#endif
+#endif // RUNTIME_H

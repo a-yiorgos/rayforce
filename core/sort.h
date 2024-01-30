@@ -29,4 +29,4 @@
 obj_t ray_sort_asc(obj_t vec);
 obj_t ray_sort_desc(obj_t vec);
 
-#endif
+#endif // SORT_H

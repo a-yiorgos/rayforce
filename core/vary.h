@@ -36,4 +36,4 @@ obj_t ray_println(obj_t *x, u64_t n);
 obj_t ray_args(obj_t *x, u64_t n);
 obj_t ray_exit(obj_t *x, u64_t n);
 
-#endif
+#endif // VARY_H

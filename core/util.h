@@ -47,6 +47,12 @@
 #define unlikely(x) __builtin_expect((x), 0)
 
 #ifdef DEBUG
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 #define debug(fmt, ...)                      \
     do                                       \
     {                                        \
@@ -66,6 +72,10 @@
             assert(x);                                 \
         }                                              \
     }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define debug_obj(o)             \
     {                            \
@@ -105,4 +115,4 @@ bool_t is_valid(obj_t obj);
 u32_t next_power_of_two_u32(u32_t n);
 u64_t next_power_of_two_u64(u64_t n);
 
-#endif
+#endif // UTIL_H

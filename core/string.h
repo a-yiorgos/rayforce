@@ -38,4 +38,4 @@ u64_t str_cpy(str_t dst, str_t src);
 u64_t str_len(str_t s, u64_t n);
 obj_t vn_vstring(str_t fmt, va_list args);
 
-#endif
+#endif // STRING_H

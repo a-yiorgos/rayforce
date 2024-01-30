@@ -21,8 +21,8 @@
  *   SOFTWARE.
  */
 
-#ifndef MONAD_H
-#define MONAD_H
+#ifndef UNARY_H
+#define UNARY_H
 
 #include "rayforce.h"
 #include "ops.h"
@@ -32,4 +32,4 @@ obj_t ray_get(obj_t x);
 obj_t ray_time(obj_t x);
 obj_t ray_bins(obj_t x);
 
-#endif
+#endif // UNARY_H

@@ -61,4 +61,4 @@ str_t symtostr(i64_t key);
 u64_t symbols_count(symbols_t *symbols);
 u64_t symbols_memsize(symbols_t *symbols);
 
-#endif
+#endif // SYMBOLS_H

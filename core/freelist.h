@@ -21,6 +21,9 @@
  *   SOFTWARE.
  */
 
+#ifndef FREELIST_H
+#define FREELIST_H
+
 #include "rayforce.h"
 
 typedef struct freelist_t
@@ -39,3 +42,5 @@ nil_t freelist_free(freelist_t freelist);
 i64_t freelist_push(freelist_t freelist, i64_t val);
 i64_t freelist_pop(freelist_t freelist, i64_t val);
 i64_t freelist_get(freelist_t freelist, i64_t idx);
+
+#endif // FREELIST_H

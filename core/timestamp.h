@@ -43,4 +43,4 @@ timestamp_t timestamp_from_i64(i64_t offset);
 timestamp_t timestamp_from_str(str_t src);
 i64_t timestamp_into_i64(timestamp_t ts);
 
-#endif
+#endif // TIMESTAMP_H

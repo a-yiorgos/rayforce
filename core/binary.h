@@ -32,4 +32,4 @@ obj_t binary_call(u8_t attrs, binary_f f, obj_t x, obj_t y);
 obj_t ray_set(obj_t x, obj_t y);
 obj_t ray_let(obj_t x, obj_t y);
 
-#endif
+#endif // BINARY_H
