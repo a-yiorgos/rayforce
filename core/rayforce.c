@@ -744,6 +744,12 @@ obj_t set_ids(obj_t *obj, i64_t ids[], u64_t len, obj_t vals)
             as_string(*obj)[ids[i]] = vals->vchar;
         drop(vals);
         return *obj;
+    case mtype2(TYPE_GUID, -TYPE_GUID):
+        for (i = 0; i < len; i++)
+            as_guid(*obj)[ids[i]] = as_guid(vals)[i];
+        drop(vals);
+        return *obj;
+
     // case mtype2(TYPE_LIST, -TYPE_LIST):
     //     for (i = 0; i < len; i++)
     //     {
@@ -763,11 +769,20 @@ obj_t set_ids(obj_t *obj, i64_t ids[], u64_t len, obj_t vals)
     case mtype2(TYPE_F64, TYPE_F64):
         for (i = 0; i < len; i++)
             as_f64(*obj)[ids[i]] = as_f64(vals)[i];
-
+        drop(vals);
+        return *obj;
+    case mtype2(TYPE_CHAR, TYPE_CHAR):
+        for (i = 0; i < len; i++)
+            as_string(*obj)[ids[i]] = as_string(vals)[i];
+        drop(vals);
+        return *obj;
+    case mtype2(TYPE_GUID, TYPE_GUID):
+        for (i = 0; i < len; i++)
+            as_guid(*obj)[ids[i]] = as_guid(vals)[i];
         drop(vals);
         return *obj;
     default:
-        throw(ERR_TYPE, "set_ids: types mismatch: '%s, '%s", typename((*obj)->type), typename(vals->type));
+        throw(ERR_TYPE, "set_ids: types mismatch/unsupported: '%s, '%s", typename((*obj)->type), typename(vals->type));
     }
 }
 

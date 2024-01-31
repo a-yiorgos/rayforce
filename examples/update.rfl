@@ -2,3 +2,5 @@
 (set n m)
 (amend 'n 0 set 100)
 (amend 'n [4 5] set 99)
+(set k (guid 6))
+(amend 'k [4 5 1] set (guid 3))
