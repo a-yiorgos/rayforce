@@ -181,8 +181,9 @@ obj_t dict(obj_t keys,  obj_t vals); // dict
       
 // Reference counting         
 obj_t clone(obj_t obj); // clone
-obj_t cow(obj_t   obj); // clone if refcount > 1
-u32_t rc(obj_t    obj); // get refcount
+obj_t copy(obj_t obj);  // copy
+obj_t cow(obj_t obj);   // clone if refcount > 1
+u32_t rc(obj_t obj);    // get refcount
 
 // Errors
 obj_t error(i8_t code, str_t fmt, ...);       // Creates an error object

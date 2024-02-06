@@ -1439,6 +1439,40 @@ nil_t __attribute__((hot)) drop(obj_t obj)
     }
 }
 
+obj_t copy(obj_t obj)
+{
+    u64_t i, l, size;
+    obj_t id, fd, res;
+
+    switch (obj->type)
+    {
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+    case TYPE_F64:
+    case TYPE_CHAR:
+    case TYPE_GUID:
+        size = size_of(obj);
+        res = heap_alloc(size);
+        memcpy(res, obj, size);
+        res->rc = 1;
+        return res;
+    case TYPE_LIST:
+        l = obj->len;
+        res = list(l);
+        res->rc = 1;
+        for (i = 0; i < l; i++)
+            as_list(res)[i] = clone(as_list(obj)[i]);
+        return res;
+    case TYPE_TABLE:
+        return table(copy(as_list(obj)[0]), copy(as_list(obj)[1]));
+    case TYPE_DICT:
+        return dict(copy(as_list(obj)[0]), copy(as_list(obj)[1]));
+    default:
+        throw(ERR_NOT_IMPLEMENTED, "cow: not implemented for type: '%s", typename(obj->type));
+    }
+}
+
 obj_t cow(obj_t obj)
 {
     u32_t rc;
@@ -1482,33 +1516,7 @@ obj_t cow(obj_t obj)
         return obj;
 
     // we don't own the reference, so we need to copy object
-    switch (obj->type)
-    {
-    case TYPE_I64:
-    case TYPE_SYMBOL:
-    case TYPE_TIMESTAMP:
-    case TYPE_F64:
-    case TYPE_CHAR:
-    case TYPE_GUID:
-        size = size_of(obj);
-        res = heap_alloc(size);
-        memcpy(res, obj, size);
-        res->rc = 1;
-        return res;
-    case TYPE_LIST:
-        l = obj->len;
-        res = list(l);
-        res->rc = 1;
-        for (i = 0; i < l; i++)
-            as_list(res)[i] = clone(as_list(obj)[i]);
-        return res;
-    case TYPE_TABLE:
-        return table(clone(as_list(obj)[0]), clone(as_list(obj)[1]));
-    case TYPE_DICT:
-        return dict(clone(as_list(obj)[0]), clone(as_list(obj)[1]));
-    default:
-        throw(ERR_NOT_IMPLEMENTED, "cow: not implemented for type: '%s", typename(obj->type));
-    }
+    return copy(obj);
 }
 
 u32_t rc(obj_t obj)
