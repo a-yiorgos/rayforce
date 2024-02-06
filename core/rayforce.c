@@ -746,7 +746,7 @@ obj_t at_obj(obj_t obj, obj_t idx)
             return at_idx(as_list(obj)[1], i);
         }
 
-        throw(ERR_TYPE, "at_obj: invalid type: '%s", typename(obj->type));
+        throw(ERR_TYPE, "at_obj: unable to index: '%s by '%s", typename(obj->type), typename(idx->type));
     }
 }
 
