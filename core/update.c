@@ -82,10 +82,14 @@ obj_t __update(obj_t *obj, obj_t *x, u64_t n)
 
 obj_t __commit(obj_t src, obj_t obj, obj_t *val)
 {
-    if ((val != NULL) && (*val != obj))
+    if (src->type == -TYPE_SYMBOL)
     {
-        drop(*val);
-        *val = obj;
+        if ((val != NULL) && (*val != obj))
+        {
+            drop(*val);
+            *val = obj;
+        }
+
         return clone(src);
     }
 

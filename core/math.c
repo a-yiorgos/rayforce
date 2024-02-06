@@ -96,10 +96,10 @@ obj_t ray_add(obj_t x, obj_t y)
     case mtype2(TYPE_I64, -TYPE_F64):
         l = x->len;
         xivals = as_i64(x);
-        vec = vector_i64(l);
-        iout = as_i64(vec);
+        vec = vector_f64(l);
+        fout = as_f64(vec);
         for (i = 0; i < l; i++)
-            iout[i] = addf64((f64_t)xivals[i], y->f64);
+            fout[i] = addf64((f64_t)xivals[i], y->f64);
 
         return vec;
     case mtype2(TYPE_I64, TYPE_I64):

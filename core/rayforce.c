@@ -687,8 +687,9 @@ obj_t at_ids(obj_t obj, i64_t ids[], u64_t len)
 
 obj_t at_obj(obj_t obj, obj_t idx)
 {
-    u64_t i, n, l;
+    u64_t i, j, n, l;
     i64_t *ids;
+    obj_t v;
 
     switch (mtype2(obj->type, idx->type))
     {
@@ -702,6 +703,11 @@ obj_t at_obj(obj_t obj, obj_t idx)
     case mtype2(TYPE_ANYMAP, -TYPE_I64):
     case mtype2(TYPE_TABLE, -TYPE_I64):
         return at_idx(obj, idx->i64);
+    case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
+        j = find_raw(as_list(obj)[0], &idx->i64);
+        if (j == as_list(obj)[0]->len)
+            return null(as_list(obj)[1]->type);
+        return at_idx(as_list(obj)[1], j);
     case mtype2(TYPE_I64, TYPE_I64):
     case mtype2(TYPE_SYMBOL, TYPE_I64):
     case mtype2(TYPE_TIMESTAMP, TYPE_I64):
@@ -717,8 +723,21 @@ obj_t at_obj(obj_t obj, obj_t idx)
             if (ids[i] < 0 || ids[i] >= (i64_t)l)
                 throw(ERR_TYPE, "at_obj: '%lld' is out of range '0..%lld'", ids[i], l - 1);
         return at_ids(obj, as_i64(idx), idx->len);
+    case mtype2(TYPE_TABLE, TYPE_SYMBOL):
+        l = ops_count(idx);
+        v = list(l);
+
+        for (i = 0; i < l; i++)
+        {
+            j = find_raw(as_list(obj)[0], &as_symbol(idx)[i]);
+            if (j == as_list(obj)[0]->len)
+                as_list(v)[i] = null(0);
+            else
+                as_list(v)[i] = at_idx(as_list(obj)[1], j);
+        }
+        return v;
     default:
-        if (obj->type == TYPE_DICT || obj->type == TYPE_TABLE)
+        if (obj->type == TYPE_DICT)
         {
             i = find_obj(as_list(obj)[0], idx);
             if (i == as_list(obj)[0]->len)
@@ -850,6 +869,14 @@ obj_t __expand(obj_t obj, u64_t len)
         res = vector(obj->type, len);
         for (i = 0; i < len; i++)
             as_i64(res)[i] = obj->i64;
+
+        drop(obj);
+
+        return res;
+    case -TYPE_F64:
+        res = vector_f64(len);
+        for (i = 0; i < len; i++)
+            as_f64(res)[i] = obj->f64;
 
         drop(obj);
 
