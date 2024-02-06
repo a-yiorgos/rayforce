@@ -54,7 +54,7 @@ obj_t __update(obj_t *obj, obj_t *x, u64_t n)
     obj_t v, idx, res;
 
     // special case for set
-    if (x[1]->i64 == (i64_t)ray_set)
+    if (x[1]->i64 == (i64_t)ray_set || x[1]->i64 == (i64_t)ray_let)
     {
         if (n != 4)
             throw(ERR_LENGTH, "alter: set expected a value");

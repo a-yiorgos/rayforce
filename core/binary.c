@@ -730,6 +730,6 @@ obj_t ray_let(obj_t x, obj_t y)
         return amend(x, e);
 
     default:
-        throw(ERR_TYPE, "let: unsupported types: %d %d", typename(x->type), typename(y->type));
+        throw(ERR_TYPE, "let: unsupported types: '%s '%s", typename(x->type), typename(y->type));
     }
 }
