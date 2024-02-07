@@ -195,7 +195,7 @@ obj_t ray_update(obj_t *x, u64_t n)
 obj_t ray_insert(obj_t *x, u64_t n)
 {
     u64_t i, m, l;
-    obj_t col, *val = NULL, obj, res;
+    obj_t lst, col, *val = NULL, obj, res;
     bool_t need_drop;
 
     if (n < 2)
@@ -213,10 +213,12 @@ obj_t ray_insert(obj_t *x, u64_t n)
     }
 
     // Check integrity of the table with the new object
-    switch (x[1]->type)
+    lst = x[1];
+insert:
+    switch (lst->type)
     {
     case TYPE_LIST:
-        l = x[1]->len;
+        l = lst->len;
         if (l != as_list(obj)[0]->len)
         {
             res = error(ERR_LENGTH, "insert: expected list of length %lld, got %lld", as_list(obj)[0]->len, l);
@@ -224,15 +226,15 @@ obj_t ray_insert(obj_t *x, u64_t n)
         }
 
         // There is one record to be inserted
-        if (is_atom(as_list(x[1])[0]))
+        if (is_atom(as_list(lst)[0]))
         {
             // Check all the elements of the list
             for (i = 0; i < l; i++)
             {
                 if ((as_list(as_list(obj)[1])[i]->type != TYPE_LIST) &&
-                    (as_list(as_list(obj)[1])[i]->type != -as_list(x[1])[i]->type))
+                    (as_list(as_list(obj)[1])[i]->type != -as_list(lst)[i]->type))
                 {
-                    res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(-as_list(as_list(obj)[1])[i]->type), i, typename(as_list(x[1])[i]->type));
+                    res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(-as_list(as_list(obj)[1])[i]->type), i, typename(as_list(lst)[i]->type));
                     uncow(obj, val, res);
                 }
             }
@@ -242,7 +244,7 @@ obj_t ray_insert(obj_t *x, u64_t n)
             {
                 col = cow(as_list(as_list(obj)[1])[i]);
                 need_drop = (col != as_list(as_list(obj)[1])[i]);
-                push_obj(&col, clone(as_list(x[1])[i]));
+                push_obj(&col, clone(as_list(lst)[i]));
                 if (need_drop)
                     drop(as_list(as_list(obj)[1])[i]);
                 as_list(as_list(obj)[1])[i] = col;
@@ -251,7 +253,7 @@ obj_t ray_insert(obj_t *x, u64_t n)
         else
         {
             // There are multiple records to be inserted
-            m = as_list(x[1])[0]->len;
+            m = as_list(lst)[0]->len;
             if (m == 0)
             {
                 res = error(ERR_LENGTH, "insert: expected non-empty list of records");
@@ -262,13 +264,13 @@ obj_t ray_insert(obj_t *x, u64_t n)
             for (i = 0; i < l; i++)
             {
                 if ((as_list(as_list(obj)[1])[i]->type != TYPE_LIST) &&
-                    (as_list(as_list(obj)[1])[i]->type != as_list(x[1])[i]->type))
+                    (as_list(as_list(obj)[1])[i]->type != as_list(lst)[i]->type))
                 {
-                    res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(as_list(as_list(obj)[1])[i]->type), i, typename(as_list(x[1])[i]->type));
+                    res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(as_list(as_list(obj)[1])[i]->type), i, typename(as_list(lst)[i]->type));
                     uncow(obj, val, res);
                 }
 
-                if (as_list(x[1])[i]->len != m)
+                if (as_list(lst)[i]->len != m)
                 {
                     res = error(ERR_LENGTH, "insert: expected list of length %lld, as %lldth element in a values, got %lld", as_list(as_list(obj)[1])[i]->len, i, n);
                     uncow(obj, val, res);
@@ -280,7 +282,7 @@ obj_t ray_insert(obj_t *x, u64_t n)
             {
                 col = cow(as_list(as_list(obj)[1])[i]);
                 need_drop = (col != as_list(as_list(obj)[1])[i]);
-                append(&col, as_list(x[1])[i]);
+                append(&col, as_list(lst)[i]);
                 if (need_drop)
                     drop(as_list(as_list(obj)[1])[i]);
                 as_list(as_list(obj)[1])[i] = col;
@@ -289,8 +291,16 @@ obj_t ray_insert(obj_t *x, u64_t n)
 
         break;
 
+    case TYPE_TABLE:
+        // Check columns
+        if (lst->len != as_list(obj)[0]->len)
+        {
+            res = error(ERR_LENGTH, "insert: expected list of length %lld, got %lld", as_list(obj)[0]->len, lst->len);
+            uncow(obj, val, res);
+        }
+
     default:
-        res = error(ERR_TYPE, "insert: unsupported type '%s' as 2nd argument", typename(x[1]->type));
+        res = error(ERR_TYPE, "insert: unsupported type '%s' as 2nd argument", typename(lst->type));
         uncow(obj, val, res);
     }
 
