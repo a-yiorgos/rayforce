@@ -214,6 +214,9 @@ obj_t push_raw(obj_t *obj, raw_t val); // push raw value into a list
 obj_t push_obj(obj_t *obj, obj_t val); // push object to a list
 obj_t push_sym(obj_t *obj, str_t str); // push interned string to a symbol vector
 
+// Append list to a list
+obj_t append(obj_t *obj, obj_t vals);  
+
 // Pop a value from the end of a list
 obj_t pop_obj(obj_t *obj); // pop object from a list
 

@@ -377,14 +377,6 @@ obj_t push_obj(obj_t *obj, obj_t val)
         res = push_raw(obj, &val->vchar);
         drop(val);
         return res;
-    case mtype2(TYPE_I64, TYPE_I64):
-    case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-    case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
-        size1 = size_of(*obj) - sizeof(struct obj_t);
-        size2 = size_of(val) - sizeof(struct obj_t);
-        res = resize(obj, (*obj)->len + val->len);
-        memcpy((*obj)->arr + size1, as_i64(val), size2);
-        return res;
     default:
         if ((*obj)->type == TYPE_LIST)
         {
@@ -393,6 +385,40 @@ obj_t push_obj(obj_t *obj, obj_t val)
         }
 
         throw(ERR_TYPE, "push_obj: invalid types: '%s, '%s", typename((*obj)->type), typename(val->type));
+    }
+}
+
+obj_t append(obj_t *obj, obj_t vals)
+{
+    obj_t res, lst = NULL;
+    u64_t i, l, size1, size2;
+
+    switch (mtype2((*obj)->type, vals->type))
+    {
+    case mtype2(TYPE_I64, TYPE_I64):
+    case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
+    case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        size1 = size_of(*obj) - sizeof(struct obj_t);
+        size2 = size_of(vals) - sizeof(struct obj_t);
+        res = resize(obj, (*obj)->len + vals->len);
+        memcpy((*obj)->arr + size1, as_i64(vals), size2);
+        return res;
+    case mtype2(TYPE_F64, TYPE_F64):
+        size1 = size_of(*obj) - sizeof(struct obj_t);
+        size2 = size_of(vals) - sizeof(struct obj_t);
+        res = resize(obj, (*obj)->len + vals->len);
+        memcpy((*obj)->arr + size1, as_f64(vals), size2);
+        return res;
+    default:
+        // if ((*obj)->type == TYPE_LIST)
+        // {
+        //     size1 = size_of(*obj) - sizeof(struct obj_t);
+        //     size2 = size_of(vals) - sizeof(struct obj_t);
+        //     res = push_raw(obj, &val);
+        //     return res;
+        // }
+
+        throw(ERR_TYPE, "push_obj: invalid types: '%s, '%s", typename((*obj)->type), typename(vals->type));
     }
 }
 

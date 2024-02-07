@@ -192,6 +192,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "alter",     TYPE_VARY,     FN_NONE,                   ray_alter);
     regf(functions,  "modify",    TYPE_VARY,     FN_NONE,                   ray_modify);
     regf(functions,  "update",    TYPE_VARY,     FN_NONE,                   ray_update);
+    regf(functions,  "insert",    TYPE_VARY,     FN_NONE,                   ray_insert);
     regf(functions,  "upsert",    TYPE_VARY,     FN_NONE,                   ray_upsert);
     regf(functions,  "csv",       TYPE_VARY,     FN_NONE,                   ray_csv);
     regf(functions,  "lj",        TYPE_VARY,     FN_NONE,                   ray_lj);

@@ -618,7 +618,8 @@ obj_t parse_symbol(parser_t *parser)
 obj_t parse_vector(parser_t *parser)
 {
     obj_t tok, vec = vector_i64(0), err;
-    i32_t i;
+    u64_t i;
+    f64_t v;
     span_t span = span_start(parser);
 
     shift(parser, 1); // skip '['
@@ -663,7 +664,8 @@ obj_t parse_vector(parser_t *parser)
                 push_raw(&vec, &tok->i64);
             else if (vec->type == TYPE_F64)
             {
-                push_raw(&vec, &tok->i64);
+                v = (f64_t)tok->i64;
+                push_raw(&vec, &v);
             }
             else
             {
@@ -681,7 +683,7 @@ obj_t parse_vector(parser_t *parser)
             else if (vec->type == TYPE_I64)
             {
                 vec->type = TYPE_F64;
-                for (i = 0; i < (i32_t)vec->len; i++)
+                for (i = 0; i < vec->len; i++)
                     as_f64(vec)[i] = (f64_t)as_i64(vec)[i];
 
                 push_raw(&vec, &tok->f64);
