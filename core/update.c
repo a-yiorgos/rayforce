@@ -229,7 +229,8 @@ obj_t ray_insert(obj_t *x, u64_t n)
             // Check all the elements of the list
             for (i = 0; i < l; i++)
             {
-                if (as_list(as_list(obj)[1])[i]->type != -as_list(x[1])[i]->type)
+                if ((as_list(as_list(obj)[1])[i]->type != TYPE_LIST) &&
+                    (as_list(as_list(obj)[1])[i]->type != -as_list(x[1])[i]->type))
                 {
                     res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(-as_list(as_list(obj)[1])[i]->type), i, typename(as_list(x[1])[i]->type));
                     uncow(obj, val, res);
@@ -260,7 +261,8 @@ obj_t ray_insert(obj_t *x, u64_t n)
             // Check all the elements of the list
             for (i = 0; i < l; i++)
             {
-                if (as_list(as_list(obj)[1])[i]->type != as_list(x[1])[i]->type)
+                if ((as_list(as_list(obj)[1])[i]->type != TYPE_LIST) &&
+                    (as_list(as_list(obj)[1])[i]->type != as_list(x[1])[i]->type))
                 {
                     res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'", typename(as_list(as_list(obj)[1])[i]->type), i, typename(as_list(x[1])[i]->type));
                     uncow(obj, val, res);
@@ -268,7 +270,7 @@ obj_t ray_insert(obj_t *x, u64_t n)
 
                 if (as_list(x[1])[i]->len != m)
                 {
-                    res = error(ERR_LENGTH, "insert: expected list of length %lld, got %lld", as_list(as_list(obj)[1])[i]->len, n);
+                    res = error(ERR_LENGTH, "insert: expected list of length %lld, as %lldth element in a values, got %lld", as_list(as_list(obj)[1])[i]->len, i, n);
                     uncow(obj, val, res);
                 }
             }

@@ -339,9 +339,9 @@ obj_t push_raw(obj_t *obj, raw_t val)
 
 obj_t push_obj(obj_t *obj, obj_t val)
 {
-    obj_t res, lst = NULL;
-    u64_t i, l, size1, size2;
+    u64_t i, l;
     type_t t = val ? val->type : TYPE_LIST;
+    obj_t res, lst = NULL;
 
     // change vector type to a list
     if ((*obj)->type != -t && (*obj)->type != TYPE_LIST)
@@ -390,8 +390,8 @@ obj_t push_obj(obj_t *obj, obj_t val)
 
 obj_t append(obj_t *obj, obj_t vals)
 {
-    obj_t res, lst = NULL;
-    u64_t i, l, size1, size2;
+    u64_t i, c, l, size1, size2;
+    obj_t res;
 
     switch (mtype2((*obj)->type, vals->type))
     {
@@ -410,13 +410,16 @@ obj_t append(obj_t *obj, obj_t vals)
         memcpy((*obj)->arr + size1, as_f64(vals), size2);
         return res;
     default:
-        // if ((*obj)->type == TYPE_LIST)
-        // {
-        //     size1 = size_of(*obj) - sizeof(struct obj_t);
-        //     size2 = size_of(vals) - sizeof(struct obj_t);
-        //     res = push_raw(obj, &val);
-        //     return res;
-        // }
+        if ((*obj)->type == TYPE_LIST)
+        {
+            l = (*obj)->len;
+            c = ops_count(vals);
+            res = resize(obj, l + c);
+            for (i = 0; i < c; i++)
+                as_list(res)[l + i] = at_idx(vals, i);
+
+            return res;
+        }
 
         throw(ERR_TYPE, "push_obj: invalid types: '%s, '%s", typename((*obj)->type), typename(vals->type));
     }

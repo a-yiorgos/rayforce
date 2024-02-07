@@ -11,5 +11,5 @@
 (alter 'l set [0 2] 192)
 
 ;; And tables
-(set t (table [sym price volume] (list [aapl vod goog] [102 99 203] [500 400 900])))
+(set t (table [sym price volume tape] (list [aapl vod goog] [102 99 203] [500 400 900] (list "A" "B" "C"))))
 (alter 't + [price volume] 12.7)
