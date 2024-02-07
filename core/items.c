@@ -912,34 +912,14 @@ obj_t ray_union(obj_t x, obj_t y)
 
 obj_t ray_first(obj_t x)
 {
-    if (!x)
-        return NULL_OBJ;
-    if (x->type < 0)
-        return clone(x);
-    if (is_vector(x))
-        return at_idx(x, 0);
-    if (x->type == TYPE_ANYMAP)
-        return at_idx(x, 0);
-    if (x->type == TYPE_GROUPMAP)
-        return aggr_first(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
-
-    return clone(x);
+    return at_idx(x, 0);
 }
 
 obj_t ray_last(obj_t x)
 {
-    if (!x)
-        return NULL_OBJ;
-    if (x->type < 0)
-        return clone(x);
-    if (is_vector(x))
-        return at_idx(x, -1);
-    if (x->type == TYPE_ANYMAP)
-        return at_idx(x, -1);
-    if (x->type == TYPE_GROUPMAP)
-        return aggr_last(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
+    u64_t l = ops_count(x);
 
-    return clone(x);
+    return at_idx(x, l ? l - 1 : l);
 }
 
 obj_t ray_key(obj_t x)

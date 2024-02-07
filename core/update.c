@@ -291,6 +291,12 @@ insert:
 
         break;
 
+    case TYPE_DICT:
+        if (as_list(lst)[0]->type != TYPE_SYMBOL)
+        {
+            res = error(ERR_TYPE, "insert: expected 'Symbol as 1st element in a dictionary, got '%s'", typename(as_list(lst)[0]->type));
+            uncow(obj, val, res);
+        }
     case TYPE_TABLE:
         // Check columns
         l = as_list(lst)[0]->len;
