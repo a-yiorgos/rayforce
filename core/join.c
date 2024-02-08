@@ -32,13 +32,6 @@
 #include "error.h"
 #include "index.h"
 
-typedef struct __join_ctx_t
-{
-    obj_t lcols;
-    obj_t rcols;
-    u64_t *hashes;
-} __join_ctx_t;
-
 obj_t select_column(obj_t left_col, obj_t right_col, i64_t ids[], u64_t len)
 {
     u64_t i;
@@ -67,79 +60,6 @@ obj_t select_column(obj_t left_col, obj_t right_col, i64_t ids[], u64_t len)
 
         ins_obj(&res, i, v);
     }
-
-    return res;
-}
-
-nil_t precalc_hash(obj_t cols, u64_t *out, u64_t ncols, u64_t nrows)
-{
-    u64_t i;
-
-    index_hash_list(as_list(cols)[0], out, nrows, 0xa5b6c7d8e9f01234ull);
-
-    for (i = 1; i < ncols; i++)
-        index_hash_list(as_list(cols)[i], out, nrows, 0);
-
-    return;
-}
-
-u64_t __join_hash_get(i64_t row, nil_t *seed)
-{
-    __join_ctx_t *ctx = (__join_ctx_t *)seed;
-    return ctx->hashes[row];
-}
-
-i64_t __join_cmp_row(i64_t row1, i64_t row2, nil_t *seed)
-{
-    u64_t i, l;
-    __join_ctx_t *ctx = (__join_ctx_t *)seed;
-    obj_t *lcols = as_list(ctx->lcols);
-    obj_t *rcols = as_list(ctx->rcols);
-
-    l = ctx->lcols->len;
-
-    for (i = 0; i < l; i++)
-        if (!ops_eq_idx(lcols[i], row1, rcols[i], row2))
-            return 1;
-
-    return 0;
-}
-
-obj_t build_idx(obj_t lcols, obj_t rcols, u64_t len)
-{
-    u64_t i, ll, rl;
-    obj_t ht, res;
-    i64_t idx;
-    __join_ctx_t ctx;
-
-    if (len == 1)
-        return ray_find(rcols, lcols);
-
-    ll = as_list(lcols)[0]->len;
-    rl = as_list(rcols)[0]->len;
-    ht = ht_tab(maxi64(ll, rl) * 2, -1);
-    res = vector_i64(maxi64(ll, rl));
-
-    // Right hashes
-    precalc_hash(rcols, (u64_t *)as_i64(res), len, rl);
-    ctx = (__join_ctx_t){rcols, rcols, (u64_t *)as_i64(res)};
-    for (i = 0; i < rl; i++)
-    {
-        idx = ht_tab_next_with(&ht, i, &__join_hash_get, &__join_cmp_row, &ctx);
-        if (as_i64(as_list(ht)[0])[idx] == NULL_I64)
-            as_i64(as_list(ht)[0])[idx] = i;
-    }
-
-    // Left hashes
-    precalc_hash(lcols, (u64_t *)as_i64(res), len, ll);
-    ctx = (__join_ctx_t){rcols, lcols, (u64_t *)as_i64(res)};
-    for (i = 0; i < ll; i++)
-    {
-        idx = ht_tab_get_with(ht, i, &__join_hash_get, &__join_cmp_row, &ctx);
-        as_i64(res)[i] = (idx == NULL_I64) ? NULL_I64 : as_i64(as_list(ht)[0])[idx];
-    }
-
-    drop(ht);
 
     return res;
 }
@@ -178,7 +98,7 @@ obj_t ray_lj(obj_t *x, u64_t n)
         return k2;
     }
 
-    idx = build_idx(k1, k2, x[0]->len);
+    idx = index_join_obj(k1, k2, x[0]->len);
     drop(k2);
 
     if (is_error(idx))
@@ -216,7 +136,7 @@ obj_t ray_lj(obj_t *x, u64_t n)
     }
 
     // resulting columns
-    vals = vector(TYPE_LIST, l);
+    vals = list(l);
 
     // process each column
     for (i = 0; i < l; i++)

@@ -32,6 +32,8 @@
 #include "unary.h"
 #include "vary.h"
 #include "iter.h"
+#include "index.h"
+#include "items.h"
 
 #define uncow(o, v, r)            \
     if ((v == NULL) || (*v != o)) \
@@ -198,7 +200,7 @@ obj_t ray_insert(obj_t *x, u64_t n)
     obj_t lst, col, *val = NULL, obj, res;
     bool_t need_drop;
 
-    if (n < 2)
+    if (n != 2)
         throw(ERR_LENGTH, "insert: expected 2 arguments, got %lld", n);
 
     obj = __fetch(x[0], &val);
@@ -331,7 +333,133 @@ insert:
  */
 obj_t ray_upsert(obj_t *x, u64_t n)
 {
-    unused(x);
-    unused(n);
-    throw(ERR_NOT_IMPLEMENTED, "upsert");
+    u64_t i, j, m, l;
+    i64_t row, keys, *rows;
+    obj_t obj, k1, k2, idx, col, lst, *val = NULL, v, res;
+    bool_t need_drop, single_rec;
+
+    if (n != 3)
+        throw(ERR_LENGTH, "upsert: expected 3 arguments, got %lld", n);
+
+    if (x[1]->type != -TYPE_I64)
+        throw(ERR_TYPE, "upsert: expected 'I64 as 2nd argument, got '%s'", typename(x[1]->type));
+
+    keys = x[1]->i64;
+    if (keys < 1)
+        throw(ERR_LENGTH, "upsert: expected positive number of keys > 0, got %lld", keys);
+
+    obj = __fetch(x[0], &val);
+    if (is_error(obj))
+        return obj;
+
+    if (obj->type != TYPE_TABLE)
+    {
+        drop(obj);
+        return error(ERR_TYPE, "upsert: expected 'Table as 1st argument, got '%s'", typename(obj->type));
+    }
+
+    lst = x[2];
+    l = ops_count(lst);
+
+    single_rec = is_atom(as_list(lst)[0]);
+
+    // if (l == 0)
+    //     return clone(x[0]);
+
+    if (keys == 1)
+    {
+        k1 = at_idx(as_list(obj)[1], 0);
+        k2 = at_idx(lst, 0);
+        m = ops_count(k2);
+    }
+    else
+    {
+        k1 = ray_take(x[1], as_list(obj)[1]);
+        k2 = ray_take(x[1], lst);
+        m = ops_count(as_list(k2)[0]);
+    }
+
+    idx = index_join_obj(k2, k1, x[1]->i64);
+
+    drop(k1);
+    drop(k2);
+
+    if (is_error(idx))
+    {
+        drop(obj);
+        return idx;
+    }
+
+    rows = as_i64(idx);
+
+    // Insert/Update all the records now
+    for (j = 0; j < m; j++)
+    {
+        row = rows[j];
+
+        // Insert record
+        if (row == NULL_I64)
+        {
+            for (i = 0; i < l; i++)
+            {
+                col = cow(as_list(as_list(obj)[1])[i]);
+                need_drop = (col != as_list(as_list(obj)[1])[i]);
+                // single record
+                if (single_rec)
+                {
+                    res = push_obj(&col, at_idx(lst, i));
+                }
+                else
+                {
+                    v = at_idx(lst, i);
+                    res = push_obj(&col, at_idx(v, j));
+                    drop(v);
+                }
+                if (is_error(res))
+                {
+                    drop(col);
+                    drop(idx);
+                    drop(obj);
+                    return res;
+                }
+                if (need_drop)
+                    drop(as_list(as_list(obj)[1])[i]);
+                as_list(as_list(obj)[1])[i] = col;
+            }
+        }
+        // Update record
+        else
+        {
+            for (i = 0; i < l; i++)
+            {
+                col = cow(as_list(as_list(obj)[1])[i]);
+                need_drop = (col != as_list(as_list(obj)[1])[i]);
+                // single record
+                if (single_rec)
+                {
+                    res = set_idx(&col, row, at_idx(lst, i));
+                }
+                else
+                {
+                    v = at_idx(lst, i);
+                    res = set_idx(&col, row, at_idx(v, j));
+                    drop(v);
+                }
+                if (is_error(res))
+                {
+                    drop(col);
+                    drop(idx);
+                    drop(obj);
+                    return res;
+                }
+                if (need_drop)
+                    drop(as_list(as_list(obj)[1])[i]);
+                as_list(as_list(obj)[1])[i] = col;
+            }
+        }
+    }
+
+    drop(idx);
+
+    return __commit(x[0], obj, val);
 }

@@ -505,6 +505,32 @@ nil_t index_hash_list(obj_t obj, u64_t out[], u64_t len, u64_t seed)
 
     switch (obj->type)
     {
+    case -TYPE_BOOL:
+    case -TYPE_BYTE:
+    case -TYPE_CHAR:
+        if (seed != 0)
+            out[0] = index_hash_u64((u64_t)obj->u8, seed);
+        else
+            out[0] = index_hash_u64((u64_t)obj->u8, out[0]);
+        break;
+    case -TYPE_I64:
+    case -TYPE_SYMBOL:
+    case -TYPE_TIMESTAMP:
+        if (seed != 0)
+            out[0] = index_hash_u64((u64_t)obj->i64, seed);
+        else
+            out[0] = index_hash_u64((u64_t)obj->i64, out[0]);
+        break;
+    case -TYPE_F64:
+        if (seed != 0)
+            out[0] = index_hash_u64((u64_t)obj->f64, seed);
+        else
+            out[0] = index_hash_u64((u64_t)obj->f64, out[0]);
+        break;
+    case -TYPE_GUID:
+        out[0] = index_hash_u64(*(u64_t *)as_guid(obj), seed);
+        out[0] = index_hash_u64(*((u64_t *)as_guid(obj) + 1), out[0]);
+        break;
     case TYPE_BOOL:
     case TYPE_BYTE:
     case TYPE_CHAR:
@@ -617,6 +643,96 @@ obj_t index_group_cnts(obj_t grp)
     ids = as_i64(as_list(grp)[1]);
     for (i = 0; i < l; i++)
         grps[ids[i]]++;
+
+    return res;
+}
+
+typedef struct __join_ctx_t
+{
+    obj_t lcols;
+    obj_t rcols;
+    u64_t *hashes;
+} __join_ctx_t;
+
+nil_t precalc_hash(obj_t cols, u64_t *out, u64_t ncols, u64_t nrows)
+{
+    u64_t i;
+
+    index_hash_list(as_list(cols)[0], out, nrows, 0xa5b6c7d8e9f01234ull);
+
+    for (i = 1; i < ncols; i++)
+        index_hash_list(as_list(cols)[i], out, nrows, 0);
+
+    return;
+}
+
+u64_t __join_hash_get(i64_t row, nil_t *seed)
+{
+    __join_ctx_t *ctx = (__join_ctx_t *)seed;
+    return ctx->hashes[row];
+}
+
+i64_t __join_cmp_row(i64_t row1, i64_t row2, nil_t *seed)
+{
+    u64_t i, l;
+    __join_ctx_t *ctx = (__join_ctx_t *)seed;
+    obj_t *lcols = as_list(ctx->lcols);
+    obj_t *rcols = as_list(ctx->rcols);
+
+    l = ctx->lcols->len;
+
+    for (i = 0; i < l; i++)
+        if (!ops_eq_idx(lcols[i], row1, rcols[i], row2))
+            return 1;
+
+    return 0;
+}
+
+obj_t index_join_obj(obj_t lcols, obj_t rcols, u64_t len)
+{
+    u64_t i, ll, rl;
+    obj_t ht, res;
+    i64_t idx;
+    __join_ctx_t ctx;
+    if (len == 1)
+    {
+        res = ray_find(rcols, lcols);
+        if (res->type == -TYPE_I64)
+        {
+            idx = res->i64;
+            drop(res);
+            res = vector_i64(1);
+            as_i64(res)[0] = idx;
+        }
+
+        return res;
+    }
+
+    ll = ops_count(as_list(lcols)[0]);
+    rl = ops_count(as_list(rcols)[0]);
+    ht = ht_tab(maxi64(ll, rl) * 2, -1);
+    res = vector_i64(maxi64(ll, rl));
+
+    // Right hashes
+    precalc_hash(rcols, (u64_t *)as_i64(res), len, rl);
+    ctx = (__join_ctx_t){rcols, rcols, (u64_t *)as_i64(res)};
+    for (i = 0; i < rl; i++)
+    {
+        idx = ht_tab_next_with(&ht, i, &__join_hash_get, &__join_cmp_row, &ctx);
+        if (as_i64(as_list(ht)[0])[idx] == NULL_I64)
+            as_i64(as_list(ht)[0])[idx] = i;
+    }
+
+    // Left hashes
+    precalc_hash(lcols, (u64_t *)as_i64(res), len, ll);
+    ctx = (__join_ctx_t){rcols, lcols, (u64_t *)as_i64(res)};
+    for (i = 0; i < ll; i++)
+    {
+        idx = ht_tab_get_with(ht, i, &__join_hash_get, &__join_cmp_row, &ctx);
+        as_i64(res)[i] = (idx == NULL_I64) ? NULL_I64 : as_i64(as_list(ht)[0])[idx];
+    }
+
+    drop(ht);
 
     return res;
 }

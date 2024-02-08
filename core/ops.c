@@ -104,28 +104,41 @@ bool_t ops_eq_idx(obj_t a, i64_t ai, obj_t b, i64_t bi)
     obj_t lv, rv;
     bool_t eq;
 
-    switch (a->type)
+    switch (mtype2(a->type, b->type))
     {
-    case TYPE_I64:
-    case TYPE_SYMBOL:
-    case TYPE_TIMESTAMP:
+    case mtype2(TYPE_BYTE, -TYPE_BYTE):
+    case mtype2(TYPE_CHAR, -TYPE_CHAR):
+    case mtype2(TYPE_BOOL, -TYPE_BOOL):
+        return as_u8(a)[ai] == b->u8;
+    case mtype2(TYPE_I64, -TYPE_I64):
+    case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
+    case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        return as_i64(a)[ai] == b->i64;
+    case mtype2(TYPE_BYTE, TYPE_BYTE):
+    case mtype2(TYPE_BOOL, TYPE_BOOL):
+    case mtype2(TYPE_CHAR, TYPE_CHAR):
+        return as_u8(a)[ai] == as_u8(b)[bi];
+    case mtype2(TYPE_I64, TYPE_I64):
+    case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
+    case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
         return as_i64(a)[ai] == as_i64(b)[bi];
-    case TYPE_F64:
+    case mtype2(TYPE_F64, -TYPE_F64):
+        return as_f64(a)[ai] == b->f64;
+    case mtype2(TYPE_F64, TYPE_F64):
         return as_f64(a)[ai] == as_f64(b)[bi];
-    case TYPE_CHAR:
-        return as_string(a)[ai] == as_string(b)[bi];
-    case TYPE_GUID:
+    case mtype2(TYPE_GUID, TYPE_GUID):
         return memcmp(as_guid(a) + ai, as_guid(b) + bi, sizeof(guid_t)) == 0;
-    case TYPE_LIST:
+        // TODO: figure out how to distinguish between list as column and a list as a value
+    case mtype2(TYPE_LIST, TYPE_LIST):
         return objcmp(as_list(a)[ai], as_list(b)[bi]) == 0;
-    case TYPE_ENUM:
+    case mtype2(TYPE_ENUM, TYPE_ENUM):
         lv = at_idx(a, ai);
         rv = at_idx(b, bi);
         eq = lv->i64 == rv->i64;
         drop(lv);
         drop(rv);
         return eq;
-    case TYPE_ANYMAP:
+    case mtype2(TYPE_ANYMAP, TYPE_ANYMAP):
         lv = at_idx(a, ai);
         rv = at_idx(b, bi);
         eq = objcmp(lv, rv) == 0;
@@ -213,6 +226,17 @@ u64_t ops_count(obj_t x)
 {
     switch (x->type)
     {
+    case TYPE_NULL:
+        return 0;
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_I64:
+    case TYPE_F64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+    case TYPE_GUID:
+    case TYPE_LIST:
+        return x->len;
     case TYPE_CHAR:
         return x->len ? x->len - 1 : x->len;
     case TYPE_TABLE:
@@ -228,9 +252,10 @@ u64_t ops_count(obj_t x)
     case TYPE_GROUPMAP:
         return as_list(as_list(x)[1])[0]->i64;
     default:
-        return x->len;
+        return 1;
     }
 }
+
 /*
  * Returns the rank of an arguments, i.e.
  * if there are at least one vector - it's length, otherwise - 1.

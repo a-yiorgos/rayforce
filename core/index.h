@@ -36,5 +36,6 @@ obj_t index_group_i64(i64_t values[], i64_t filter[], u64_t len);
 obj_t index_group_guid(guid_t values[], i64_t filter[], u64_t len);
 obj_t index_group_obj(obj_t values[], i64_t filter[], u64_t len);
 obj_t index_group_cnts(obj_t grp);
+obj_t index_join_obj(obj_t lcols, obj_t rcols, u64_t len);
 
 #endif // INDEX_H

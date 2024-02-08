@@ -801,8 +801,8 @@ obj_t set_idx(obj_t *obj, i64_t idx, obj_t val)
     switch (mtype2((*obj)->type, val->type))
     {
     case mtype2(TYPE_I64, -TYPE_I64):
-    case mtype2(TYPE_SYMBOL, -TYPE_I64):
-    case mtype2(TYPE_TIMESTAMP, -TYPE_I64):
+    case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
+    case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
         as_i64(*obj)[idx] = val->i64;
         drop(val);
         return *obj;
