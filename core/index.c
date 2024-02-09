@@ -197,6 +197,184 @@ obj_t index_distinct_obj(obj_t values[], u64_t len)
     return vec;
 }
 
+obj_t index_find_i8(i8_t x[], u64_t xl, i8_t y[], u64_t yl)
+{
+    unused(x);
+    unused(xl);
+    unused(y);
+    unused(yl);
+    throw(ERR_NOT_IMPLEMENTED, "index_find_i8 not implemented");
+}
+
+obj_t index_find_i64(i64_t x[], u64_t xl, i64_t y[], u64_t yl)
+{
+    u64_t i, range;
+    i64_t max = 0, min = 0, n, p, *r, *f;
+    obj_t vec, ht;
+
+    if (xl == 0)
+        return vector_i64(0);
+
+    range = index_range(&min, &max, x, NULL, xl);
+
+    if (range <= yl)
+    {
+        vec = vector_i64(yl + range);
+        r = as_i64(vec);
+        f = r + yl;
+
+        for (i = 0; i < range; i++)
+            f[i] = NULL_I64;
+
+        for (i = 0; i < xl; i++)
+        {
+            n = x[i] - min;
+            f[n] = (f[n] == NULL_I64) ? (i64_t)i : NULL_I64;
+        }
+
+        for (i = 0; i < yl; i++)
+        {
+            n = y[i] - min;
+            r[i] = (y[i] < min || y[i] > max) ? NULL_I64 : f[n];
+        }
+
+        resize(&vec, yl);
+
+        return vec;
+    }
+
+    vec = vector_i64(yl);
+    r = as_i64(vec);
+
+    // otherwise, use a hash table
+    ht = ht_tab(xl, TYPE_I64);
+
+    for (i = 0; i < xl; i++)
+    {
+        p = ht_tab_next(&ht, x[i] - min);
+        if (as_i64(as_list(ht)[0])[p] == NULL_I64)
+        {
+            as_i64(as_list(ht)[0])[p] = x[i] - min;
+            as_i64(as_list(ht)[1])[p] = i;
+        }
+    }
+
+    for (i = 0; i < yl; i++)
+    {
+        p = ht_tab_get(ht, y[i] - min);
+        r[i] = p == NULL_I64 ? NULL_I64 : as_i64(as_list(ht)[1])[p];
+    }
+
+    drop(ht);
+
+    return vec;
+}
+
+typedef struct __find_ctx_t
+{
+    raw_t lobj;
+    raw_t robj;
+    u64_t *hashes;
+} __find_ctx_t;
+
+u64_t __hash_get(i64_t row, nil_t *seed)
+{
+    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    return ctx->hashes[row];
+}
+
+i64_t __cmp_obj(i64_t row1, i64_t row2, nil_t *seed)
+{
+    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    return objcmp(((obj_t *)ctx->lobj)[row1], ((obj_t *)ctx->robj)[row2]);
+}
+
+i64_t __cmp_guid(i64_t row1, i64_t row2, nil_t *seed)
+{
+    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    return memcmp((guid_t *)ctx->lobj + row1, (guid_t *)ctx->robj + row2, sizeof(guid_t));
+}
+
+obj_t index_find_guid(guid_t x[], u64_t xl, guid_t y[], u64_t yl)
+{
+    u64_t i, *hashes;
+    obj_t ht, res;
+    i64_t idx;
+    __find_ctx_t ctx;
+
+    // calc hashes
+    res = vector_i64(maxi64(xl, yl));
+    ht = ht_tab(maxi64(xl, yl) * 2, -1);
+
+    hashes = (u64_t *)as_i64(res);
+
+    for (i = 0; i < xl; i++)
+        hashes[i] = index_hash_u64(*(u64_t *)(x + i), *((u64_t *)(x + i) + 1));
+
+    ctx = (__find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
+    for (i = 0; i < xl; i++)
+    {
+        idx = ht_tab_next_with(&ht, i, &__hash_get, &__cmp_guid, &ctx);
+        if (as_i64(as_list(ht)[0])[idx] == NULL_I64)
+            as_i64(as_list(ht)[0])[idx] = i;
+    }
+
+    for (i = 0; i < yl; i++)
+        hashes[i] = index_hash_u64(*(u64_t *)(y + i), *((u64_t *)(y + i) + 1));
+
+    ctx = (__find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
+    for (i = 0; i < yl; i++)
+    {
+        idx = ht_tab_get_with(ht, i, &__hash_get, &__cmp_guid, &ctx);
+        as_i64(res)[i] = (idx == NULL_I64) ? NULL_I64 : as_i64(as_list(ht)[0])[idx];
+    }
+
+    drop(ht);
+    resize(&res, yl);
+
+    return res;
+}
+
+obj_t index_find_obj(obj_t x[], u64_t xl, obj_t y[], u64_t yl)
+{
+    u64_t i, *hashes;
+    obj_t ht, res;
+    i64_t idx;
+    __find_ctx_t ctx;
+
+    // calc hashes
+    res = vector_i64(maxi64(xl, yl));
+    ht = ht_tab(maxi64(xl, yl) * 2, -1);
+
+    hashes = (u64_t *)as_i64(res);
+
+    for (i = 0; i < xl; i++)
+        hashes[i] = index_hash_u64(index_hash_obj(x[i]), 0xa5b6c7d8e9f01234ull);
+
+    ctx = (__find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
+    for (i = 0; i < xl; i++)
+    {
+        idx = ht_tab_next_with(&ht, i, &__hash_get, &__cmp_obj, &ctx);
+        if (as_i64(as_list(ht)[0])[idx] == NULL_I64)
+            as_i64(as_list(ht)[0])[idx] = i;
+    }
+
+    for (i = 0; i < yl; i++)
+        hashes[i] = index_hash_u64(index_hash_obj(y[i]), 0xa5b6c7d8e9f01234ull);
+
+    ctx = (__find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
+    for (i = 0; i < yl; i++)
+    {
+        idx = ht_tab_get_with(ht, i, &__hash_get, &__cmp_obj, &ctx);
+        as_i64(res)[i] = (idx == NULL_I64) ? NULL_I64 : as_i64(as_list(ht)[0])[idx];
+    }
+
+    drop(ht);
+    resize(&res, yl);
+
+    return res;
+}
+
 /*
  * result is a list
  * [0] - groups number
