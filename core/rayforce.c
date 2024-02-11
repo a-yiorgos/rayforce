@@ -308,15 +308,31 @@ obj_t anymap(obj_t sym, obj_t vec)
 
 obj_t resize(obj_t *obj, u64_t len)
 {
+    i64_t new_size;
+    obj_t new_obj;
+
     debug_assert(is_vector(*obj), "resize: invalid type: %d", (*obj)->type);
 
     if ((*obj)->len == len)
         return *obj;
 
     // calculate size of vector with new length
-    i64_t new_size = sizeof(struct obj_t) + len * size_of_type((*obj)->type);
+    new_size = sizeof(struct obj_t) + len * size_of_type((*obj)->type);
 
-    *obj = heap_realloc(*obj, new_size);
+    if (is_internal(*obj))
+        *obj = heap_realloc(*obj, new_size);
+    else
+    {
+        new_obj = heap_alloc(new_size);
+        memcpy(new_obj, *obj, size_of(*obj));
+        new_obj->mmod = MMOD_INTERNAL;
+        new_obj->refc = 1;
+        new_obj->type = (*obj)->type;
+        new_obj->rc = 1;
+        drop(*obj);
+        *obj = new_obj;
+    }
+
     (*obj)->len = len;
 
     return *obj;
@@ -326,11 +342,26 @@ obj_t push_raw(obj_t *obj, raw_t val)
 {
     i64_t off, occup, req;
     i32_t size = size_of_type((*obj)->type);
+    obj_t new_obj;
 
     off = (*obj)->len * size;
     occup = sizeof(struct obj_t) + off;
     req = occup + size;
-    *obj = heap_realloc(*obj, req);
+
+    if (is_internal(*obj))
+        *obj = heap_realloc(*obj, req);
+    else
+    {
+        new_obj = heap_alloc(req);
+        memcpy(new_obj, *obj, occup);
+        new_obj->mmod = MMOD_INTERNAL;
+        new_obj->refc = 1;
+        new_obj->type = (*obj)->type;
+        new_obj->rc = 1;
+        drop(*obj);
+        *obj = new_obj;
+    }
+
     memcpy((*obj)->arr + off, val, size);
     (*obj)->len++;
 
@@ -1491,31 +1522,8 @@ nil_t __attribute__((hot)) drop(obj_t obj)
 
 obj_t copy(obj_t obj)
 {
-    u64_t i, l, size;
-    obj_t id, fd, res;
-
-    if (!is_internal(obj))
-    {
-        id = i64((i64_t)obj);
-        fd = at_obj(runtime_get()->fds, id);
-        if (is_null(fd))
-        {
-            printf("cow: invalid fd");
-            exit(1);
-        }
-
-        res = mmap_file(fd->i64, size_of(obj));
-        res->rc = 2;
-        drop(id);
-        id = i64((i64_t)res);
-
-        // insert fd into runtime fds
-        set_obj(&runtime_get()->fds, id, fd);
-
-        drop(id);
-
-        return res;
-    }
+    u64_t i, l;
+    obj_t res;
 
     switch (obj->type)
     {
@@ -1525,10 +1533,8 @@ obj_t copy(obj_t obj)
     case TYPE_F64:
     case TYPE_CHAR:
     case TYPE_GUID:
-        size = size_of(obj);
-        res = heap_alloc(size);
-        memcpy(res, obj, size);
-        res->rc = 1;
+        res = vector(obj->type, obj->len);
+        memcpy(res->arr, obj->arr, size_of(obj) - sizeof(struct obj_t));
         return res;
     case TYPE_LIST:
         l = obj->len;
@@ -1549,9 +1555,6 @@ obj_t copy(obj_t obj)
 obj_t cow(obj_t obj)
 {
     u32_t rc;
-
-    if (!is_internal(obj))
-        return copy(obj);
 
     /*
     Since it is forbidden to modify globals from several threads simultenously,

@@ -35,10 +35,12 @@
 #include "index.h"
 #include "items.h"
 
-#define uncow(o, v, r)            \
-    if ((v == NULL) || (*v != o)) \
-        drop(o);                  \
-    return r;
+#define uncow(o, v, r)                \
+    {                                 \
+        if ((v == NULL) || (*v != o)) \
+            drop(o);                  \
+        return r;                     \
+    };
 
 obj_t __fetch(obj_t obj, obj_t **val)
 {
@@ -299,6 +301,7 @@ insert:
             res = error(ERR_TYPE, "insert: expected 'Symbol as 1st element in a dictionary, got '%s'", typename(as_list(lst)[0]->type));
             uncow(obj, val, res);
         }
+        // Fall through
     case TYPE_TABLE:
         // Check columns
         l = as_list(lst)[0]->len;
@@ -477,6 +480,7 @@ upsert:
             drop(obj);
             return error(ERR_TYPE, "upsert: expected 'Symbol as 1st element in a dictionary, got '%s'", typename(as_list(lst)[0]->type));
         }
+        // Fall through
     case TYPE_TABLE:
         // Check columns
         l = as_list(lst)[0]->len;
