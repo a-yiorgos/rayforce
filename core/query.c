@@ -340,3 +340,116 @@ obj_t ray_select(obj_t obj)
 
     return val;
 }
+
+obj_t ray_update(obj_t obj)
+{
+    u64_t i, l, tablen;
+    obj_t keys = NULL_OBJ, vals = NULL_OBJ, filters = NULL_OBJ, groupby = NULL_OBJ,
+          bycol = NULL_OBJ, bysym = NULL_OBJ, tab, sym, prm, val;
+
+    if (obj->type != TYPE_DICT)
+        throw(ERR_LENGTH, "'select' takes dict of params");
+
+    if (as_list(obj)[0]->type != TYPE_SYMBOL)
+        throw(ERR_LENGTH, "'select' takes dict with symbol keys");
+
+    // Retrive a table
+    prm = get_param(obj, "from");
+
+    if (is_null(prm))
+        throw(ERR_LENGTH, "'select' expects 'from' param");
+
+    tab = eval(prm);
+    drop(prm);
+
+    if (is_error(tab))
+        return tab;
+
+    if (tab->type != TYPE_TABLE)
+    {
+        drop(tab);
+        throw(ERR_TYPE, "'select' from: expects table");
+    }
+
+    // Mount table columns to a local env
+    tablen = as_list(tab)[0]->len;
+    mount_env(tab);
+
+    // Apply filters
+    prm = get_param(obj, "where");
+    if (prm != NULL_OBJ)
+    {
+        val = eval(prm);
+        drop(prm);
+        if (is_error(val))
+        {
+            drop(tab);
+            return val;
+        }
+
+        filters = ray_where(val);
+        drop(val);
+        if (is_error(filters))
+        {
+            drop(tab);
+            return filters;
+        }
+    }
+
+    // Apply groupping
+    prm = get_param(obj, "by");
+    if (prm != NULL_OBJ)
+    {
+        groupby = eval(prm);
+        if (prm->type == -TYPE_SYMBOL)
+            bysym = prm;
+        else
+        {
+            bysym = symbol("x");
+            drop(prm);
+        }
+
+        unmount_env(tablen);
+
+        if (is_error(groupby))
+        {
+            drop(tab);
+            return groupby;
+        }
+
+        prm = group_map(&bycol, groupby, tab, filters);
+
+        if (is_error(prm))
+        {
+            drop(tab);
+            drop(filters);
+            drop(groupby);
+            drop(bysym);
+            return prm;
+        }
+        return prm;
+        mount_env(prm);
+
+        drop(prm);
+        drop(filters);
+        drop(groupby);
+
+        if (is_error(bycol))
+        {
+            drop(tab);
+            return bycol;
+        }
+    }
+    else if (filters != NULL_OBJ)
+    {
+        // Unmount table columns from a local env
+        unmount_env(tablen);
+        // Create filtermaps over table
+        val = remap_filter(tab, filters);
+        drop(filters);
+        mount_env(val);
+        drop(val);
+    }
+
+    return NULL;
+}

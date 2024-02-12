@@ -135,6 +135,7 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "select",    TYPE_UNARY,    FN_NONE,                   ray_select);
     regf(functions,  "time",      TYPE_UNARY,    FN_NONE | FN_SPECIAL_FORM, ray_time);
     regf(functions,  "bins",      TYPE_UNARY,    FN_NONE,                   ray_bins);
+    regf(functions,  "update",    TYPE_UNARY,    FN_NONE,                   ray_update);
     
     // Binary           
     regf(functions,  "try",       TYPE_BINARY,   FN_NONE | FN_SPECIAL_FORM, try_obj);
@@ -191,7 +192,6 @@ nil_t init_functions(obj_t functions)
     regf(functions,  "args",      TYPE_VARY,     FN_NONE,                   ray_args);
     regf(functions,  "alter",     TYPE_VARY,     FN_NONE,                   ray_alter);
     regf(functions,  "modify",    TYPE_VARY,     FN_NONE,                   ray_modify);
-    regf(functions,  "update",    TYPE_VARY,     FN_NONE,                   ray_update);
     regf(functions,  "insert",    TYPE_VARY,     FN_NONE,                   ray_insert);
     regf(functions,  "upsert",    TYPE_VARY,     FN_NONE,                   ray_upsert);
     regf(functions,  "csv",       TYPE_VARY,     FN_NONE,                   ray_csv);

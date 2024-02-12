@@ -17,3 +17,8 @@
 (set a (table [a b c d] (list (til 10) (til 10) (til 10) (til 10))))
 (set b (table [a b c] (list (+ 8 (til 5)) (+ 8 (til 5)) (+ 10 (til 5)))))
 (upsert a 2 b)
+
+(insert a (list 67 77 8 9))
+
+;; (set t (table [sym price volume tape] (list [aapl vod goog aapl aapl vod mod] 
+;;    [102 99 203 102 103 10 3] [500 400 900 10 30 40 78] (list "A" "B" "C" "D" "E" "F" "G"))))

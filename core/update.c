@@ -184,16 +184,6 @@ obj_t ray_modify(obj_t *x, u64_t n)
 }
 
 /*
- * updates for tables
- */
-obj_t ray_update(obj_t *x, u64_t n)
-{
-    unused(x);
-    unused(n);
-    throw(ERR_NOT_IMPLEMENTED, "update");
-}
-
-/*
  * inserts for tables
  */
 obj_t ray_insert(obj_t *x, u64_t n)

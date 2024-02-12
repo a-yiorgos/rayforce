@@ -27,5 +27,6 @@
 #include "rayforce.h"
 
 obj_t ray_select(obj_t obj);
+obj_t ray_update(obj_t obj);
 
 #endif // QUERY_H
