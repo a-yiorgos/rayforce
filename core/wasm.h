@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Anton Kundenko <singaraiona@gmail.com>
+ *   Copyright (c) 2024 Anton Kundenko <singaraiona@gmail.com>
  *   All rights reserved.
 
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,30 +21,11 @@
  *   SOFTWARE.
  */
 
-#ifndef MMAP_H
-#define MMAP_H
+#ifndef WASM_H
+#define WASM_H
 
-#ifndef __USE_MISC
-#define __USE_MISC
-#define _DEFAULT_SOURCE
-#endif
+#include <emscripten.h>
 
-#ifdef __EMSCRIPTEN__
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 65536
-#endif
-#else
-#define PAGE_SIZE 4096
-#endif
+nil_t printjs(str_t str);
 
-#include "rayforce.h"
-
-// clang-format off
-nil_t *mmap_stack(u64_t size);
-nil_t *mmap_malloc(u64_t size);
-nil_t *mmap_file(i64_t fd, u64_t size);
-i64_t  mmap_free(nil_t *addr, u64_t size);
-i64_t  mmap_sync(nil_t *addr, u64_t size);
-// clang-format on
-
-#endif // MMAP_H
+#endif // WASM_H

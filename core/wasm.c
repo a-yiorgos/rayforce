@@ -23,16 +23,86 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include "repl.h"
+#include "wasm.h"
+#include "parse.h"
 #include "hash.h"
 #include "format.h"
 #include "util.h"
+#include "string.h"
+#include "poll.h"
+#include "heap.h"
 
-i32_t create_event_loop(parser_t *parser, i16_t port)
+// Use EM_JS to define JavaScript functions to be called from C
+EM_JS(nil_t, js_appendOutput, (str_t text), {
+    Module.appendOutput(UTF8ToString(text));
+});
+
+// volatile int hasInput = 0;
+// volatile char inputBuffer[256];
+
+poll_t poll_init(i64_t port) { return (poll_t){0}; };
+
+nil_t poll_cleanup(poll_t poll) { unused(poll); };
+
+i64_t poll_run(poll_t poll)
 {
+    unused(poll);
+    // emscripten_set_main_loop(wasm_repl, -1, 1);
     return 0;
+};
+
+i64_t poll_register(poll_t poll, i64_t fd, u8_t version)
+{
+    unused(poll);
+    unused(fd);
+    unused(version);
+    return 0;
+};
+
+nil_t poll_deregister(poll_t poll, i64_t id)
+{
+    unused(poll);
+    unused(id);
+};
+
+obj_t ipc_send_sync(poll_t poll, i64_t id, obj_t msg)
+{
+    unused(poll);
+    unused(id);
+    unused(msg);
+    return NULL_OBJ;
+};
+
+obj_t ipc_send_async(poll_t poll, i64_t id, obj_t msg)
+{
+    unused(poll);
+    unused(id);
+    unused(msg);
+    return NULL_OBJ;
+};
+
+nil_t printjs(str_t str)
+{
+    js_appendOutput(str);
 }
+
+// Define the wasm_repl function to be called from JavaScript
+EMSCRIPTEN_KEEPALIVE nil_t wasm_repl(str_t input)
+{
+    obj_t src, file, res;
+    str_t fmt;
+
+    src = string_from_str(input, strlen(input));
+    file = string_from_str("webrepl", 4);
+    res = eval_str(0, src, file);
+    drop(src);
+    drop(file);
+
+    fmt = obj_fmt(res);
+    js_appendOutput(fmt);
+    heap_free(fmt);
+    drop(res);
+};

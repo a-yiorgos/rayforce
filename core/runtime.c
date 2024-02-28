@@ -30,7 +30,7 @@
 #include "io.h"
 
 // Global runtime reference
-__thread runtime_t __RUNTIME = NULL;
+runtime_t __RUNTIME = NULL;
 
 nil_t usage(nil_t)
 {

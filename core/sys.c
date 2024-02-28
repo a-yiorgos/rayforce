@@ -83,6 +83,15 @@ sys_info_t get_sys_info(nil_t)
     len = sizeof(memSize);
     sysctlbyname("hw.memsize", &memSize, &len, NULL, 0);
     info.mem = (i32_t)(memSize / (1024 * 1024));
+
+#elif defined(__EMSCRIPTEN__)
+    snprintf(info.cpu, sizeof(info.cpu), "wasm");
+    info.mem = 0;
+
+#else
+    snprintf(info.cpu, sizeof(info.cpu), "unknown");
+    info.mem = 0;
+
 #endif
 
     return info;

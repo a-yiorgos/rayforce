@@ -29,8 +29,6 @@
 #include "../core/util.h"
 #include "../core/sys.h"
 
-#define LINE_SIZE 2048
-#define PROMPT "> "
 #define LOGO "\
   RayforceDB: %d.%d %s\n\
   %s %d(MB)\n\

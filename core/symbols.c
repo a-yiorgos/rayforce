@@ -130,8 +130,8 @@ str_t str_intern(symbols_t *symbols, str_t str, i64_t len)
 symbols_t *symbols_new(nil_t)
 {
     symbols_t *symbols = (symbols_t *)mmap_malloc(sizeof(struct symbols_t));
-
     pool_node_t *node = pool_node_new();
+
     symbols->pool_node_0 = node;
     symbols->pool_node = node;
     symbols->strings_pool = (str_t)(node + sizeof(pool_node_t *)); // Skip the node size of next ptr

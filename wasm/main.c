@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Anton Kundenko <singaraiona@gmail.com>
+ *   Copyright (c) 2024 Anton Kundenko <singaraiona@gmail.com>
  *   All rights reserved.
 
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,30 +21,33 @@
  *   SOFTWARE.
  */
 
-#ifndef MMAP_H
-#define MMAP_H
+#define _POSIX_C_SOURCE 1
 
-#ifndef __USE_MISC
-#define __USE_MISC
-#define _DEFAULT_SOURCE
-#endif
+#include "../core/rayforce.h"
+#include "../core/runtime.h"
+#include "../core/format.h"
+#include "../core/util.h"
+#include "../core/wasm.h"
 
-#ifdef __EMSCRIPTEN__
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 65536
-#endif
-#else
-#define PAGE_SIZE 4096
-#endif
+#define LOGO "\
+  RayforceDB: %d.%d %s\n\
+  WASM\n\
+  Documentation: https://rayforcedb.com/\n\
+  Github: https://github.com/singaraiona/rayforce\n"
 
-#include "rayforce.h"
+nil_t print_logo(nil_t)
+{
+    str_t logo = str_fmt(0, LOGO, RAYFORCE_MAJOR_VERSION, RAYFORCE_MINOR_VERSION, __DATE__);
+    str_t fmt = str_fmt(0, "%s%s%s", BOLD, logo, RESET);
+    printjs(fmt);
+    heap_free(logo);
+    heap_free(fmt);
+}
 
-// clang-format off
-nil_t *mmap_stack(u64_t size);
-nil_t *mmap_malloc(u64_t size);
-nil_t *mmap_file(i64_t fd, u64_t size);
-i64_t  mmap_free(nil_t *addr, u64_t size);
-i64_t  mmap_sync(nil_t *addr, u64_t size);
-// clang-format on
+EMSCRIPTEN_KEEPALIVE i32_t main(i32_t argc, str_t argv[])
+{
+    runtime_init(argc, argv);
+    print_logo();
 
-#endif // MMAP_H
+    return runtime_run();
+}
