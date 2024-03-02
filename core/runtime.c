@@ -41,7 +41,7 @@ nil_t usage(nil_t)
 obj_p parse_cmdline(i32_t argc, str_p argv[])
 {
     i32_t opt;
-    obj_p keys = vector_symbol(0), vals = vn_list(0), str;
+    obj_p keys = vector_symbol(0), vals = list(0), str;
     b8_t file_handled = B8_FALSE; // flag to indicate if the file has been handled
 
     for (opt = 1; opt < argc; opt++)

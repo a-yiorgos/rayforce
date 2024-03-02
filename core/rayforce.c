@@ -441,7 +441,7 @@ obj_p push_obj(obj_p *obj, obj_p val)
     if ((*obj)->type != -t && (*obj)->type != TYPE_LIST)
     {
         l = (*obj)->len;
-        lst = vn_list(l + 1);
+        lst = list(l + 1);
 
         for (i = 0; i < l; i++)
             as_list(lst)[i] = at_idx(*obj, i);

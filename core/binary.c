@@ -438,7 +438,7 @@ obj_p __ray_set(obj_p x, obj_p y)
 
             l = as_list(y)[0]->len;
 
-            cols = vn_list(0);
+            cols = list(0);
 
             // find symbol columns
             for (i = 0, c = 0; i < l; i++)

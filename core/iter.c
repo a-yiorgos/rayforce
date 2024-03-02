@@ -149,7 +149,7 @@ obj_p ray_fold(obj_p *x, u64_t n)
     obj_p f, v, *b, x1, x2;
 
     if (n < 2)
-        return vn_list(0);
+        return list(0);
 
     f = x[0];
     x++;

@@ -458,7 +458,7 @@ obj_p ray_filter(obj_p x, obj_p y)
             return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
         l = x->len;
-        res = vn_list(l);
+        res = list(l);
         for (i = 0; i < l; i++)
             if (as_b8(y)[i])
                 as_list(res)[j++] = clone_obj(as_list(x)[i]);
@@ -470,7 +470,7 @@ obj_p ray_filter(obj_p x, obj_p y)
     case mtype2(TYPE_TABLE, TYPE_B8):
         vals = as_list(x)[1];
         l = vals->len;
-        res = vn_list(l);
+        res = list(l);
 
         for (i = 0; i < l; i++)
         {

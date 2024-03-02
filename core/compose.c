@@ -156,7 +156,7 @@ obj_p ray_table(obj_p x, obj_p y)
         if (x->len != 1)
             return error_str(ERR_LENGTH, "table: keys and values must have the same length");
 
-        l = vn_list(1);
+        l = list(1);
         as_list(l)[0] = clone_obj(y);
         y = l;
     }
