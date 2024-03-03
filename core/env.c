@@ -112,6 +112,8 @@ nil_t init_functions(obj_p functions)
     regf(functions,  "group",     TYPE_UNARY,    FN_NONE,                   ray_group);
     regf(functions,  "sum",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_sum);
     regf(functions,  "avg",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_avg);
+    regf(functions,  "med",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_med);
+    regf(functions,  "dev",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_dev);
     regf(functions,  "min",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_min);
     regf(functions,  "max",       TYPE_UNARY,    FN_ATOMIC | FN_AGGR,       ray_max);
     regf(functions,  "round",     TYPE_UNARY,    FN_ATOMIC,                 ray_round);
@@ -177,8 +179,6 @@ nil_t init_functions(obj_p functions)
     regf(functions,  "xdesc",     TYPE_BINARY,   FN_NONE,                   ray_xdesc);
     regf(functions,  "enum",      TYPE_BINARY,   FN_NONE,                   ray_enum);
     regf(functions,  "xbar",      TYPE_BINARY,   FN_ATOMIC,                 ray_xbar);
-    regf(functions,  "dev",       TYPE_BINARY,   FN_ATOMIC,                 ray_dev);
-    regf(functions,  "med",       TYPE_BINARY,   FN_ATOMIC,                 ray_med);
         
     // Vary               
     regf(functions,  "do",        TYPE_VARY,     FN_NONE | FN_SPECIAL_FORM, ray_do);
@@ -209,36 +209,36 @@ nil_t init_functions(obj_p functions)
     
 nil_t init_typenames(obj_p typenames)    
 {
-    regt(typenames,   -TYPE_ERROR,      "Null");
-    regt(typenames,   -TYPE_B8,       "b8");
-    regt(typenames,   -TYPE_U8,       "byte");
-    regt(typenames,   -TYPE_I64,        "i64");
-    regt(typenames,   -TYPE_F64,        "f64");
-    regt(typenames,   -TYPE_C8,       "char");
-    regt(typenames,   -TYPE_SYMBOL,     "symbol");
-    regt(typenames,   -TYPE_TIMESTAMP,  "timestamp");
-    regt(typenames,   -TYPE_GUID,       "guid");
-    regt(typenames,    TYPE_B8,       "b8");
-    regt(typenames,    TYPE_U8,       "Byte");
-    regt(typenames,    TYPE_I64,        "I64");
-    regt(typenames,    TYPE_F64,        "F64");
-    regt(typenames,    TYPE_C8,       "String");
-    regt(typenames,    TYPE_ENUM,       "Enum");
-    regt(typenames,    TYPE_ANYMAP,     "Anymap");
-    regt(typenames,    TYPE_SYMBOL,     "Symbol");
-    regt(typenames,    TYPE_TIMESTAMP,  "Timestamp");
-    regt(typenames,    TYPE_GUID,       "Guid");
-    regt(typenames,    TYPE_LIST,       "List");
-    regt(typenames,    TYPE_TABLE,      "Table");
-    regt(typenames,    TYPE_DICT,       "Dict");
-    regt(typenames,    TYPE_UNARY,      "Unary");
-    regt(typenames,    TYPE_BINARY,     "Binary");
-    regt(typenames,    TYPE_VARY,       "Vary");
-    regt(typenames,    TYPE_LAMBDA,     "Lambda");
-    regt(typenames,    TYPE_FILTERMAP,  "Filtermap");
-    regt(typenames,    TYPE_GROUPMAP,   "Groupmap");
-    regt(typenames,    TYPE_NULL,       "Null");
-    regt(typenames,    TYPE_ERROR,      "Error");
+    regt(typenames,   -TYPE_ERROR,     "Null");
+    regt(typenames,   -TYPE_B8,        "b8");
+    regt(typenames,   -TYPE_U8,        "byte");
+    regt(typenames,   -TYPE_I64,       "i64");
+    regt(typenames,   -TYPE_F64,       "f64");
+    regt(typenames,   -TYPE_C8,        "char");
+    regt(typenames,   -TYPE_SYMBOL,    "symbol");
+    regt(typenames,   -TYPE_TIMESTAMP, "timestamp");
+    regt(typenames,   -TYPE_GUID,      "guid");
+    regt(typenames,    TYPE_B8,        "b8");
+    regt(typenames,    TYPE_U8,        "Byte");
+    regt(typenames,    TYPE_I64,       "I64");
+    regt(typenames,    TYPE_F64,       "F64");
+    regt(typenames,    TYPE_C8,        "String");
+    regt(typenames,    TYPE_ENUM,      "Enum");
+    regt(typenames,    TYPE_ANYMAP,    "Anymap");
+    regt(typenames,    TYPE_SYMBOL,    "Symbol");
+    regt(typenames,    TYPE_TIMESTAMP, "Timestamp");
+    regt(typenames,    TYPE_GUID,      "Guid");
+    regt(typenames,    TYPE_LIST,      "List");
+    regt(typenames,    TYPE_TABLE,     "Table");
+    regt(typenames,    TYPE_DICT,      "Dict");
+    regt(typenames,    TYPE_UNARY,     "Unary");
+    regt(typenames,    TYPE_BINARY,    "Binary");
+    regt(typenames,    TYPE_VARY,      "Vary");
+    regt(typenames,    TYPE_LAMBDA,    "Lambda");
+    regt(typenames,    TYPE_FILTERMAP, "Filtermap");
+    regt(typenames,    TYPE_GROUPMAP,  "Groupmap");
+    regt(typenames,    TYPE_NULL,      "Null");
+    regt(typenames,    TYPE_ERROR,     "Error");
 }
 // clang-format on
 
