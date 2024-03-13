@@ -74,17 +74,17 @@ u64_t str_hash(str_p key, u64_t len)
     switch (len & 7)
     {
     case 7:
-        k1 ^= ((u64_t)key[i + 6]) << 48;
+        k1 ^= ((u64_t)key[i + 6]) << 48; // fall through
     case 6:
-        k1 ^= ((u64_t)key[i + 5]) << 40;
+        k1 ^= ((u64_t)key[i + 5]) << 40; // fall through
     case 5:
-        k1 ^= ((u64_t)key[i + 4]) << 32;
+        k1 ^= ((u64_t)key[i + 4]) << 32; // fall through
     case 4:
-        k1 ^= ((u64_t)key[i + 3]) << 24;
+        k1 ^= ((u64_t)key[i + 3]) << 24; // fall through
     case 3:
-        k1 ^= ((u64_t)key[i + 2]) << 16;
+        k1 ^= ((u64_t)key[i + 2]) << 16; // fall through
     case 2:
-        k1 ^= ((u64_t)key[i + 1]) << 8;
+        k1 ^= ((u64_t)key[i + 1]) << 8; // fall through
     case 1:
         k1 ^= ((u64_t)key[i]);
         k1 *= c1;

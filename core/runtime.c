@@ -112,6 +112,7 @@ i32_t runtime_init(i32_t argc, str_p argv[])
     __RUNTIME->addr = (sock_addr_t){0};
     __RUNTIME->slaves = 0;
     __RUNTIME->fds = dict(vector_i64(0), vector_i64(0));
+    __RUNTIME->args = NULL_OBJ;
 
     interpreter_new();
 

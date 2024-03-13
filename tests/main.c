@@ -30,7 +30,7 @@
 #include "../core/format.h"
 #include "../core/unary.h"
 #include "../core/heap.h"
-#include "../core/vm.h"
+#include "../core/eval.h"
 #include "../core/hash.h"
 #include "../core/symbols.h"
 #include "../core/string.h"
