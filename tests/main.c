@@ -64,7 +64,7 @@ typedef struct test_entry_t
 // Setup and Teardown functions
 nil_t setup()
 {
-    runtime_init(0, NULL);
+    runtime_init(1, NULL);
 }
 
 nil_t teardown()
@@ -123,6 +123,7 @@ test_entry_t tests[] = {
     {"test_varying_sizes", test_varying_sizes},
     {"test_str_match", test_str_match},
     {"test_lang_basic", test_lang_basic},
+    {"test_lang_query", test_lang_query},
 };
 // ---
 

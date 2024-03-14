@@ -147,9 +147,6 @@ nil_t poll_cleanup(poll_p poll)
     close(__EVENT_FD[1]);
     close(poll->poll_fd);
     heap_free(poll);
-
-    printf("\nBye.\n");
-    fflush(stdout);
 }
 
 i64_t poll_register(poll_p poll, i64_t fd, u8_t version)

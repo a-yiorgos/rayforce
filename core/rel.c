@@ -65,6 +65,15 @@ obj_p ray_eq(obj_p x, obj_p y)
 
         return vec;
 
+    case mtype2(TYPE_F64, -TYPE_I64):
+        l = x->len;
+        vec = vector_b8(l);
+
+        for (i = 0; i < l; i++)
+            as_b8(vec)[i] = as_f64(x)[i] == (f64_t)y->i64;
+
+        return vec;
+
     case mtype2(-TYPE_I64, TYPE_I64):
     case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
     case mtype2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
@@ -108,6 +117,15 @@ obj_p ray_eq(obj_p x, obj_p y)
 
         for (i = 0; i < l; i++)
             as_b8(vec)[i] = as_f64(x)[i] == as_f64(y)[i];
+
+        return vec;
+
+    case mtype2(TYPE_F64, TYPE_I64):
+        l = y->len;
+        vec = vector_b8(l);
+
+        for (i = 0; i < l; i++)
+            as_b8(vec)[i] = as_f64(x)[i] == (f64_t)as_i64(y)[i];
 
         return vec;
 

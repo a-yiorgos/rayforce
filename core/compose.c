@@ -180,6 +180,7 @@ obj_p ray_table(obj_p x, obj_p y)
         case -TYPE_C8:
         case -TYPE_SYMBOL:
         case -TYPE_TIMESTAMP:
+        case -TYPE_GUID:
         case TYPE_LAMBDA:
         case TYPE_DICT:
         case TYPE_TABLE:
@@ -236,6 +237,8 @@ obj_p ray_table(obj_p x, obj_p y)
         case -TYPE_F64:
         case -TYPE_C8:
         case -TYPE_SYMBOL:
+        case -TYPE_TIMESTAMP:
+        case -TYPE_GUID:
             c = i64(cl);
             as_list(lst)[i] = ray_take(c, as_list(y)[i]);
             drop_obj(c);

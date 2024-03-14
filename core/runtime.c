@@ -149,7 +149,10 @@ i32_t runtime_init(i32_t argc, str_p argv[])
 
 i32_t runtime_run(nil_t)
 {
-    return poll_run(__RUNTIME->poll);
+    if (__RUNTIME->poll)
+        return poll_run(__RUNTIME->poll);
+
+    return 0;
 }
 
 nil_t runtime_cleanup(nil_t)

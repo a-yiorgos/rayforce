@@ -550,6 +550,14 @@ obj_p ray_take(obj_p x, obj_p y)
 
         return res;
 
+    case mtype2(-TYPE_I64, -TYPE_GUID):
+        l = absi64(x->i64);
+        res = vector_guid(l);
+        for (i = 0; i < l; i++)
+            memcpy(as_guid(res)[i].buf, as_guid(y), sizeof(guid_t));
+
+        return res;
+
     case mtype2(-TYPE_I64, TYPE_ENUM):
         k = ray_key(y);
         s = ray_get(k);

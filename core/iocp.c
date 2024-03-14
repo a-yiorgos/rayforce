@@ -254,9 +254,6 @@ nil_t poll_cleanup(poll_p poll)
     heap_free(poll);
 
     WSACleanup();
-
-    printf("\nBye.\n");
-    fflush(stdout);
 }
 
 nil_t poll_deregister(poll_p poll, i64_t id)
