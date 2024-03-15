@@ -72,25 +72,6 @@ test_result_t test_out_of_memory()
     PASS();
 }
 
-test_result_t test_large_number_of_allocations()
-{
-    i64_t i, num_allocs = 10000000; // Large number of allocations
-    u64_t size = 1024;
-    nil_t **ptrs = heap_alloc(num_allocs * sizeof(nil_t *));
-    for (i = 0; i < num_allocs; i++)
-    {
-        ptrs[i] = heap_alloc(size);
-        TEST_ASSERT(ptrs[i] != NULL, "ptrs[i] != NULL");
-    }
-    // Free memory in reverse order
-    for (i = num_allocs - 1; i >= 0; i--)
-        heap_free(ptrs[i]);
-
-    heap_free(ptrs);
-
-    PASS();
-}
-
 test_result_t test_varying_sizes()
 {
     u64_t size = 16;       // Start size

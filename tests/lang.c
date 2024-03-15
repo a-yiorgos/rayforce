@@ -37,6 +37,28 @@
 
 test_result_t test_lang_basic()
 {
+    TEST_ASSERT_EQ("null", "null");
+    TEST_ASSERT_EQ("true", "true");
+    TEST_ASSERT_EQ("false", "false");
+    TEST_ASSERT_EQ("1", "1");
+    TEST_ASSERT_EQ("1.1", "1.10");
+    TEST_ASSERT_EQ("\"\"", "\"\"");
+    TEST_ASSERT_EQ("'asd", "'asd");
+    TEST_ASSERT_EQ("\"asd\"", "\"asd\"");
+    TEST_ASSERT_EQ("{a: \"asd\" b: 1 c: [1 2 3]}", "{a: \"asd\" b: 1 c: [1 2 3]}");
+    TEST_ASSERT_EQ("{a: \"asd\" b: 1 c: [1 2 3] d: {e: 1 f: 2}}", "{a: \"asd\" b: 1 c: [1 2 3] d: {e: 1 f: 2}}");
+    TEST_ASSERT_EQ("{a: \"asd\" b: 1 c: [1 2 3] d: {e: 1 f: 2 g: {h: 1 i: 2}}}", "{a: \"asd\" b: 1 c: [1 2 3] d: {e: 1 f: 2 g: {h: 1 i: 2}}}");
+    TEST_ASSERT_EQ("(list 1 2 3 \"asd\")", "(list 1 2 3 \"asd\")");
+    TEST_ASSERT_EQ("(list 1 2 3 \"asd\" (list 1 2 3))", "(list 1 2 3 \"asd\" (list 1 2 3))");
+    TEST_ASSERT_EQ("(list 1 2 3 \"asd\" (list 1 2 3 (list 1 2 3)))", "(list 1 2 3 \"asd\" (list 1 2 3 (list 1 2 3)))");
+    TEST_ASSERT_EQ("(list 1 2 3)", "(list 1 2 3)");
+    TEST_ASSERT_EQ("(enlist 1 2 3)", "[1 2 3]");
+
+    PASS();
+}
+
+test_result_t test_lang_math()
+{
     TEST_ASSERT_EQ("(+ 1 2)", "3");
     TEST_ASSERT_EQ("(+ 1 2.2)", "3.20");
     TEST_ASSERT_EQ("(+ 1.1 2)", "3.10");
@@ -105,5 +127,10 @@ test_result_t test_lang_query()
                    "(table [Symbol s]"
                    "(list [apll good msfk ibmd amznt fbad baba]"
                    "[7.00 9.00 11.00 3.00 4.00 5.00 6.00]))");
+    PASS();
+}
+
+test_result_t test_lang_update()
+{
     PASS();
 }
