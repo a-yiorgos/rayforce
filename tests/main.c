@@ -64,7 +64,11 @@ typedef struct test_entry_t
 // Setup and Teardown functions
 nil_t setup()
 {
+#ifdef STOP_ON_FAIL
     runtime_init(1, NULL);
+#else
+    runtime_init(0, NULL);
+#endif
 }
 
 nil_t teardown()
@@ -84,28 +88,41 @@ nil_t teardown()
             FAIL(msg);         \
     }
 
+nil_t on_pass(f64_t ms)
+{
+    printf("%sPassed%s at: %.*f ms\n", GREEN, RESET, 4, ms);
+}
+
+nil_t on_fail(str_p msg)
+{
+    printf("%sFailed.%s \n          \\ %s\n", RED, RESET, msg);
+#ifdef STOP_ON_FAIL
+    runtime_run();
+#endif
+}
+
 // Macro to encapsulate the pattern
-#define RUN_TEST(name, func, pass)                                          \
-    test_result_t res;                                                      \
-    clock_t timer;                                                          \
-    f64_t ms;                                                               \
-    do                                                                      \
-    {                                                                       \
-        setup();                                                            \
-        printf("%s  Running %s%s ... ", CYAN, RESET, name);                 \
-        timer = clock();                                                    \
-        res = func();                                                       \
-        ms = (((f64_t)(clock() - timer)) / CLOCKS_PER_SEC) * 1000;          \
-        if (res.status == TEST_PASS)                                        \
-        {                                                                   \
-            (*pass)++;                                                      \
-            printf("%sPassed%s at: %.*f ms\n", GREEN, RESET, 4, ms);        \
-        }                                                                   \
-        else                                                                \
-        {                                                                   \
-            printf("%sFailed.%s \n          \\ %s\n", RED, RESET, res.msg); \
-        }                                                                   \
-        teardown();                                                         \
+#define RUN_TEST(name, func, pass)                                 \
+    test_result_t res;                                             \
+    clock_t timer;                                                 \
+    f64_t ms;                                                      \
+    do                                                             \
+    {                                                              \
+        setup();                                                   \
+        printf("%s  Running %s%s ... ", CYAN, RESET, name);        \
+        timer = clock();                                           \
+        res = func();                                              \
+        ms = (((f64_t)(clock() - timer)) / CLOCKS_PER_SEC) * 1000; \
+        if (res.status == TEST_PASS)                               \
+        {                                                          \
+            (*pass)++;                                             \
+            on_pass(ms);                                           \
+        }                                                          \
+        else                                                       \
+        {                                                          \
+            on_fail(res.msg);                                      \
+        }                                                          \
+        teardown();                                                \
     } while (0)
 
 // Include tests files
