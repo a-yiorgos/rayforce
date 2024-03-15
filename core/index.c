@@ -735,7 +735,7 @@ obj_p index_group_list_direct(obj_p lst, i64_t filter[], u64_t len)
         }
     }
 
-    scopes = heap_alloc(l * sizeof(index_scope_t));
+    scopes = (index_scope_t *)heap_alloc(l * sizeof(index_scope_t));
 
     // calculate scopes of each column to check if we can use direct hashing
     for (i = 0; i < l; i++)
