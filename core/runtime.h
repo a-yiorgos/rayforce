@@ -30,6 +30,7 @@
 #include "eval.h"
 #include "poll.h"
 #include "sock.h"
+#include "pool.h"
 
 /*
  * Runtime structure.
@@ -41,8 +42,8 @@ typedef struct runtime_t
     symbols_p symbols; // vector_symbols pool.
     poll_p poll;       // I/O event loop handle.
     obj_p fds;         // File descriptors.
-    u16_t slaves;      // Number of slave threads.
     sock_addr_t addr;  // Socket address that a process listen.
+    pool_p pool;       // Executors pool.
 } *runtime_p;
 
 extern runtime_p __RUNTIME;

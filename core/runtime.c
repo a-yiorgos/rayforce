@@ -28,13 +28,14 @@
 #include "poll.h"
 #include "unary.h"
 #include "io.h"
+#include "pool.h"
 
 // Global runtime reference
 runtime_p __RUNTIME = NULL;
 
 nil_t usage(nil_t)
 {
-    printf("%s%s%s", BOLD, YELLOW, "Usage: rayforce [-f file...] [-p port] [file]\n");
+    printf("%s%s%s", BOLD, YELLOW, "Usage: rayforce [-f file...] [-p port] [file] [-t threads]\n");
     exit(EXIT_FAILURE);
 }
 
@@ -73,6 +74,17 @@ obj_p parse_cmdline(i32_t argc, str_p argv[])
                 push_obj(&vals, str);
                 break;
 
+            case 't':
+                opt++;
+
+                if (argv[opt] == NULL)
+                    usage();
+
+                push_sym(&keys, "threads");
+                str = string_from_str(argv[opt], strlen(argv[opt]));
+                push_obj(&vals, str);
+                break;
+
             default:
                 usage();
             }
@@ -100,8 +112,8 @@ obj_p parse_cmdline(i32_t argc, str_p argv[])
 
 i32_t runtime_init(i32_t argc, str_p argv[])
 {
-    i64_t i;
-    obj_p file, res;
+    u64_t n;
+    obj_p arg, res;
     str_p fmt;
 
     heap_init();
@@ -110,27 +122,31 @@ i32_t runtime_init(i32_t argc, str_p argv[])
     __RUNTIME->symbols = symbols_new();
     __RUNTIME->env = create_env();
     __RUNTIME->addr = (sock_addr_t){0};
-    __RUNTIME->slaves = 0;
     __RUNTIME->fds = dict(vector_i64(0), vector_i64(0));
     __RUNTIME->args = NULL_OBJ;
+    __RUNTIME->pool = NULL;
 
     interpreter_new();
 
     if (argc)
     {
         __RUNTIME->args = parse_cmdline(argc, argv);
-        i = find_sym(as_list(__RUNTIME->args)[0], "port");
-        if (i < (i64_t)as_list(__RUNTIME->args)[0]->len)
-            __RUNTIME->addr.port = atoi(as_string(as_list(as_list(__RUNTIME->args)[1])[i]));
+
+        arg = runtime_get_arg("port");
+        if (!is_null(arg))
+        {
+            __RUNTIME->addr.port = atoi(as_string(arg));
+            drop_obj(arg);
+        }
 
         __RUNTIME->poll = poll_init(__RUNTIME->addr.port);
 
         // load file
-        file = runtime_get_arg("file");
-        if (!is_null(file))
+        arg = runtime_get_arg("file");
+        if (!is_null(arg))
         {
-            res = ray_load(file);
-            drop_obj(file);
+            res = ray_load(arg);
+            drop_obj(arg);
 
             if (res)
             {
@@ -139,6 +155,17 @@ i32_t runtime_init(i32_t argc, str_p argv[])
                 heap_free(fmt);
                 drop_obj(res);
             }
+        }
+
+        // thread count
+        arg = runtime_get_arg("threads");
+        if (!is_null(arg))
+        {
+            n = atoi(as_string(arg));
+            if (n > 1)
+                __RUNTIME->pool = pool_new(n);
+
+            drop_obj(arg);
         }
     }
     else
@@ -165,6 +192,8 @@ nil_t runtime_cleanup(nil_t)
     free_env(&__RUNTIME->env);
     drop_obj(__RUNTIME->fds);
     interpreter_free();
+    if (__RUNTIME->pool)
+        pool_free(__RUNTIME->pool);
     mmap_free(__RUNTIME, sizeof(struct runtime_t));
     heap_cleanup();
     __RUNTIME = NULL;

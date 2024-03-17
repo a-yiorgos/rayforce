@@ -21,49 +21,42 @@
  *   SOFTWARE.
  */
 
+#ifndef POOL_H
+#define POOL_H
+
 #include "rayforce.h"
+#include <pthread.h>
 
-#define WRITE 1
-#define READ 2
-#define DESTROY 4
-#define ROUND 64
-#define BLOCK_SIZE (ROUND - 1)
-#define CLOSED_FLAG (1ULL << 63)
-#define CROSSED_FLAG CLOSED_FLAG
-
-typedef struct slot_t
+typedef struct task_t
 {
-    u64_t state;
-    raw_p message;
-} *slot_p;
+    nil_t (*function)(raw_p);
+    raw_p arg;
+    u64_t len;
+} *task_p;
 
-typedef struct block_t
+typedef struct result_t
 {
-    struct block_t *next;
-    struct slot_t slots[BLOCK_SIZE];
-} *block_p;
+    raw_p data;
+    u64_t len;
+} *result_p;
 
-typedef struct cursor_t
+typedef struct executor_t
 {
-    u64_t index;
-    block_p block;
-} cursor_t;
+    u64_t id;
+    pthread_t handle;
+} *executor_p;
 
-typedef struct channel_t
+typedef struct pool_t
 {
-    cursor_t tail;
-    cursor_t head;
-} *channel_p;
+    pthread_cond_t complete; // Condition variable to signal task completion
+    executor_p executors;    // Array of executors
+    u64_t executors_count;   // Number of executors
+    task_p tasks;            // Array of input tasks for executors
+    result_p results;        // Array of results from executors
+    u64_t tasks_remaining;   // Counter to track remaining tasks
+} *pool_p;
 
-block_p block_new();
-nil_t block_free(block_p block, u64_t start);
-block_p block_get_next(block_p block);
-block_p block_wait_next(block_p block);
-nil_t block_set_next(block_p block, block_p next);
+pool_p pool_new(u64_t executors_count);
+nil_t pool_free(pool_p pool);
 
-channel_p channel_new();
-nil_t channel_free(channel_p channel);
-i32_t channel_send(channel_p channel, raw_p message);
-raw_p channel_recv(channel_p channel);
-i32_t channel_is_empty(channel_p channel);
-nil_t channel_close(channel_p channel);
+#endif // POOL_H
