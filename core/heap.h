@@ -42,12 +42,17 @@ typedef struct memstat_t
 
 typedef struct block_t
 {
-    struct block_t *pool; // address of the pool the block belongs to
-    u16_t pool_order;     // order of the pool the block belongs to
-    u16_t used;           // used flag
-    u32_t order;          // order of the block
-    struct block_t *prev; // previous block
-    struct block_t *next; // next block
+    u8_t offset;    // log2 offset from the block pool base
+    u8_t order : 6; // block order
+    u8_t right : 1; // right buddy flag
+    u8_t used : 1;  // used flag
+                    // untouched fields (used directly by obj_t)
+    i8_t type;      // type
+    u8_t attrs;     // attributes
+    u32_t rc;       // reference count
+    u64_t pad;      // padding
+    struct block_t *next;
+    struct block_t *prev;
 } *block_p;
 
 typedef struct heap_t

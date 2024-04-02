@@ -104,8 +104,8 @@ typedef struct guid_t {
 // Object (generic type)
 typedef struct obj_t
 {
-    u8_t mmod;  // memory model (internal, external, etc.)
-    u8_t resv;  // reserved
+    u8_t mmod;  // block order | distance parity | memory model (internal, external, etc.)
+    u8_t dist;  // log2 distance to the block base
     i8_t type;  // type
     u8_t attrs; // attributes
     u32_t rc;   // reference count
