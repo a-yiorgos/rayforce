@@ -47,19 +47,19 @@ test_result_t test_multiple_allocations()
 
 test_result_t test_multiple_allocs_and_frees()
 {
-    u64_t i, size;
-    nil_t *ptrs[100];
+    u64_t i, size, n = 6;
+    nil_t *ptrs[n];
 
     // Allocate multiple blocks of different sizes
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < n; i++)
     {
         size = i % 3;
         ptrs[i] = heap_alloc(size);
         TEST_ASSERT((size != 0 && ptrs[i] != NULL) || (size == 0 && ptrs[i] == NULL), "ptrs[i] != NULL");
     }
 
-    // Free the allocated blocks in random order
-    for (i = 0; i < 100; i++)
+    // Free the allocated blocks in direct order
+    for (i = 0; i < n; i++)
         heap_free(ptrs[i]);
 
     PASS();

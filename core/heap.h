@@ -27,11 +27,10 @@
 #include "rayforce.h"
 
 #define AVAIL_MASK ((u64_t)0xffffffffffffffff)
-#define BLOCK_HEADER_SIZE 16
-#define MIN_ORDER 5                   // 2^5 = 32 bytes (size of block header)
-#define MAX_ORDER 25                  // 2^25 = 32MB
-#define MAX_POOL_ORDER 36             // 2^36 = 64GB
-#define POOL_SIZE (1ull << MAX_ORDER) // 32MB
+#define MIN_ORDER 5                                   // 2^5 = 32 bytes
+#define MAX_ORDER 25                                  // 2^25 = 32MB
+#define MAX_POOL_ORDER 36                             // 2^36 = 64GB
+#define POOL_SIZE (1024 * 1024 * (1ull << MAX_ORDER)) //
 
 typedef struct memstat_t
 {
@@ -42,10 +41,9 @@ typedef struct memstat_t
 
 typedef struct block_t
 {
-    u8_t offset;    // log2 offset from the block pool base
-    u8_t order : 6; // block order
-    u8_t right : 1; // right buddy flag
+    u8_t mmod;      //
     u8_t used : 1;  // used flag
+    u8_t order : 7; // block order
                     // untouched fields (used directly by obj_t)
     i8_t type;      // type
     u8_t attrs;     // attributes
@@ -61,6 +59,8 @@ typedef struct heap_t
     block_p freelist[MAX_POOL_ORDER + 2]; // free list of blocks by order
     u64_t avail;                          // mask of available blocks by order
     memstat_t memstat;
+    u64_t memoffset; // memory offset
+    block_p memory;  // memory pool
 } *heap_p;
 
 heap_p heap_init(u64_t id);
