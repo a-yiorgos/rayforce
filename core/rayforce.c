@@ -246,7 +246,7 @@ obj_p vector(i8_t type, u64_t len)
     else
         t = TYPE_LIST;
 
-    vec = heap_alloc_obj(len * size_of_type(t));
+    vec = heap_alloc_obj(sizeof(struct obj_t) + len * size_of_type(t));
 
     if (!vec)
         panic("oom");
@@ -361,7 +361,7 @@ obj_p anymap(obj_p sym, obj_p vec)
 
 obj_p resize_obj(obj_p *obj, u64_t len)
 {
-    i64_t new_size;
+    i64_t size, new_size;
     obj_p new_obj;
 
     debug_assert(is_vector(*obj), "resize: invalid type: %d", (*obj)->type);
@@ -369,15 +369,17 @@ obj_p resize_obj(obj_p *obj, u64_t len)
     if ((*obj)->len == len)
         return *obj;
 
+    size = size_of_type((*obj)->type);
+
     // calculate size of vector with new length
-    new_size = len * size_of_type((*obj)->type);
+    new_size = sizeof(struct obj_t) + len * size;
 
     if (is_internal(*obj))
         *obj = heap_realloc_obj(*obj, new_size);
     else
     {
         new_obj = heap_alloc_obj(new_size);
-        objcpy(new_obj, *obj, size_of(*obj));
+        memcpy(new_obj->arr, (*obj)->arr, (*obj)->len * size);
         new_obj->mmod = MMOD_INTERNAL;
         new_obj->type = (*obj)->type;
         new_obj->rc = 1;
@@ -392,10 +394,10 @@ obj_p resize_obj(obj_p *obj, u64_t len)
 
 obj_p push_raw(obj_p *obj, raw_p val)
 {
-    i64_t off, req;
-    i32_t size = size_of_type((*obj)->type);
+    i64_t off, req, size;
     obj_p new_obj;
 
+    size = size_of_type((*obj)->type);
     off = (*obj)->len * size;
     req = off + size;
 
@@ -404,7 +406,7 @@ obj_p push_raw(obj_p *obj, raw_p val)
     else
     {
         new_obj = heap_alloc_obj(req);
-        objcpy(new_obj, *obj, off);
+        memcpy(new_obj->arr, (*obj)->arr, off);
         new_obj->mmod = MMOD_INTERNAL;
         new_obj->type = (*obj)->type;
         new_obj->rc = 1;

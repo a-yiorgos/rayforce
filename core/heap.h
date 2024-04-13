@@ -74,6 +74,5 @@ nil_t heap_merge(heap_p heap);
 nil_t heap_cleanup(nil_t);
 memstat_t heap_memstat(nil_t);
 nil_t heap_print_blocks(heap_p heap);
-nil_t objcpy(obj_p dst, obj_p src, u64_t size);
 
 #endif // HEAP_H

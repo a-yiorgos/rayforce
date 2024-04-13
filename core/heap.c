@@ -43,9 +43,9 @@ __thread heap_p __HEAP = NULL;
 
 #ifdef SYS_MALLOC
 
-raw_p heap_alloc_raw(u64_t size) { return malloc(size); }
-nil_t heap_free_raw(raw_p ptr) { free(ptr); }
-raw_p heap_realloc_raw(raw_p ptr, u64_t new_size) { return realloc(ptr, new_size); }
+obj_p heap_alloc_obj(u64_t size) { return malloc(sizeof(struct obj_t) + size); }
+nil_t heap_free_obj(obj_p obj) { free(obj); }
+obj_p heap_realloc_obj(obj_p ptr, u64_t new_size) { return realloc(ptr, sizeof(struct obj_t) + new_size); }
 raw_p heap_alloc_raw(u64_t size) { return malloc(size); }
 nil_t heap_free_raw(raw_p ptr) { free(ptr); }
 raw_p heap_realloc_raw(raw_p ptr, u64_t size) { return realloc(ptr, size); }
@@ -245,7 +245,6 @@ __attribute__((hot)) obj_p heap_realloc_obj(obj_p obj, u64_t new_size)
 {
     block_p block, new_block;
     u64_t i, old_size, cap, order;
-
     if (obj == NULL)
         return heap_alloc_obj(new_size);
 
@@ -257,7 +256,9 @@ __attribute__((hot)) obj_p heap_realloc_obj(obj_p obj, u64_t new_size)
 
     block = (block_p)obj;
     old_size = bsizeof(block->order);
-    cap = blocksize(new_size);
+    cap = sizeof(struct obj_t) + blocksize(new_size);
+
+    // debug("REALLOC OBJ: %p, old_size: %lld, new_size: %lld, cap: %lld", obj, old_size, new_size, cap);
 
     if (cap == old_size)
         return obj;
@@ -267,7 +268,7 @@ __attribute__((hot)) obj_p heap_realloc_obj(obj_p obj, u64_t new_size)
     // grow
     if (cap > old_size)
     {
-        new_block = (block_p)heap_alloc_obj(new_size);
+        new_block = (block_p)heap_alloc_obj(cap);
 
         // Need to preserve the allocator metadata
         if (new_block)
@@ -488,14 +489,6 @@ nil_t heap_print_blocks(heap_p heap)
         }
         printf("]\n");
     }
-}
-
-// Same as memcpy, but for objects preserving heap metadata
-nil_t objcpy(obj_p dst, obj_p src, u64_t size)
-{
-    u8_t mmod = src->mmod;
-    memcpy((raw_p)dst, (raw_p)src, size);
-    dst->mmod = mmod;
 }
 
 #endif

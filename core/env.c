@@ -261,7 +261,7 @@ env_t create_env(nil_t)
 
     init_kw();
     init_functions(functions);
-    // init_typenames(typenames);
+    init_typenames(typenames);
 
     env_t env = {
         .functions = functions,
