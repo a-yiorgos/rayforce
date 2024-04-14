@@ -34,7 +34,7 @@ CASSERT(sizeof(struct block_t) == 2 * sizeof(struct obj_t), heap_h);
 
 __thread heap_p __HEAP = NULL;
 
-#define blocksize(s) ((s < sizeof(struct block_t)) ? sizeof(struct block_t) : (s) + sizeof(struct obj_t))
+#define blocksize(s) ((s < sizeof(struct obj_t)) ? sizeof(struct block_t) : (s) + sizeof(struct obj_t))
 #define bsizeof(i) (1ull << (u64_t)(i))
 #define buddyof(b, n) ((block_p)((u64_t)__HEAP->memory + (((u64_t)(b) - (u64_t)__HEAP->memory) ^ bsizeof(n))))
 #define orderof(s) (64ull - __builtin_clzll((s) - 1))
@@ -256,7 +256,7 @@ __attribute__((hot)) obj_p heap_realloc_obj(obj_p obj, u64_t new_size)
 
     block = (block_p)obj;
     old_size = bsizeof(block->order);
-    cap = sizeof(struct obj_t) + blocksize(new_size);
+    cap = blocksize(new_size);
 
     // debug("REALLOC OBJ: %p, old_size: %lld, new_size: %lld, cap: %lld", obj, old_size, new_size, cap);
 
