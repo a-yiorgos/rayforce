@@ -35,7 +35,7 @@
 
 __thread interpreter_p __INTERPRETER = NULL;
 
-nil_t error_add_loc(obj_p err, i64_t id, ctx_t *ctx)
+nil_t error_add_loc(obj_p err, i64_t id, ctx_p ctx)
 {
     obj_p loc, nfo;
     span_t span;
@@ -65,17 +65,21 @@ nil_t error_add_loc(obj_p err, i64_t id, ctx_t *ctx)
 interpreter_p interpreter_new(nil_t)
 {
     interpreter_p interpreter;
+    obj_p f;
 
     interpreter = (interpreter_p)mmap_alloc(sizeof(struct interpreter_t));
     interpreter->sp = 0;
     interpreter->stack = (obj_p *)mmap_stack(sizeof(obj_p) * EVAL_STACK_SIZE);
     interpreter->cp = 0;
-    interpreter->ctxstack = (ctx_t *)mmap_stack(sizeof(ctx_t) * EVAL_STACK_SIZE);
-    memset(interpreter->ctxstack, 0, sizeof(ctx_t) * EVAL_STACK_SIZE);
+    interpreter->ctxstack = (ctx_p)mmap_stack(sizeof(struct ctx_t) * EVAL_STACK_SIZE);
+    memset(interpreter->ctxstack, 0, sizeof(struct ctx_t) * EVAL_STACK_SIZE);
+
     __INTERPRETER = interpreter;
 
     // push top-level context
-    ctx_push(NULL_OBJ);
+    f = lambda(NULL_OBJ, NULL_OBJ, NULL_OBJ);
+    as_lambda(f)->name = symbol("top-level");
+    ctx_push(f);
 
     return interpreter;
 }
@@ -91,7 +95,7 @@ nil_t interpreter_free(nil_t)
     // cleanup context stack
     drop_obj(__INTERPRETER->ctxstack[0].lambda);
 
-    mmap_free(__INTERPRETER->ctxstack, sizeof(ctx_t) * EVAL_STACK_SIZE);
+    mmap_free(__INTERPRETER->ctxstack, sizeof(struct ctx_t) * EVAL_STACK_SIZE);
 
     mmap_free(__INTERPRETER, sizeof(struct interpreter_t));
 }
@@ -99,7 +103,7 @@ nil_t interpreter_free(nil_t)
 obj_p call(obj_p obj, u64_t arity)
 {
     lambda_p lambda;
-    ctx_t *ctx;
+    ctx_p ctx;
     obj_p res;
     i64_t sp;
 
@@ -353,7 +357,7 @@ obj_p *deref(obj_p sym)
     i64_t bp, *args;
     obj_p lambda, env;
     u64_t i, l, n;
-    ctx_t *ctx;
+    ctx_p ctx;
 
     ctx = ctx_get();
     lambda = ctx->lambda;
@@ -399,7 +403,7 @@ obj_p amend(obj_p sym, obj_p val)
     obj_p *env;
     obj_p lambda;
     i64_t bp;
-    ctx_t *ctx;
+    ctx_p ctx;
 
     ctx = ctx_get();
     lambda = ctx->lambda;
@@ -424,7 +428,7 @@ obj_p mount_env(obj_p obj)
     obj_p *env;
     obj_p lambda, keys, vals;
     i64_t bp;
-    ctx_t *ctx;
+    ctx_p ctx;
 
     ctx = ctx_get();
     lambda = ctx->lambda;
@@ -471,7 +475,7 @@ obj_p unmount_env(u64_t n)
     obj_p lambda;
     i64_t bp;
     u64_t i, l;
-    ctx_t *ctx;
+    ctx_p ctx;
 
     ctx = ctx_get();
     lambda = ctx->lambda;
@@ -552,13 +556,11 @@ obj_p ray_parse_str(i64_t fd, obj_p str, obj_p file)
 obj_p eval_obj(obj_p obj)
 {
     obj_p res;
-    ctx_t *ctx;
+    ctx_p ctx;
     i64_t sp;
 
     ctx = ctx_top(NULL_OBJ);
     res = (setjmp(ctx->jmp) == 0) ? eval(obj) : stack_pop();
-    ctx_pop();
-    drop_obj(ctx->lambda);
 
     // cleanup stack frame
     sp = ctx->sp;
@@ -571,7 +573,7 @@ obj_p eval_obj(obj_p obj)
 obj_p ray_eval_str(obj_p str, obj_p file)
 {
     obj_p parsed, res, info;
-    ctx_t *ctx;
+    ctx_p ctx;
     i64_t sp;
 
     if (str->type != TYPE_C8)
@@ -590,9 +592,9 @@ obj_p ray_eval_str(obj_p str, obj_p file)
 
     res = (setjmp(ctx->jmp) == 0) ? eval(parsed) : stack_pop();
 
-    ctx_pop();
     drop_obj(parsed);
-    drop_obj(ctx->lambda);
+    drop_obj(as_lambda(ctx->lambda)->nfo);
+    as_lambda(ctx->lambda)->nfo = NULL_OBJ;
 
     // cleanup stack frame
     sp = ctx->sp;
@@ -604,7 +606,7 @@ obj_p ray_eval_str(obj_p str, obj_p file)
 
 obj_p try_obj(obj_p obj, obj_p ctch)
 {
-    ctx_t *ctx;
+    ctx_p ctx;
     i64_t sp;
     obj_p res;
     b8_t sig;
@@ -630,11 +632,10 @@ obj_p try_obj(obj_p obj, obj_p ctch)
         __builtin_unreachable();
     }
 
-    ctx = ctx_pop();
     sp = ctx->sp;
 
     if (__INTERPRETER->cp == 1)
-        drop_obj(ctx->lambda);
+        drop_obj(as_lambda(ctx->lambda)->nfo);
 
     // cleanup stack frame
     while (__INTERPRETER->sp > sp)

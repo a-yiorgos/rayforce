@@ -40,14 +40,14 @@ typedef struct ctx_t
     i64_t sp;     // Stack pointer.
     obj_p lambda; // Lambda being evaluated.
     jmp_buf jmp;  // Jump buffer.
-} ctx_t;
+} *ctx_p;
 
 typedef struct interpreter_t
 {
-    i64_t sp;        // Stack pointer.
-    obj_p *stack;    // Stack.
-    i64_t cp;        // Context pointer.
-    ctx_t *ctxstack; // Stack of contexts.
+    i64_t sp;       // Stack pointer.
+    obj_p *stack;   // Stack.
+    i64_t cp;       // Context pointer.
+    ctx_p ctxstack; // Stack of contexts.
 } *interpreter_p;
 
 extern __thread interpreter_p __INTERPRETER;
@@ -65,7 +65,7 @@ obj_p ray_eval_str(obj_p str, obj_p file);
 obj_p ray_raise(obj_p obj);
 obj_p try_eval(obj_p obj, obj_p ctch);
 obj_p ray_return(obj_p *x, u64_t n);
-nil_t error_add_loc(obj_p err, i64_t id, ctx_t *ctx);
+nil_t error_add_loc(obj_p err, i64_t id, ctx_p ctx);
 
 inline __attribute__((always_inline)) nil_t stack_push(obj_p val)
 {
@@ -87,35 +87,32 @@ inline __attribute__((always_inline)) obj_p stack_at(i64_t n)
     return __INTERPRETER->stack[__INTERPRETER->sp - n - 1];
 }
 
-inline __attribute__((always_inline)) ctx_t *ctx_push(obj_p lambda)
+inline __attribute__((always_inline)) ctx_p ctx_push(obj_p lambda)
 {
-    ctx_t *ctx = &__INTERPRETER->ctxstack[__INTERPRETER->cp++];
+    ctx_p ctx = &__INTERPRETER->ctxstack[__INTERPRETER->cp++];
     ctx->lambda = lambda;
     return ctx;
 }
 
-inline __attribute__((always_inline)) ctx_t *ctx_pop(nil_t)
+inline __attribute__((always_inline)) ctx_p ctx_pop(nil_t)
 {
     return &__INTERPRETER->ctxstack[--__INTERPRETER->cp];
 }
 
-inline __attribute__((always_inline)) ctx_t *ctx_get(nil_t)
+inline __attribute__((always_inline)) ctx_p ctx_get(nil_t)
 {
     return &__INTERPRETER->ctxstack[__INTERPRETER->cp - 1];
 }
 
-inline __attribute__((always_inline)) ctx_t *ctx_top(obj_p info)
+inline __attribute__((always_inline)) ctx_p ctx_top(obj_p info)
 {
-    ctx_t *ctx;
+    ctx_p ctx;
     i64_t sp;
-    obj_p f;
 
     sp = __INTERPRETER->sp;
     stack_push(NULL_OBJ);
-    f = lambda(vector_symbol(0), NULL_OBJ, info);
-    as_lambda(f)->name = symbol("top-level");
-
-    ctx = ctx_push(f);
+    ctx = ctx_get();
+    as_lambda(ctx->lambda)->nfo = info;
     ctx->sp = sp;
 
     return ctx;
