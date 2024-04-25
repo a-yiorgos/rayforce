@@ -41,7 +41,7 @@ static inline void cpu_relax()
 nil_t backoff_spin(u64_t *rounds)
 {
     u64_t i;
-    printf("SPIN!!!\n");
+
     for (i = 0; i < (1 << *rounds); i++)
         cpu_relax();
 

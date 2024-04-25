@@ -24,8 +24,9 @@
 #include "pool.h"
 #include "util.h"
 #include "runtime.h"
+#include "error.h"
 
-#define MPMC_SIZE 1024
+#define MPMC_SIZE 16
 
 raw_p executor_run(raw_p arg)
 {
@@ -71,10 +72,6 @@ raw_p executor_run(raw_p arg)
     }
 
     interpreter_destroy();
-
-    // merge all our blocks to the main heap
-    heap_merge(executor->heap, executor->pool->heap);
-
     heap_destroy();
 
     return NULL;
@@ -90,7 +87,6 @@ pool_p pool_new(u64_t executors_count)
     pool->done_count = 0;
     pool->task_queue = mpmc_create(MPMC_SIZE);
     pool->result_queue = mpmc_create(MPMC_SIZE);
-    pool->heap = heap_get();
 
     pthread_mutex_init(&pool->mutex, NULL);
     pthread_cond_init(&pool->done_task, NULL);
@@ -139,6 +135,8 @@ nil_t pool_prepare(pool_p pool)
     if (!pool)
         return;
 
+    rc_sync(B8_TRUE);
+
     u64_t i, n;
     obj_p env = interpreter_env_get();
 
@@ -147,7 +145,7 @@ nil_t pool_prepare(pool_p pool)
 
     for (i = 0; i < n; i++)
     {
-        heap_borrow(pool->heap, pool->executors[i].heap);
+        heap_borrow(pool->executors[i].heap);
         interpreter_env_set(pool->executors[i].interpreter, env);
     }
 }
@@ -199,21 +197,22 @@ obj_p pool_run(pool_p pool, u64_t tasks_count)
     // merge heaps
     for (i = 0; i < pool->executors_count; i++)
     {
-        // interpreter_env_unset(pool->executors[i].interpreter);
-        // heap_merge(pool->executors[i].heap, pool->heap);
+        interpreter_env_unset(pool->executors[i].interpreter);
+        heap_merge(pool->executors[i].heap);
     }
 
     pthread_mutex_unlock(&pool->mutex);
+    rc_sync(B8_FALSE);
 
     // collect results
     res = vector(TYPE_LIST, tasks_count);
 
-    for (i = 0; i < tasks_count;)
+    for (i = 0; i < tasks_count; i++)
     {
         data = mpmc_pop(pool->result_queue);
         if (data.id == -1)
-            continue;
-        ins_obj(&res, i++, data.out.result);
+            panic("Pool run: invalid data id!!!!");
+        ins_obj(&res, data.id, data.out.result);
     }
 
     return res;

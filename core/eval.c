@@ -76,8 +76,17 @@ interpreter_p interpreter_new(nil_t)
 
     __INTERPRETER = interpreter;
 
-    f = lambda(NULL_OBJ, NULL_OBJ, NULL_OBJ);
-    as_lambda(f)->name = symbol("top-level");
+    // Directly allocate lambda to avoid using heap_alloc here
+    f = (obj_p)heap_mmap(sizeof(struct obj_t) + sizeof(struct lambda_t));
+    f->mmod = MMOD_INTERNAL;
+    f->type = TYPE_LAMBDA;
+    f->rc = 1;
+
+    as_lambda(f)->name = NULL_OBJ;
+    as_lambda(f)->nfo = NULL_OBJ;
+    as_lambda(f)->args = NULL_OBJ;
+    as_lambda(f)->body = NULL_OBJ;
+
     ctx_push(f);
 
     return interpreter;
@@ -86,11 +95,10 @@ interpreter_p interpreter_new(nil_t)
 nil_t interpreter_destroy(nil_t)
 {
     // cleanup stack (if any)
-    while (__INTERPRETER->sp)
-        drop_obj(__INTERPRETER->stack[--__INTERPRETER->sp]);
+    debug_assert(__INTERPRETER->sp == 0, "stack is not empty");
 
     heap_unmap(__INTERPRETER->stack, EVAL_STACK_SIZE);
-    drop_obj(__INTERPRETER->ctxstack[0].lambda);
+    heap_unmap(__INTERPRETER->ctxstack[0].lambda, sizeof(struct obj_t) + sizeof(struct lambda_t));
     heap_unmap(__INTERPRETER->ctxstack, sizeof(struct ctx_t) * EVAL_STACK_SIZE);
     heap_unmap(__INTERPRETER, sizeof(struct interpreter_t));
 }

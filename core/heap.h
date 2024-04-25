@@ -74,8 +74,8 @@ raw_p heap_realloc(raw_p ptr, u64_t size);
 nil_t heap_free(raw_p ptr);
 nil_t heap_unmap(raw_p ptr, u64_t size);
 i64_t heap_gc(nil_t);
-nil_t heap_borrow(heap_p from, heap_p to);
-nil_t heap_merge(heap_p from, heap_p to);
+nil_t heap_borrow(heap_p heap);
+nil_t heap_merge(heap_p heap);
 memstat_t heap_memstat(nil_t);
 nil_t heap_print_blocks(heap_p heap);
 

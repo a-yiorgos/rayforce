@@ -74,6 +74,8 @@ nil_t heap_destroy(nil_t)
     u64_t i;
     block_p block, next;
 
+    heap_print_blocks(__HEAP);
+
     // All the nodes remains are pools, so just munmap them
     for (i = MIN_BLOCK_ORDER; i <= MAX_POOL_ORDER; i++)
     {
@@ -363,53 +365,57 @@ i64_t heap_gc(nil_t)
     return total;
 }
 
-nil_t heap_borrow(heap_p from, heap_p to)
+nil_t heap_borrow(heap_p heap)
 {
     u64_t i;
 
     for (i = MAX_BLOCK_ORDER; i <= MAX_POOL_ORDER; i++)
     {
         // Only borrow if the source heap has a freelist[i] and it has more than one node and it is the pool (not a splitted block)
-        if (from->freelist[i] == NULL || from->freelist[i]->next == NULL || from->freelist[i]->pool_order != i)
+        if (__HEAP->freelist[i] == NULL || __HEAP->freelist[i]->next == NULL || __HEAP->freelist[i]->pool_order != i)
             continue;
 
-        to->freelist[i] = from->freelist[i];
-        from->freelist[i] = from->freelist[i]->next;
-        from->freelist[i]->prev = NULL;
+        heap->freelist[i] = __HEAP->freelist[i];
+        __HEAP->freelist[i] = __HEAP->freelist[i]->next;
+        __HEAP->freelist[i]->prev = NULL;
 
-        to->freelist[i]->next = NULL;
-        to->freelist[i]->prev = NULL;
-        to->avail |= bsizeof(i);
+        heap->freelist[i]->next = NULL;
+        heap->freelist[i]->prev = NULL;
+        heap->avail |= bsizeof(i);
     }
 }
 
-nil_t heap_merge(heap_p from, heap_p to)
+nil_t heap_merge(heap_p heap)
 {
     u64_t i;
-    block_p block, prev;
+    block_p block, last;
 
-    for (i = MIN_BLOCK_ORDER; i <= MAX_POOL_ORDER; i++)
+    for (i = MAX_BLOCK_ORDER; i <= MAX_POOL_ORDER; i++)
     {
-        block = from->freelist[i];
+        block = heap->freelist[i];
+        last = block;
 
-        while (block)
+        while (block != NULL)
         {
-            prev = block;
+            last = block;
             block = block->next;
-            heap_free(block2raw(prev));
         }
 
-        from->freelist[i] = NULL;
+        if (last != NULL)
+        {
+            last->next = __HEAP->freelist[i];
+
+            if (__HEAP->freelist[i] != NULL)
+                __HEAP->freelist[i]->prev = last;
+
+            __HEAP->freelist[i] = heap->freelist[i];
+
+            heap->freelist[i] = NULL;
+        }
     }
 
-    // Update memory statistics
-    to->memstat.heap += from->memstat.heap;
-    to->memstat.system += from->memstat.system;
-
-    // Clear borrowed heap
-    from->memstat.heap = 0;
-    from->memstat.system = 0;
-    from->avail = 0;
+    __HEAP->avail |= heap->avail;
+    heap->avail = 0;
 }
 
 memstat_t heap_memstat(nil_t)
