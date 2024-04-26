@@ -32,12 +32,14 @@
 
 typedef struct pool_t *pool_p;
 
+typedef enum pool_state_t
+{
+    POOL_STATE_RUN = 0,
+    POOL_STATE_STOP = 1
+} pool_state_t;
 typedef struct
 {
     u64_t id;
-    pthread_mutex_t mutex;     // Mutex for condition variable
-    pthread_cond_t has_task;   // Condition variable for task
-    b8_t stop;                 // Stop flag
     heap_p heap;               // Executor's heap
     interpreter_p interpreter; // Executor's interpreter
     pool_p pool;               // Executor's pool
@@ -46,13 +48,15 @@ typedef struct
 
 typedef struct pool_t
 {
-    pthread_mutex_t mutex;    // Mutex for condition variable
-    pthread_cond_t done_task; // Condition variable for signal task done
-    u64_t done_count;         // Number of done tasks
-    u64_t executors_count;    // Number of executors
-    mpmc_p task_queue;        // Pool's task queue
-    mpmc_p result_queue;      // Pool's result queue
-    executor_t executors[];   // Array of executors
+    pthread_mutex_t mutex;  // Mutex for condition variable
+    pthread_cond_t run;     // Condition variable for run executors
+    pthread_cond_t done;    // Condition variable for signal that executor is done
+    pool_state_t state;     // Pool's state
+    u64_t done_count;       // Number of done executors
+    u64_t executors_count;  // Number of executors
+    mpmc_p task_queue;      // Pool's task queue
+    mpmc_p result_queue;    // Pool's result queue
+    executor_t executors[]; // Array of executors
 } *pool_p;
 
 pool_p pool_new(u64_t executors_count);

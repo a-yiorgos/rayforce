@@ -546,7 +546,7 @@ obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val)
         val = null((*obj)->type);
 
     // we need to convert vector to list
-    if ((*obj)->type - -val->type != 0 && (*obj)->type != TYPE_LIST)
+    if (((*obj)->type - (-val->type) != 0) && (*obj)->type != TYPE_LIST)
     {
         l = ops_count(*obj);
         ret = list(l);
