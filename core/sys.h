@@ -37,6 +37,7 @@ typedef struct sys_info_t
     c8_t build_date[256];
     c8_t cpu[256];
     c8_t os[256];
+    c8_t cwd[1024];
     i32_t mem;
     i32_t cores;
     i32_t threads;

@@ -29,6 +29,8 @@
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
+#include <direct.h>
+#define getcwd _getcwd
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -38,6 +40,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #elif defined(__EMSCRIPTEN__)
+#include <unistd.h>
 #include <emscripten.h>
 #endif
 
@@ -66,6 +69,7 @@ sys_info_t sys_info(i32_t threads)
     info.build_date[strcspn(info.build_date, "\n")] = 0; // Remove the newline
     info.cores = cpu_cores();
     info.threads = (threads == 0) ? info.cores : threads;
+    getcwd(info.cwd, sizeof(info.cwd));
 
 #if defined(_WIN32) || defined(__CYGWIN__)
     SYSTEM_INFO si;

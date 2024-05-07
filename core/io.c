@@ -100,10 +100,9 @@ obj_p ray_read(obj_p x)
             return res;
         }
 
-        size = fs_fsize(fd) + 1;
-        res = string(size);
+        size = fs_fsize(fd);
+        res = string(size + 1);
         buf = as_string(res);
-
         c = fs_fread(fd, buf, size);
         fs_fclose(fd);
 

@@ -110,6 +110,116 @@ i64_t fs_dclose(i64_t fd)
     return FindClose((HANDLE)fd);
 }
 
+#elif defined(__EMSCRIPTEN__)
+
+#include <emscripten.h>
+
+// void list_directory_contents(const char *path)
+// {
+//     DIR *dir;
+//     struct dirent *entry;
+
+//     // Attempt to open the directory
+//     dir = opendir(path);
+//     if (dir == NULL)
+//     {
+//         fprintf(stderr, "Error opening directory '%s'\n", path);
+//         return;
+//     }
+
+//     // Read each entry in the directory
+//     while ((entry = readdir(dir)) != NULL)
+//     {
+//         printf("Found file: %s\n", entry->d_name);
+//     }
+
+//     // Close the directory
+//     closedir(dir);
+// }
+
+// clang-format off
+EM_JS(nil_t, fs_dcreate_js, (lit_p path), {
+    FS.mkdir(UTF8ToString(path));
+});
+
+EM_JS(i64_t, fs_dopen_js, (lit_p path), {
+    try
+    {
+        FS.mkdir(UTF8ToString(path));
+    }
+    catch (e)
+    {
+        if (e.code !== 'EEXIST')
+            throw e; // Ignore 'EEXIST' and throw other errors
+    }
+    return Module._opendir(UTF8ToString(path));
+});
+// clang-format on
+
+i64_t fs_fopen(str_p path, i64_t attrs)
+{
+    return open(path, attrs, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+}
+
+i64_t fs_fsize(i64_t fd)
+{
+    struct stat st;
+    if (fstat(fd, &st) == -1)
+        return -1;
+
+    return st.st_size;
+}
+
+i64_t fs_fread(i64_t fd, str_p buf, i64_t size)
+{
+    i64_t bytesRead, totalRead = 0;
+
+    while (totalRead < size && (bytesRead = read(fd, buf + totalRead, size - totalRead)) > 0)
+        totalRead += bytesRead;
+
+    if (bytesRead == -1)
+        return -1; // Read error
+
+    buf[totalRead] = '\0'; // Null terminate the string
+
+    return totalRead;
+}
+
+i64_t fs_fwrite(i64_t fd, str_p buf, i64_t size)
+{
+    i64_t bytesWritten, totalWritten = 0;
+
+    while (totalWritten < size && (bytesWritten = write(fd, buf + totalWritten, size - totalWritten)) > 0)
+        totalWritten += bytesWritten;
+
+    if (bytesWritten == -1)
+        return -1; // Write error
+
+    return totalWritten;
+}
+
+i64_t fs_fclose(i64_t fd)
+{
+    return close(fd);
+}
+
+i64_t fs_dcreate(str_p path)
+{
+    fs_dcreate_js(path);
+
+    return 0;
+}
+
+i64_t fs_dopen(str_p path)
+{
+    return fs_dopen_js(path);
+}
+
+i64_t fs_dclose(i64_t fd)
+{
+    return closedir((DIR *)fd);
+}
+
 #else
 
 i64_t fs_fopen(str_p path, i64_t attrs)

@@ -35,11 +35,12 @@ nil_t print_logo(sys_info_t *info)
          "  RayforceDB: %d.%d %s\n"
          "  %s %d(MB) %d core(s)\n"
          "  Using %d threads(s)\n"
+         "  Started from: %s\n"
          "  Documentation: https://rayforcedb.com/\n"
          "  Github: https://github.com/singaraiona/rayforce\n"
          "%s",
          BOLD, info->major_version, info->minor_version,
-         info->build_date, info->cpu, info->mem, info->cores, info->threads, RESET);
+         info->build_date, info->cpu, info->mem, info->cores, info->threads, info->cwd, RESET);
 }
 
 i32_t main(i32_t argc, str_p argv[])

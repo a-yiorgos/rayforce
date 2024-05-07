@@ -546,15 +546,14 @@ obj_p ray_eval_str(obj_p str, obj_p file)
     }
 
     ctx = ctx_top(info);
+    sp = ctx->sp;
 
     res = (setjmp(ctx->jmp) == 0) ? eval(parsed) : stack_pop();
 
     drop_obj(parsed);
-    drop_obj(as_lambda(ctx->lambda)->nfo);
-    as_lambda(ctx->lambda)->nfo = NULL_OBJ;
+    drop_obj(info);
 
     // cleanup stack frame
-    sp = ctx->sp;
     while (__INTERPRETER->sp > sp)
         drop_obj(stack_pop());
 

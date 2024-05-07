@@ -349,7 +349,7 @@ i64_t string_fmt_into(obj_p *dst, i64_t limit, obj_p obj)
 
 i64_t error_frame_fmt_into(obj_p *dst, obj_p obj, i64_t idx, str_p msg, i32_t msg_len)
 {
-    i64_t n = 0;
+    i64_t n = 0, done = 0;
     u32_t line_len, fname_len;
     u16_t line_number = 0, i;
     lit_p filename, source, function, start, end,
@@ -380,12 +380,13 @@ i64_t error_frame_fmt_into(obj_p *dst, obj_p obj, i64_t idx, str_p msg, i32_t ms
     start = source;
     end = NULL;
 
-    while (1)
+    for (;;)
     {
         end = (str_p)memchr(start, '\n', line_len);
 
         if (end == NULL)
         {
+            done = 1;
             end = source + strlen(source) - 1;
             lf = "\n";
         }
@@ -428,7 +429,7 @@ i64_t error_frame_fmt_into(obj_p *dst, obj_p obj, i64_t idx, str_p msg, i32_t ms
             }
         }
 
-        if (line_number > span.end_line)
+        if (line_number > span.end_line || done)
             break;
 
         line_number++;

@@ -40,6 +40,7 @@
 #define __ABOUT "\
   %s%sRayforceDB: %d.%d %s\n\
   WASM target\n\
+  Started from: %s\n\
   Documentation: https://rayforcedb.com/\n\
   Github: https://github.com/singaraiona/rayforce%s\n"
 
@@ -108,7 +109,8 @@ EMSCRIPTEN_KEEPALIVE i32_t main(i32_t argc, str_p argv[])
     obj_p fmt;
     sys_info_t info = sys_info(1);
 
-    fmt = str_fmt(-1, __ABOUT, YELLOW, BOLD, info.major_version, info.minor_version, info.build_date, RESET);
+    fmt = str_fmt(-1, __ABOUT, BOLD, YELLOW,
+                  info.major_version, info.minor_version, info.build_date, info.cwd, RESET);
 
     atexit(runtime_destroy);
     runtime_init(0, NULL);

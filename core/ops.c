@@ -259,7 +259,8 @@ obj_p sys_error(os_ray_error_type_t tp, lit_p msg)
 
 obj_p sys_error(os_ray_error_type_t tp, lit_p msg)
 {
-    return error(tp, "'%s': %s", msg, strerror(errno));
+    unused(tp);
+    return error(ERR_SYS, "'%s': %s", msg, strerror(errno));
 }
 
 #endif
