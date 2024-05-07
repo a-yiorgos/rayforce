@@ -83,7 +83,7 @@ typedef struct selector_t
         i64_t size;
         u8_t *buf;
         WSABUF wsa_buf;
-        queue_t queue; // queue for async messages waiting to be sent
+        queue_p queue; // queue for async messages waiting to be sent
     } tx;
 
 } *selector_p;
