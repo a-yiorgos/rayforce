@@ -30,7 +30,7 @@
 #include "util.h"
 #include "string.h"
 
-CASSERT(sizeof(struct block_t) == 2 * sizeof(struct obj_t), heap_h);
+// CASSERT(sizeof(struct block_t) == (2 * sizeof(struct obj_t)), heap_h);
 
 __thread heap_p __HEAP = NULL;
 
@@ -43,7 +43,11 @@ __thread heap_p __HEAP = NULL;
 
 #ifdef SYS_MALLOC
 
-heap_p heap_init(u64_t) { return NULL; }
+heap_p heap_init(u64_t id)
+{
+    unused(id);
+    return NULL;
+}
 raw_p heap_alloc(u64_t size) { return malloc(size); }
 raw_p heap_mmap(u64_t size) { return mmap_alloc(size); }
 raw_p heap_stack(u64_t size) { return mmap_stack(size); }

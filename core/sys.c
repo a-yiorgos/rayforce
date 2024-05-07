@@ -43,7 +43,9 @@
 
 i32_t cpu_cores()
 {
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__EMSCRIPTEN__)
+    return 1;
+#elif defined(_WIN32) || defined(__CYGWIN__)
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     return si.dwNumberOfProcessors;
