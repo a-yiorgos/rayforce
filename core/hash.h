@@ -52,6 +52,7 @@ typedef struct ht_bk_t
 
 ht_bk_p ht_bk_create(u64_t size);
 nil_t ht_bk_destroy(ht_bk_p ht);
+nil_t ht_bk_rehash(ht_bk_p *ht, u64_t new_size);
 i64_t ht_bk_insert(ht_bk_p ht, i64_t key, i64_t val);
 i64_t ht_bk_insert_par(ht_bk_p ht, i64_t key, i64_t val);
 i64_t ht_bk_insert_with(ht_bk_p ht, i64_t key, i64_t val,

@@ -93,3 +93,18 @@ u64_t symbols_count(symbols_p symbols)
 {
     return symbols->count;
 }
+
+nil_t symbols_optimize(symbols_p symbols)
+{
+    u64_t count, size;
+
+    // rehash tables if needed
+    count = symbols->str_to_id->count;
+    size = symbols->str_to_id->size;
+
+    if ((count + 1) > (size * 0.75))
+    {
+        ht_bk_rehash(&symbols->str_to_id, size * 2);
+        ht_bk_rehash(&symbols->str_to_id, size * 2);
+    }
+}

@@ -39,5 +39,6 @@ symbols_p symbols_create(nil_t);
 nil_t symbols_destroy(symbols_p symbols);
 str_p str_from_symbol(i64_t key);
 u64_t symbols_count(symbols_p symbols);
+nil_t symbols_optimize(symbols_p symbols);
 
 #endif // SYMBOLS_H

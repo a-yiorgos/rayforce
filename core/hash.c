@@ -459,10 +459,6 @@ i64_t ht_bk_insert_par(ht_bk_p ht, i64_t key, i64_t val)
     i64_t index;
     bucket_p new_bucket, current_bucket, b;
 
-    // if ((atomic_load(&ht->count) + 1) > (ht->size * 0.75)) {
-    //     ht_bk_rehash(&ht, ht->size * 2);
-    // }
-
     index = key % ht->size;
 
     new_bucket = (bucket_p)heap_alloc(sizeof(struct bucket_t));
