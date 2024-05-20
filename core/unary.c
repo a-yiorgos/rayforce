@@ -45,6 +45,7 @@
 #include "query.h"
 #include "index.h"
 #include "group.h"
+#include "string.h"
 
 // Atomic unary functions (iterates through list of argument items down to atoms)
 obj_p unary_call_atomic(unary_f f, obj_p x)
@@ -144,7 +145,7 @@ obj_p ray_get(obj_p x)
     case -TYPE_SYMBOL:
         sym = deref(x);
         if (sym == NULL)
-            return error(ERR_TYPE, "get: symbol '%s' not found", strof_sym(x->i64));
+            return error(ERR_TYPE, "get: symbol '%s' not found", symbols_strof(x->i64));
 
         return clone_obj(*sym);
     case TYPE_C8:

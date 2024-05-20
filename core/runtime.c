@@ -196,7 +196,7 @@ nil_t runtime_destroy(nil_t)
     drop_obj(__RUNTIME->args);
     if (__RUNTIME->poll)
         poll_destroy(__RUNTIME->poll);
-    symbols_free(__RUNTIME->symbols);
+    symbols_destroy(__RUNTIME->symbols);
     heap_unmap(__RUNTIME->symbols, sizeof(struct symbols_t));
     free_env(&__RUNTIME->env);
     drop_obj(__RUNTIME->fds);

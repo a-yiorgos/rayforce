@@ -37,6 +37,7 @@
 #include "items.h"
 #include "compose.h"
 #include "error.h"
+#include "string.h"
 
 obj_p binary_call_left_atomic(binary_f f, obj_p x, obj_p y)
 {
@@ -560,7 +561,7 @@ obj_p __ray_set(obj_p x, obj_p y)
 
             memset(objbuf, 0, PAGE_SIZE);
             p = (obj_p)objbuf;
-            strncpy(as_string(p), strof_sym(as_list(y)[0]->i64), PAGE_SIZE - sizeof(struct obj_t));
+            strncpy(as_string(p), symbols_strof(as_list(y)[0]->i64), PAGE_SIZE - sizeof(struct obj_t));
             p->mmod = MMOD_EXTERNAL_COMPOUND;
 
             c = fs_fwrite(fd, objbuf, PAGE_SIZE);

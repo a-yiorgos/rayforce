@@ -33,237 +33,60 @@
 #include "runtime.h"
 #include "ops.h"
 
-#define SYMBOLS_POOL_SIZE 4096ull
-#define SYMBOLS_POOL_RESERVE_SIZE (SYMBOLS_POOL_SIZE * 64ull)
-
-/*
- * Simplefied version of murmurhash
- */
-u64_t str_hash(lit_p key, u64_t len)
-{
-    u64_t i, k, k1;
-    u64_t hash = 0x1234ABCD1234ABCD;
-    u64_t c1 = 0x87c37b91114253d5ULL;
-    u64_t c2 = 0x4cf5ad432745937fULL;
-    const int r1 = 31;
-    const int r2 = 27;
-    const u64_t m = 5ULL;
-    const u64_t n = 0x52dce729ULL;
-
-    // Process each 8-byte block of the key
-    for (i = 0; i + 7 < len; i += 8)
-    {
-        k = (u64_t)key[i] |
-            ((u64_t)key[i + 1] << 8) |
-            ((u64_t)key[i + 2] << 16) |
-            ((u64_t)key[i + 3] << 24) |
-            ((u64_t)key[i + 4] << 32) |
-            ((u64_t)key[i + 5] << 40) |
-            ((u64_t)key[i + 6] << 48) |
-            ((u64_t)key[i + 7] << 56);
-
-        k *= c1;
-        k = (k << r1) | (k >> (64 - r1));
-        k *= c2;
-
-        hash ^= k;
-        hash = ((hash << r2) | (hash >> (64 - r2))) * m + n;
-    }
-
-    // Process the tail of the data
-    k1 = 0;
-    switch (len & 7)
-    {
-    case 7:
-        k1 ^= ((u64_t)key[i + 6]) << 48; // fall through
-    case 6:
-        k1 ^= ((u64_t)key[i + 5]) << 40; // fall through
-    case 5:
-        k1 ^= ((u64_t)key[i + 4]) << 32; // fall through
-    case 4:
-        k1 ^= ((u64_t)key[i + 3]) << 24; // fall through
-    case 3:
-        k1 ^= ((u64_t)key[i + 2]) << 16; // fall through
-    case 2:
-        k1 ^= ((u64_t)key[i + 1]) << 8; // fall through
-    case 1:
-        k1 ^= ((u64_t)key[i]);
-        k1 *= c1;
-        k1 = (k1 << r1) | (k1 >> (64 - r1));
-        k1 *= c2;
-        hash ^= k1;
-    }
-
-    // Finalize the hash
-    hash ^= len;
-    hash ^= (hash >> 33);
-    hash *= 0xff51afd7ed558ccdULL;
-    hash ^= (hash >> 33);
-    hash *= 0xc4ceb9fe1a85ec53ULL;
-    hash ^= (hash >> 33);
-
-    return hash;
-}
-
-u64_t string_hash(i64_t key, raw_p seed)
-{
-    unused(seed);
-    symbol_p sym = (symbol_p)key;
-
-    return str_hash(sym->str, sym->len);
-}
-
-i64_t str_cmp(lit_p a, u64_t aln, lit_p b, u64_t bln)
-{
-    if (aln != bln)
-        return 1;
-
-    return strncmp(a, b, aln);
-}
-
-i64_t symbols_next(obj_p *obj, lit_p str, u64_t len)
-{
-    u64_t i, size;
-    i64_t *keys;
-    symbol_p sym;
-
-    size = as_list(*obj)[0]->len;
-    keys = as_i64(as_list(*obj)[0]);
-
-next:
-    for (i = str_hash(str, len) & (size - 1); i < size; i++)
-    {
-        sym = (symbol_p)keys[i];
-        if (keys[i] == NULL_I64 || str_cmp(sym->str, sym->len, str, len) == 0)
-            return i;
-    }
-
-    ht_oa_rehash(obj, &string_hash, NULL);
-
-    size = as_list(*obj)[0]->len;
-    keys = as_i64(as_list(*obj)[0]);
-
-    goto next;
-}
-
-i64_t mount_pool(symbols_p symbols)
-{
-    return mmap_commit(symbols->pool_base + symbols->pools_count * SYMBOLS_POOL_SIZE, SYMBOLS_POOL_SIZE);
-}
-
-symbol_p str_intern(symbols_p symbols, lit_p str, u64_t len)
-{
-    // symbol_p sym = symbols->symbols_pool;
-    // u64_t size = sizeof(struct symbol_t) + len + 1;
-
-    // // Allocate new pool node
-    // if ((i64_t)symbols->symbols_pool + size - (i64_t)symbols->pool_node >= STRINGS_POOL_SIZE)
-    // {
-    //     node = pool_node_create();
-    //     symbols->pool_node->next = node;
-    //     symbols->pool_node = node;
-    //     symbols->symbols_pool = (symbol_p)(node + sizeof(pool_node_p)); // Skip the node size of next ptr
-    //     sym = symbols->symbols_pool;
-    // }
-
-    // sym->len = len;
-    // memcpy(sym->str, str, len);
-    // sym->str[len] = '\0';
-    // symbols->symbols_pool += size;
-
-    // return sym;
-}
+#define SYMBOLS_HT_SIZE 1024 * 1024
 
 symbols_p symbols_create(nil_t)
 {
     symbols_p symbols = (symbols_p)heap_mmap(sizeof(struct symbols_t));
 
-    symbols->pool_base = mmap_reserve(SYMBOLS_POOL_RESERVE_SIZE);
-    symbols->pools_count = 1;
-    symbols->id_to_sym = mmap_reserve(SYMBOLS_POOL_RESERVE_SIZE);
-
-    symbols->sym_to_id = ht_oa_create(SYMBOLS_POOL_SIZE, TYPE_I64);
-    symbols->id_to_sym = ht_oa_create(SYMBOLS_POOL_SIZE, TYPE_I64);
-    symbols->symbols_count = 0;
+    symbols->count = 0;
+    symbols->str_to_id = ht_bk_create(SYMBOLS_HT_SIZE);
+    symbols->id_to_str = ht_bk_create(SYMBOLS_HT_SIZE);
 
     return symbols;
 }
 
-nil_t symbols_free(symbols_p symbols)
+nil_t symbols_destroy(symbols_p symbols)
 {
-    // pool_node_p node = symbols->pool_node_0;
+    ht_bk_destroy(symbols->str_to_id);
+    ht_bk_destroy(symbols->id_to_str);
 
-    // while (node)
-    // {
-    //     pool_node_p next = node->next;
-    //     pool_node_free(node);
-    //     node = next;
-    // }
-
-    // drop_obj(symbols->str_po_id);
-    // drop_obj(symbols->id_to_str);
+    heap_unmap(symbols, sizeof(struct symbols_t));
 }
 
-i64_t intern_symbol(lit_p s, u64_t len)
+i64_t symbols_intern(lit_p s, u64_t len)
 {
-    symbol_p sym;
+    str_p str;
+    i64_t id, new_id;
     symbols_p symbols = runtime_get()->symbols;
-    i64_t idx;
 
     // insert new symbol
-    idx = symbols_next(&symbols->sym_to_id, s, len);
-    if (as_i64(as_list(symbols->sym_to_id)[0])[idx] == NULL_I64)
-    {
-        sym = str_intern(symbols, s, len);
-        as_i64(as_list(symbols->sym_to_id)[0])[idx] = (i64_t)sym;
-        as_i64(as_list(symbols->sym_to_id)[1])[idx] = symbols->symbols_count;
+    new_id = symbols->count;
 
-        // insert id into id_to_str
-        idx = ht_oa_tab_next(&symbols->id_to_sym, symbols->symbols_count);
-        debug_assert(as_i64(as_list(symbols->id_to_sym)[0])[idx] == NULL_I64, "Symbol id: '%lld' already exists",
-                     symbols->symbols_count);
-        as_i64(as_list(symbols->id_to_sym)[0])[idx] = symbols->symbols_count;
-        as_i64(as_list(symbols->id_to_sym)[1])[idx] = (i64_t)sym;
+    id = ht_bk_insert_str(symbols->str_to_id, s, len, new_id, &str);
 
-        return symbols->symbols_count++;
-    }
-    // symbol is already interned
-    else
-    {
-        return as_i64(as_list(symbols->sym_to_id)[1])[idx];
-    }
+    // Already exists
+    if (new_id != id)
+        return id;
+
+    // insert id into id_to_str
+    ht_bk_insert_par(symbols->id_to_str, new_id, (i64_t)str);
+
+    return symbols->count++;
 }
 
-str_p strof_sym(i64_t key)
+str_p symbols_strof(i64_t key)
 {
     symbols_p symbols = runtime_get()->symbols;
-    i64_t idx = ht_oa_tab_next(&symbols->id_to_sym, key);
-    symbol_p sym;
+    i64_t sym = ht_bk_get(symbols->id_to_str, key);
 
-    if (as_i64(as_list(symbols->id_to_sym)[0])[idx] == NULL_I64)
+    if (sym == NULL_I64)
         return (str_p) "";
 
-    sym = (symbol_p)as_i64(as_list(symbols->id_to_sym)[1])[idx];
-
-    return sym->str;
+    return (str_p)sym;
 }
 
 u64_t symbols_count(symbols_p symbols)
 {
-    return symbols->symbols_count;
-}
-
-u64_t symbols_memsize(symbols_p symbols)
-{
-    u64_t size = 0;
-    // pool_node_p node = symbols->pool_node_0;
-
-    // // calculate all nodes
-    // while (node)
-    // {
-    //     size += STRINGS_POOL_SIZE;
-    //     node = node->next;
-    // }
-
-    return size;
+    return symbols->count;
 }

@@ -47,15 +47,16 @@
 #include "iter.h"
 #include "dynlib.h"
 #include "timer.h"
+#include "string.h"
 
-#define regf(r, n, t, f, o)                     \
-    {                                           \
-        i64_t _k = intern_symbol(n, strlen(n)); \
-        push_raw(&as_list(r)[0], &_k);          \
-        obj_p _o = atom(-t);                    \
-        _o->attrs = f | ATTR_PROTECTED;         \
-        _o->i64 = (i64_t)o;                     \
-        push_raw(&as_list(r)[1], &_o);          \
+#define regf(r, n, t, f, o)                      \
+    {                                            \
+        i64_t _k = symbols_intern(n, strlen(n)); \
+        push_raw(&as_list(r)[0], &_k);           \
+        obj_p _o = atom(-t);                     \
+        _o->attrs = f | ATTR_PROTECTED;          \
+        _o->i64 = (i64_t)o;                      \
+        push_raw(&as_list(r)[1], &_o);           \
     };
 
 #define regt(r, i, s)                  \
@@ -87,7 +88,7 @@ obj_p ray_memstat(obj_p *x, u64_t n)
     ins_sym(&keys, 3, "syms");
 
     vals = list(4);
-    as_list(vals)[0] = i64(stat.system + symbols_memsize(symbols));
+    // as_list(vals)[0] = i64(stat.system + symbols_memsize(symbols));
     as_list(vals)[1] = i64(stat.heap);
     as_list(vals)[2] = i64(stat.free);
     as_list(vals)[3] = i64(symbols_count(symbols));
@@ -246,12 +247,12 @@ nil_t init_typenames(obj_p typenames)
 
 nil_t init_kw(nil_t)
 {
-    assert(intern_symbol("", 0) == KW_EMPTY_SYMBOL);
-    assert(intern_symbol("fn", 2) == KW_FN);
-    assert(intern_symbol("self", 4) == KW_SELF);
-    assert(intern_symbol("do", 2) == KW_DO);
-    assert(intern_symbol("set", 3) == KW_SET);
-    assert(intern_symbol("let", 3) == KW_LET);
+    assert(symbols_intern("", 0) == KW_EMPTY_SYMBOL);
+    assert(symbols_intern("fn", 2) == KW_FN);
+    assert(symbols_intern("self", 4) == KW_SELF);
+    assert(symbols_intern("do", 2) == KW_DO);
+    assert(symbols_intern("set", 3) == KW_SET);
+    assert(symbols_intern("let", 3) == KW_LET);
 }
 
 env_t create_env(nil_t)
@@ -311,7 +312,7 @@ str_p env_get_type_name(i8_t type)
     env_t *env = &runtime_get()->env;
     i64_t name = env_get_typename_by_type(env, type);
 
-    return strof_sym(name);
+    return symbols_strof(name);
 }
 
 str_p env_get_internal_name(obj_p obj)
@@ -331,7 +332,7 @@ str_p env_get_internal_name(obj_p obj)
     }
 
     if (sym)
-        return strof_sym(sym);
+        return symbols_strof(sym);
 
     return (str_p) "@fn";
 }

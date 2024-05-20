@@ -36,6 +36,7 @@
 #include "error.h"
 #include "aggr.h"
 #include "index.h"
+#include "string.h"
 
 obj_p ray_at(obj_p x, obj_p y)
 {
@@ -156,7 +157,7 @@ obj_p ray_at(obj_p x, obj_p y)
                     return clone_obj(as_list(as_list(x)[1])[j]);
             }
 
-            throw(ERR_INDEX, "at: column '%s' has not found in a table", strof_sym(as_symbol(y)[0]));
+            throw(ERR_INDEX, "at: column '%s' has not found in a table", symbols_strof(as_symbol(y)[0]));
         }
 
         cols = vector(TYPE_LIST, yl);
@@ -175,7 +176,7 @@ obj_p ray_at(obj_p x, obj_p y)
             {
                 cols->len = i;
                 drop_obj(cols);
-                throw(ERR_INDEX, "at: column '%s' has not found in a table", strof_sym(as_symbol(y)[i]));
+                throw(ERR_INDEX, "at: column '%s' has not found in a table", symbols_strof(as_symbol(y)[i]));
             }
         }
 

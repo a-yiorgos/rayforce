@@ -30,7 +30,7 @@
 #include "util.h"
 #include "string.h"
 
-// CASSERT(sizeof(struct block_t) == (2 * sizeof(struct obj_t)), heap_h);
+CASSERT(sizeof(struct block_t) == (2 * sizeof(struct obj_t)), heap_h);
 
 __thread heap_p __HEAP = NULL;
 
@@ -41,33 +41,16 @@ __thread heap_p __HEAP = NULL;
 #define block2raw(b) ((raw_p)((u64_t)(b) + sizeof(struct obj_t)))
 #define raw2block(r) ((block_p)((u64_t)(r) - sizeof(struct obj_t)))
 
-#ifdef SYS_MALLOC
-
-heap_p heap_create(u64_t id)
-{
-    unused(id);
-    return NULL;
-}
-raw_p heap_alloc(u64_t size) { return malloc(size); }
-raw_p heap_mmap(u64_t size) { return mmap_alloc(size); }
-raw_p heap_stack(u64_t size) { return mmap_stack(size); }
-nil_t heap_free(raw_p ptr) { free(ptr); }
-raw_p heap_realloc(raw_p ptr, u64_t size) { return realloc(ptr, size); }
-nil_t heap_unmap(raw_p ptr, u64_t size) { mmap_free(ptr, size); }
-i64_t heap_gc(nil_t) { return 0; }
-nil_t heap_destroy(nil_t) {}
-nil_t heap_borrow(heap_p heap) { unused(heap); }
-nil_t heap_merge(heap_p heap) { unused(heap); }
-memstat_t heap_memstat(nil_t) { return (memstat_t){0}; }
-
-#else
-
 heap_p heap_create(u64_t id)
 {
     __HEAP = (heap_p)mmap_alloc(sizeof(struct heap_t));
     __HEAP->id = id;
     __HEAP->avail = 0;
+    __HEAP->string_pool = (str_p)mmap_reserve(STRING_POOL_SIZE);
+    __HEAP->string_curr = __HEAP->string_pool;
+    __HEAP->string_node = __HEAP->string_pool + STRING_NODE_SIZE;
 
+    mmap_commit(__HEAP->string_pool, STRING_NODE_SIZE);
     memset(__HEAP->freelist, 0, sizeof(__HEAP->freelist));
 
     return __HEAP;
@@ -97,6 +80,10 @@ nil_t heap_destroy(nil_t)
         }
     }
 
+    // munmap string pool
+    mmap_free(__HEAP->string_pool, STRING_POOL_SIZE);
+
+    // munmap heap
     mmap_free(__HEAP, sizeof(struct heap_t));
 
     __HEAP = NULL;
@@ -106,6 +93,21 @@ heap_p heap_get(nil_t)
 {
     return __HEAP;
 }
+
+#ifdef SYS_MALLOC
+
+raw_p heap_alloc(u64_t size) { return malloc(size); }
+raw_p heap_mmap(u64_t size) { return mmap_alloc(size); }
+raw_p heap_stack(u64_t size) { return mmap_stack(size); }
+nil_t heap_free(raw_p ptr) { free(ptr); }
+raw_p heap_realloc(raw_p ptr, u64_t size) { return realloc(ptr, size); }
+nil_t heap_unmap(raw_p ptr, u64_t size) { mmap_free(ptr, size); }
+i64_t heap_gc(nil_t) { return 0; }
+nil_t heap_borrow(heap_p heap) { unused(heap); }
+nil_t heap_merge(heap_p heap) { unused(heap); }
+memstat_t heap_memstat(nil_t) { return (memstat_t){0}; }
+
+#else
 
 block_p heap_add_pool(u64_t size)
 {
@@ -421,6 +423,40 @@ nil_t heap_merge(heap_p heap)
 
     __HEAP->avail |= heap->avail;
     heap->avail = 0;
+}
+
+str_p heap_intern(lit_p s, u64_t len)
+{
+    str_p str;
+
+    // add node if there is no space left
+    if (((u64_t)__HEAP->string_curr + len + 1) >= (u64_t)__HEAP->string_node)
+    {
+        debug("-- HEAP[%lld]: adding string node", __HEAP->id);
+        if (mmap_commit(__HEAP->string_node, STRING_NODE_SIZE) != 0)
+        {
+            perror("mmap_commit");
+            return NULL;
+        }
+
+        __HEAP->string_node += STRING_NODE_SIZE;
+    }
+
+    str = __HEAP->string_curr;
+
+    // Additional check before memcpy to prevent out of bounds write
+    if (__HEAP->string_curr + len + 1 > __HEAP->string_pool + STRING_POOL_SIZE)
+    {
+        fprintf(stderr, "Error: Out of bounds write attempt\n");
+        return NULL;
+    }
+
+    memcpy(str, s, len);
+    str[len] = '\0';
+
+    __HEAP->string_curr += len + 1;
+
+    return str;
 }
 
 memstat_t heap_memstat(nil_t)

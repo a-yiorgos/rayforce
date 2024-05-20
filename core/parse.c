@@ -470,7 +470,7 @@ obj_p parse_char(parser_t *parser)
             return parse_error(parser, parser->count++, str_fmt(-1, "Invalid literal: char can not contain more than one symbol"));
         }
 
-        id = intern_symbol(parser->current + 1, pos - (parser->current + 1));
+        id = symbols_intern(parser->current + 1, pos - (parser->current + 1));
         res = i64(id);
         res->type = -TYPE_SYMBOL;
         res->attrs = ATTR_QUOTED;
@@ -598,7 +598,7 @@ obj_p parse_symbol(parser_t *parser)
         pos++;
     } while (*pos && (is_alphanum(*pos) || is_op(*pos)));
 
-    id = intern_symbol(parser->current, pos - parser->current);
+    id = symbols_intern(parser->current, pos - parser->current);
 
     if (parser->replace_symbols)
         res = env_get_internal_function_by_id(id);

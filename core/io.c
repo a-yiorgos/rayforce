@@ -35,6 +35,7 @@
 #include "error.h"
 #include "timestamp.h"
 #include "sys.h"
+#include "string.h"
 
 obj_p ray_hopen(obj_p x)
 {
@@ -239,7 +240,7 @@ obj_p parse_csv_field(i8_t type, str_p start, str_p end, i64_t row, obj_p out)
         n = end - start;
         if ((n > 0) && (*(end - 1) == '\r'))
             n--;
-        as_symbol(out)[row] = intern_symbol(start, n);
+        as_symbol(out)[row] = symbols_intern(start, n);
         break;
     case TYPE_C8:
         n = end - start;
@@ -477,7 +478,7 @@ obj_p ray_csv(obj_p *x, i64_t n)
             if (type == TYPE_ERROR)
             {
                 drop_obj(types);
-                throw(ERR_TYPE, "csv: invalid type: '%s", strof_sym(as_symbol(x[0])[i]));
+                throw(ERR_TYPE, "csv: invalid type: '%s", symbols_strof(as_symbol(x[0])[i]));
             }
 
             if (type < 0)
@@ -569,7 +570,7 @@ obj_p ray_csv(obj_p *x, i64_t n)
                     pos--;
             }
 
-            as_symbol(names)[i] = intern_symbol(prev, pos - prev);
+            as_symbol(names)[i] = symbols_intern(prev, pos - prev);
             pos++;
             len -= (pos - prev);
         }

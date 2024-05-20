@@ -33,6 +33,7 @@
 #include "guid.h"
 #include "index.h"
 #include "error.h"
+#include "string.h"
 
 obj_p ray_cast_obj(obj_p x, obj_p y)
 {

@@ -514,7 +514,7 @@ upsert:
             {
                 drop_obj(obj);
                 return error(ERR_TYPE, "upsert: expected 'Table with inconsistent columns: '%s != '%s",
-                             strof_sym(as_symbol(as_list(lst)[0])[i]), strof_sym(as_symbol(as_list(obj)[0])[i]));
+                             symbols_strof(as_symbol(as_list(lst)[0])[i]), symbols_strof(as_symbol(as_list(obj)[0])[i]));
             }
         }
 
