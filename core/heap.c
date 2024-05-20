@@ -94,6 +94,40 @@ heap_p heap_get(nil_t)
     return __HEAP;
 }
 
+str_p heap_intern(u64_t len)
+{
+    str_p str;
+
+    // add node if there is no space left
+    if (((u64_t)__HEAP->string_curr + len) >= (u64_t)__HEAP->string_node)
+    {
+        if (mmap_commit(__HEAP->string_node, STRING_NODE_SIZE) != 0)
+        {
+            perror("mmap_commit");
+            return NULL;
+        }
+
+        __HEAP->string_node += STRING_NODE_SIZE;
+    }
+
+    // Additional check before memcpy to prevent out of bounds write
+    if (__HEAP->string_curr + len > __HEAP->string_pool + STRING_POOL_SIZE)
+    {
+        fprintf(stderr, "Error: Out of bounds write attempt\n");
+        return NULL;
+    }
+
+    str = __HEAP->string_curr;
+    __HEAP->string_curr += len;
+
+    return str;
+}
+
+nil_t heap_untern(u64_t len)
+{
+    __HEAP->string_curr -= len;
+}
+
 #ifdef SYS_MALLOC
 
 raw_p heap_alloc(u64_t size) { return malloc(size); }
@@ -423,40 +457,6 @@ nil_t heap_merge(heap_p heap)
 
     __HEAP->avail |= heap->avail;
     heap->avail = 0;
-}
-
-str_p heap_intern(u64_t len)
-{
-    str_p str;
-
-    // add node if there is no space left
-    if (((u64_t)__HEAP->string_curr + len) >= (u64_t)__HEAP->string_node)
-    {
-        if (mmap_commit(__HEAP->string_node, STRING_NODE_SIZE) != 0)
-        {
-            perror("mmap_commit");
-            return NULL;
-        }
-
-        __HEAP->string_node += STRING_NODE_SIZE;
-    }
-
-    // Additional check before memcpy to prevent out of bounds write
-    if (__HEAP->string_curr + len > __HEAP->string_pool + STRING_POOL_SIZE)
-    {
-        fprintf(stderr, "Error: Out of bounds write attempt\n");
-        return NULL;
-    }
-
-    str = __HEAP->string_curr;
-    __HEAP->string_curr += len;
-
-    return str;
-}
-
-nil_t heap_untern(u64_t len)
-{
-    __HEAP->string_curr -= len;
 }
 
 memstat_t heap_memstat(nil_t)
