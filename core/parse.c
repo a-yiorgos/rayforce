@@ -759,7 +759,7 @@ obj_p parse_list(parser_t *parser)
     tok = parser_advance(parser);
 
     // parse lambda
-    if (tok->type == -TYPE_SYMBOL && tok->i64 == KW_FN)
+    if (tok->type == -TYPE_SYMBOL && tok->i64 == SYMBOL_FN)
     {
         drop_obj(tok);
 
@@ -1125,7 +1125,7 @@ obj_p parse_do(parser_t *parser)
         if (car == NULL_OBJ)
             car = tok;
         else if (lst == NULL_OBJ)
-            lst = vn_list(3, env_get_internal_function_by_id(KW_DO), car, tok);
+            lst = vn_list(3, env_get_internal_function_by_id(SYMBOL_DO), car, tok);
         else
             push_obj(&lst, tok);
     }

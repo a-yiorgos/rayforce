@@ -668,7 +668,7 @@ obj_p *deref(obj_p sym)
     ctx = ctx_get();
     lambda = ctx->lambda;
 
-    if (sym->i64 == KW_SELF)
+    if (sym->i64 == SYMBOL_SELF)
         return &ctx->lambda;
 
     l = as_lambda(lambda)->args->len;

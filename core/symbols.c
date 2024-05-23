@@ -34,77 +34,144 @@
 #include "ops.h"
 #include "atomic.h"
 
-#define SYMBOLS_HT_SIZE 1024 * 1024
+/*
+ * Simplefied version of murmurhash
+ */
+static inline u64_t str_hash(lit_p key, u64_t len)
+{
+    u64_t i, k, k1;
+    u64_t hash = 0x1234ABCD1234ABCD;
+    u64_t c1 = 0x87c37b91114253d5ULL;
+    u64_t c2 = 0x4cf5ad432745937fULL;
+    const int r1 = 31;
+    const int r2 = 27;
+    const u64_t m = 5ULL;
+    const u64_t n = 0x52dce729ULL;
+
+    // Process each 8-byte block of the key
+    for (i = 0; i + 7 < len; i += 8)
+    {
+        k = (u64_t)key[i] |
+            ((u64_t)key[i + 1] << 8) |
+            ((u64_t)key[i + 2] << 16) |
+            ((u64_t)key[i + 3] << 24) |
+            ((u64_t)key[i + 4] << 32) |
+            ((u64_t)key[i + 5] << 40) |
+            ((u64_t)key[i + 6] << 48) |
+            ((u64_t)key[i + 7] << 56);
+
+        k *= c1;
+        k = (k << r1) | (k >> (64 - r1));
+        k *= c2;
+
+        hash ^= k;
+        hash = ((hash << r2) | (hash >> (64 - r2))) * m + n;
+    }
+
+    // Process the tail of the data
+    k1 = 0;
+    switch (len & 7)
+    {
+    case 7:
+        k1 ^= ((u64_t)key[i + 6]) << 48; // fall through
+    case 6:
+        k1 ^= ((u64_t)key[i + 5]) << 40; // fall through
+    case 5:
+        k1 ^= ((u64_t)key[i + 4]) << 32; // fall through
+    case 4:
+        k1 ^= ((u64_t)key[i + 3]) << 24; // fall through
+    case 3:
+        k1 ^= ((u64_t)key[i + 2]) << 16; // fall through
+    case 2:
+        k1 ^= ((u64_t)key[i + 1]) << 8; // fall through
+    case 1:
+        k1 ^= ((u64_t)key[i]);
+        k1 *= c1;
+        k1 = (k1 << r1) | (k1 >> (64 - r1));
+        k1 *= c2;
+        hash ^= k1;
+    }
+
+    // Finalize the hash
+    hash ^= len;
+    hash ^= (hash >> 33);
+    hash *= 0xff51afd7ed558ccdULL;
+    hash ^= (hash >> 33);
+    hash *= 0xc4ceb9fe1a85ec53ULL;
+    hash ^= (hash >> 33);
+
+    return hash;
+}
 
 symbols_p symbols_create(nil_t)
 {
     symbols_p symbols = (symbols_p)heap_mmap(sizeof(struct symbols_t));
 
+    symbols->size = SYMBOLS_SIZE;
     symbols->count = 0;
-    symbols->str_to_id = ht_bk_create(SYMBOLS_HT_SIZE);
-    symbols->id_to_str = ht_bk_create(SYMBOLS_HT_SIZE);
+    symbols->syms = (symbol_p *)heap_mmap(SYMBOLS_SIZE * sizeof(symbol_p));
 
     return symbols;
 }
 
 nil_t symbols_destroy(symbols_p symbols)
 {
-    ht_bk_destroy(symbols->str_to_id);
-    ht_bk_destroy(symbols->id_to_str);
-
+    mmap_free(symbols->syms, symbols->size * sizeof(symbol_p));
     heap_unmap(symbols, sizeof(struct symbols_t));
 }
 
-i64_t symbols_intern(lit_p s, u64_t len)
+i64_t symbols_intern(lit_p str, u64_t len)
 {
-    str_p str;
-    i64_t id, new_id;
+    i64_t index;
+    str_p intr;
     symbols_p symbols = runtime_get()->symbols;
+    symbol_p new_bucket, current_bucket, b, *syms;
 
-    // insert new symbol
-    new_id = __atomic_load_n(&symbols->count, __ATOMIC_RELAXED);
+    syms = symbols->syms;
+    index = str_hash(str, len) % symbols->size;
+    intr = heap_intern(len + 1);
 
-    id = ht_bk_insert_str_par(symbols->str_to_id, s, len, new_id, &str);
+    new_bucket = (symbol_p)heap_alloc(sizeof(struct symbol_t));
+    if (new_bucket == NULL)
+        return NULL_I64;
 
-    // Already exists
-    if (new_id != id)
-        return id;
+    memcpy(intr, str, len);
+    intr[len] = '\0';
 
-    // insert id into id_to_str
-    ht_bk_insert_par(symbols->id_to_str, new_id, (i64_t)str);
+    new_bucket->str = intr;
 
-    __atomic_fetch_add(&symbols->count, 1, __ATOMIC_RELAXED);
+    for (;;)
+    {
+        current_bucket = __atomic_load_n(&syms[index], __ATOMIC_ACQUIRE);
+        b = current_bucket;
 
-    return new_id;
+        while (b != NULL)
+        {
+            if (strncmp(b->str, str, len) == 0)
+            {
+                heap_untern(len + 1);
+                heap_free(new_bucket);
+                return (i64_t)b->str;
+            }
+
+            b = __atomic_load_n(&b->next, __ATOMIC_ACQUIRE);
+        }
+
+        new_bucket->next = current_bucket;
+        if (__atomic_compare_exchange(&syms[index], &current_bucket, &new_bucket, 1, __ATOMIC_RELEASE, __ATOMIC_RELAXED))
+        {
+            __atomic_fetch_add(&symbols->count, 1, __ATOMIC_RELAXED);
+            return (i64_t)intr;
+        }
+    }
 }
 
 str_p str_from_symbol(i64_t key)
 {
-    symbols_p symbols = runtime_get()->symbols;
-    i64_t sym = ht_bk_get(symbols->id_to_str, key);
-
-    if (sym == NULL_I64)
-        return (str_p) "";
-
-    return (str_p)sym;
+    return (str_p)key;
 }
 
 u64_t symbols_count(symbols_p symbols)
 {
     return symbols->count;
-}
-
-nil_t symbols_optimize(symbols_p symbols)
-{
-    u64_t count, size;
-
-    // rehash tables if needed
-    count = symbols->str_to_id->count;
-    size = symbols->str_to_id->size;
-
-    if ((count + 1) > (size * 0.75))
-    {
-        ht_bk_rehash(&symbols->str_to_id, size * 2);
-        ht_bk_rehash(&symbols->str_to_id, size * 2);
-    }
 }

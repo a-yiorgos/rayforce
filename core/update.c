@@ -536,7 +536,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
     // No filters nor groupings
     if (filters == NULL_OBJ && groupby == NULL_OBJ)
     {
-        prm = vn_list(4, tab, env_get_internal_function_by_id(KW_SET), keys, vals);
+        prm = vn_list(4, tab, env_get_internal_function_by_id(SYMBOL_SET), keys, vals);
         obj = ray_alter(as_list(prm), prm->len);
         drop_obj(prm);
 

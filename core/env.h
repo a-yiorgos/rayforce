@@ -31,13 +31,12 @@
 #define TYPE_OFFSET TYPE_C8
 #define MAX_TYPE (TYPE_ERROR + TYPE_OFFSET + 2)
 
-// reserved symbols (keywords)
-#define KW_EMPTY_SYMBOL 0
-#define KW_FN 1
-#define KW_SELF 2
-#define KW_DO 3
-#define KW_SET 4
-#define KW_LET 5
+// hot symbols
+extern i64_t SYMBOL_FN;
+extern i64_t SYMBOL_SELF;
+extern i64_t SYMBOL_DO;
+extern i64_t SYMBOL_SET;
+extern i64_t SYMBOL_LET;
 
 /*
  *  Environment

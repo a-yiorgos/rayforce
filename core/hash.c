@@ -34,75 +34,6 @@
 #include "error.h"
 #include "atomic.h"
 
-/*
- * Simplefied version of murmurhash
- */
-u64_t str_hash(lit_p key, u64_t len)
-{
-    u64_t i, k, k1;
-    u64_t hash = 0x1234ABCD1234ABCD;
-    u64_t c1 = 0x87c37b91114253d5ULL;
-    u64_t c2 = 0x4cf5ad432745937fULL;
-    const int r1 = 31;
-    const int r2 = 27;
-    const u64_t m = 5ULL;
-    const u64_t n = 0x52dce729ULL;
-
-    // Process each 8-byte block of the key
-    for (i = 0; i + 7 < len; i += 8)
-    {
-        k = (u64_t)key[i] |
-            ((u64_t)key[i + 1] << 8) |
-            ((u64_t)key[i + 2] << 16) |
-            ((u64_t)key[i + 3] << 24) |
-            ((u64_t)key[i + 4] << 32) |
-            ((u64_t)key[i + 5] << 40) |
-            ((u64_t)key[i + 6] << 48) |
-            ((u64_t)key[i + 7] << 56);
-
-        k *= c1;
-        k = (k << r1) | (k >> (64 - r1));
-        k *= c2;
-
-        hash ^= k;
-        hash = ((hash << r2) | (hash >> (64 - r2))) * m + n;
-    }
-
-    // Process the tail of the data
-    k1 = 0;
-    switch (len & 7)
-    {
-    case 7:
-        k1 ^= ((u64_t)key[i + 6]) << 48; // fall through
-    case 6:
-        k1 ^= ((u64_t)key[i + 5]) << 40; // fall through
-    case 5:
-        k1 ^= ((u64_t)key[i + 4]) << 32; // fall through
-    case 4:
-        k1 ^= ((u64_t)key[i + 3]) << 24; // fall through
-    case 3:
-        k1 ^= ((u64_t)key[i + 2]) << 16; // fall through
-    case 2:
-        k1 ^= ((u64_t)key[i + 1]) << 8; // fall through
-    case 1:
-        k1 ^= ((u64_t)key[i]);
-        k1 *= c1;
-        k1 = (k1 << r1) | (k1 >> (64 - r1));
-        k1 *= c2;
-        hash ^= k1;
-    }
-
-    // Finalize the hash
-    hash ^= len;
-    hash ^= (hash >> 33);
-    hash *= 0xff51afd7ed558ccdULL;
-    hash ^= (hash >> 33);
-    hash *= 0xc4ceb9fe1a85ec53ULL;
-    hash ^= (hash >> 33);
-
-    return hash;
-}
-
 obj_p ht_oa_create(u64_t size, i8_t vals)
 {
     u64_t i;
@@ -334,11 +265,7 @@ nil_t ht_bk_rehash(ht_bk_p *ht, u64_t new_size)
     ht_bk_p new_ht = ht_bk_create(new_size);
 
     if (new_ht == NULL)
-    {
-        // Handle memory allocation failure
-        fprintf(stderr, "Memory allocation failed during rehash.\n");
-        return;
-    }
+        panic("Memory allocation failed during rehash.");
 
     // Rehash all elements from the old table to the new table
     for (i = 0; i < (*ht)->size; ++i)
@@ -362,10 +289,6 @@ i64_t ht_bk_insert(ht_bk_p ht, i64_t key, i64_t val)
 {
     i64_t index;
     bucket_p bucket;
-
-    // Check the load factor and rehash if necessary
-    if ((ht->count + 1) > (ht->size * 0.75))
-        ht_bk_rehash(&ht, ht->size * 2);
 
     index = key % ht->size;
 
@@ -491,112 +414,6 @@ i64_t ht_bk_insert_par(ht_bk_p ht, i64_t key, i64_t val)
             return val;
         }
     }
-}
-
-i64_t ht_bk_insert_str_par(ht_bk_p ht, lit_p str, u64_t len, i64_t id, str_p *key)
-{
-    i64_t index;
-    str_p intr;
-    bucket_p new_bucket, current_bucket, b;
-
-    index = str_hash(str, len) % ht->size;
-    intr = heap_intern(len + 1);
-
-    new_bucket = (bucket_p)heap_alloc(sizeof(struct bucket_t));
-    if (new_bucket == NULL)
-        return NULL_I64;
-
-    memcpy(intr, str, len);
-    intr[len] = '\0';
-
-    new_bucket->key = (i64_t)intr;
-    new_bucket->val = id;
-
-    for (;;)
-    {
-        current_bucket = __atomic_load_n(&ht->table[index], __ATOMIC_ACQUIRE);
-        b = current_bucket;
-
-        while (b != NULL)
-        {
-            if (strncmp((str_p)b->key, str, len) == 0)
-            {
-                heap_untern(len + 1);
-                heap_free(new_bucket);
-                return b->val;
-            }
-
-            b = __atomic_load_n(&b->next, __ATOMIC_ACQUIRE);
-        }
-
-        new_bucket->next = current_bucket;
-        if (__atomic_compare_exchange(&ht->table[index], &current_bucket, &new_bucket, 1, __ATOMIC_RELEASE, __ATOMIC_RELAXED))
-        {
-            __atomic_fetch_add(&ht->count, 1, __ATOMIC_RELAXED);
-            *key = intr;
-
-            return id;
-        }
-    }
-}
-
-i64_t ht_bk_insert_str(ht_bk_p ht, lit_p str, u64_t len, i64_t id, str_p *key)
-{
-    i64_t index;
-    bucket_p bucket;
-    str_p intr;
-
-    index = str_hash(str, len) % ht->size;
-
-    bucket = ht->table[index];
-
-    if (bucket == NULL)
-    {
-        bucket = (bucket_p)heap_alloc(sizeof(struct bucket_t));
-        if (bucket == NULL)
-            return NULL_I64;
-
-        intr = heap_intern(len + 1);
-        memcpy(intr, str, len);
-        intr[len] = '\0';
-
-        bucket->key = (i64_t)intr;
-        bucket->val = id;
-        bucket->next = NULL;
-        ht->table[index] = bucket;
-        ht->count++;
-
-        *key = intr;
-
-        return id;
-    }
-
-    while (bucket != NULL)
-    {
-        if (strncmp((str_p)bucket->key, str, len) == 0)
-            return bucket->val;
-
-        bucket = bucket->next;
-    }
-
-    // Key does not exist, insert a new bucket
-    bucket = (bucket_p)heap_alloc(sizeof(struct bucket_t));
-    if (bucket == NULL)
-        return NULL_I64;
-
-    intr = heap_intern(len + 1);
-    memcpy(intr, str, len);
-    intr[len] = '\0';
-
-    bucket->key = (i64_t)intr;
-    bucket->val = id;
-    bucket->next = ht->table[index];
-    ht->table[index] = bucket;
-    ht->count++;
-
-    *key = intr;
-
-    return id;
 }
 
 i64_t ht_bk_get(ht_bk_p ht, i64_t key)

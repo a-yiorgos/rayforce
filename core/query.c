@@ -371,7 +371,7 @@ obj_p ray_select(obj_p obj)
         pool = runtime_get()->pool;
 
         // single-threaded
-        if (!pool)
+        if (!pool || l < 2)
         {
             vals = list(l);
 

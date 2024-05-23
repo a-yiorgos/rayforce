@@ -27,11 +27,19 @@
 #include "rayforce.h"
 #include "hash.h"
 
+#define SYMBOLS_SIZE 4096 * 1024
+
+typedef struct symbol_t
+{
+    lit_p str;
+    struct symbol_t *next;
+} *symbol_p;
+
 typedef struct symbols_t
 {
+    u64_t size;
     u64_t count;
-    ht_bk_p str_to_id;
-    ht_bk_p id_to_str;
+    symbol_p *syms;
 } *symbols_p;
 
 i64_t symbols_intern(lit_p s, u64_t len);
@@ -39,6 +47,5 @@ symbols_p symbols_create(nil_t);
 nil_t symbols_destroy(symbols_p symbols);
 str_p str_from_symbol(i64_t key);
 u64_t symbols_count(symbols_p symbols);
-nil_t symbols_optimize(symbols_p symbols);
 
 #endif // SYMBOLS_H

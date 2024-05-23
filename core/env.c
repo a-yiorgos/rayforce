@@ -49,6 +49,12 @@
 #include "timer.h"
 #include "string.h"
 
+i64_t SYMBOL_FN;
+i64_t SYMBOL_SELF;
+i64_t SYMBOL_DO;
+i64_t SYMBOL_SET;
+i64_t SYMBOL_LET;
+
 #define regf(r, n, t, f, o)                      \
     {                                            \
         i64_t _k = symbols_intern(n, strlen(n)); \
@@ -247,12 +253,11 @@ nil_t init_typenames(obj_p typenames)
 
 nil_t init_kw(nil_t)
 {
-    assert(symbols_intern("", 0) == KW_EMPTY_SYMBOL);
-    assert(symbols_intern("fn", 2) == KW_FN);
-    assert(symbols_intern("self", 4) == KW_SELF);
-    assert(symbols_intern("do", 2) == KW_DO);
-    assert(symbols_intern("set", 3) == KW_SET);
-    assert(symbols_intern("let", 3) == KW_LET);
+    SYMBOL_FN = symbols_intern("fn", 2);
+    SYMBOL_SELF = symbols_intern("self", 4);
+    SYMBOL_DO = symbols_intern("do", 2);
+    SYMBOL_SET = symbols_intern("set", 3);
+    SYMBOL_LET = symbols_intern("let", 3);
 }
 
 env_t create_env(nil_t)

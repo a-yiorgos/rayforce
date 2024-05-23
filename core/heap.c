@@ -43,14 +43,35 @@ __thread heap_p __HEAP = NULL;
 
 heap_p heap_create(u64_t id)
 {
+    raw_p pooladdr = (raw_p)(16 * PAGE_SIZE);
+
     __HEAP = (heap_p)mmap_alloc(sizeof(struct heap_t));
+
+    if (__HEAP == NULL)
+    {
+        perror("heap mmap_alloc");
+        exit(1);
+    }
+
     __HEAP->id = id;
     __HEAP->avail = 0;
-    __HEAP->string_pool = (str_p)mmap_reserve(STRING_POOL_SIZE);
+    __HEAP->string_pool = (str_p)mmap_reserve(pooladdr, STRING_POOL_SIZE);
+    debug("STRING POOL ADDR: %p", __HEAP->string_pool);
+    if (__HEAP->string_pool == NULL)
+    {
+        perror("string_pool mmap_reserve");
+        exit(1);
+    }
+
     __HEAP->string_curr = __HEAP->string_pool;
     __HEAP->string_node = __HEAP->string_pool + STRING_NODE_SIZE;
 
-    mmap_commit(__HEAP->string_pool, STRING_NODE_SIZE);
+    if (mmap_commit(__HEAP->string_pool, STRING_NODE_SIZE) == -1)
+    {
+        perror("string_pool mmap_commit");
+        exit(1);
+    }
+
     memset(__HEAP->freelist, 0, sizeof(__HEAP->freelist));
 
     return __HEAP;

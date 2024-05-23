@@ -222,8 +222,6 @@ obj_p pool_run(pool_p pool, u64_t tasks_count)
     mutex_unlock(&pool->mutex);
     rc_sync(B8_FALSE);
 
-    symbols_optimize(runtime_get()->symbols);
-
     return res;
 }
 
