@@ -33,19 +33,19 @@
 
 u64_t __hash_get(i64_t row, nil_t *seed)
 {
-    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    __index_find_ctx_t *ctx = (__index_find_ctx_t *)seed;
     return ctx->hashes[row];
 }
 
 i64_t __cmp_obj(i64_t row1, i64_t row2, nil_t *seed)
 {
-    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    __index_find_ctx_t *ctx = (__index_find_ctx_t *)seed;
     return cmp_obj(((obj_p *)ctx->lobj)[row1], ((obj_p *)ctx->robj)[row2]);
 }
 
 i64_t __hash_cmp_guid(i64_t row1, i64_t row2, nil_t *seed)
 {
-    __find_ctx_t *ctx = (__find_ctx_t *)seed;
+    __index_find_ctx_t *ctx = (__index_find_ctx_t *)seed;
     return memcmp((guid_t *)ctx->lobj + row1, (guid_t *)ctx->robj + row2, sizeof(guid_t));
 }
 
@@ -379,7 +379,7 @@ obj_p index_find_guid(guid_t x[], u64_t xl, guid_t y[], u64_t yl)
     u64_t i, *hashes;
     obj_p ht, res;
     i64_t idx;
-    __find_ctx_t ctx;
+    __index_find_ctx_t ctx;
 
     // calc hashes
     res = vector_i64(maxi64(xl, yl));
@@ -390,7 +390,7 @@ obj_p index_find_guid(guid_t x[], u64_t xl, guid_t y[], u64_t yl)
     for (i = 0; i < xl; i++)
         hashes[i] = hash_index_u64(*(u64_t *)(x + i), *((u64_t *)(x + i) + 1));
 
-    ctx = (__find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
+    ctx = (__index_find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
     for (i = 0; i < xl; i++)
     {
         idx = ht_oa_tab_next_with(&ht, i, &__hash_get, &__hash_cmp_guid, &ctx);
@@ -401,7 +401,7 @@ obj_p index_find_guid(guid_t x[], u64_t xl, guid_t y[], u64_t yl)
     for (i = 0; i < yl; i++)
         hashes[i] = hash_index_u64(*(u64_t *)(y + i), *((u64_t *)(y + i) + 1));
 
-    ctx = (__find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
+    ctx = (__index_find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
     for (i = 0; i < yl; i++)
     {
         idx = ht_oa_tab_get_with(ht, i, &__hash_get, &__hash_cmp_guid, &ctx);
@@ -419,7 +419,7 @@ obj_p index_find_obj(obj_p x[], u64_t xl, obj_p y[], u64_t yl)
     u64_t i, *hashes;
     obj_p ht, res;
     i64_t idx;
-    __find_ctx_t ctx;
+    __index_find_ctx_t ctx;
 
     // calc hashes
     res = vector_i64(maxi64(xl, yl));
@@ -430,7 +430,7 @@ obj_p index_find_obj(obj_p x[], u64_t xl, obj_p y[], u64_t yl)
     for (i = 0; i < xl; i++)
         hashes[i] = hash_index_u64(hash_index_obj(x[i]), 0xa5b6c7d8e9f01234ull);
 
-    ctx = (__find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
+    ctx = (__index_find_ctx_t){.lobj = x, .robj = x, .hashes = hashes};
     for (i = 0; i < xl; i++)
     {
         idx = ht_oa_tab_next_with(&ht, i, &__hash_get, &__cmp_obj, &ctx);
@@ -441,7 +441,7 @@ obj_p index_find_obj(obj_p x[], u64_t xl, obj_p y[], u64_t yl)
     for (i = 0; i < yl; i++)
         hashes[i] = hash_index_u64(hash_index_obj(y[i]), 0xa5b6c7d8e9f01234ull);
 
-    ctx = (__find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
+    ctx = (__index_find_ctx_t){.lobj = x, .robj = y, .hashes = hashes};
     for (i = 0; i < yl; i++)
     {
         idx = ht_oa_tab_get_with(ht, i, &__hash_get, &__cmp_obj, &ctx);
@@ -454,12 +454,38 @@ obj_p index_find_obj(obj_p x[], u64_t xl, obj_p y[], u64_t yl)
     return res;
 }
 
-/*
- * result is a list
- * [0] - groups number
- * [1] - bins
- * [2] - count of each group (will be filled later on demand)
- */
+obj_p index_group_create(i64_t *buckets, u64_t buckets_cnt, u64_t chunks_cnt)
+{
+    u64_t i, l, m;
+    obj_p obj;
+    index_group_p index;
+
+    obj = (obj_p)heap_alloc(sizeof(struct obj_t) + sizeof(struct index_group_t) * chunks_cnt);
+    obj->mmod = MMOD_INTERNAL;
+    obj->type = TYPE_INDEXGROUP;
+    obj->rc = 1;
+    obj->len = chunks_cnt;
+
+    index = (index_group_p)obj->arr;
+    m = buckets_cnt / chunks_cnt;
+
+    // fill chunks but last
+    for (i = 0; i < chunks_cnt - 1; i++)
+    {
+        index[i].buckets = buckets + i * buckets_cnt;
+        index[i].len = m;
+    }
+
+    // fill last chunk
+    index[i].buckets = buckets + i * buckets_cnt;
+    index[i].len = buckets_cnt - i * buckets_cnt;
+
+    return obj;
+}
+
+nil_t index_group_fill_buckets(obj_p obj)
+{
+}
 
 obj_p index_group_i8(i8_t values[], i64_t indices[], u64_t len)
 {
@@ -512,16 +538,13 @@ obj_p index_group_i64_scoped(i64_t values[], i64_t indices[], u64_t len, const i
 {
     u64_t i, j, n;
     i64_t idx, *hk, *hv, *hp;
-    obj_p keys, vals, ht;
+    obj_p keys, vals, ht, idx;
 
     // use open addressing if range is compatible with the input length
     if (scope.range <= len)
     {
-        keys = vector_i64(scope.range);
-        hk = as_i64(keys);
-
-        vals = vector_i64(len);
-        hv = as_i64(vals);
+        hk = heap_alloc(sizeof(i64_t) * scope.range);
+        hv = heap_alloc(sizeof(i64_t) * len);
 
         for (i = 0; i < scope.range; i++)
             hk[i] = NULL_I64;
@@ -534,8 +557,6 @@ obj_p index_group_i64_scoped(i64_t values[], i64_t indices[], u64_t len, const i
                 n = values[indices[i]] - scope.min;
                 if (hk[n] == NULL_I64)
                     hk[n] = j++;
-
-                hv[i] = hk[n];
             }
         }
         else
@@ -545,14 +566,20 @@ obj_p index_group_i64_scoped(i64_t values[], i64_t indices[], u64_t len, const i
                 n = values[i] - scope.min;
                 if (hk[n] == NULL_I64)
                     hk[n] = j++;
-
-                hv[i] = hk[n];
             }
         }
 
-        drop_obj(keys);
+        for (i = 0; i < len; i++)
+        {
+            n = values[i] - scope.min;
+            hv[i] = hk[n];
+        }
 
-        return vn_list(3, i64(j), vals, NULL_OBJ);
+        heap_free(hk);
+
+        idx = index_group_create(vals, len, 1);
+
+        return idx;
     }
 
     // use hash table if range is large

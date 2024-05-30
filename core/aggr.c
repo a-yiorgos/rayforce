@@ -32,69 +32,174 @@
 #include "unary.h"
 #include "group.h"
 #include "string.h"
+#include "runtime.h"
+#include "pool.h"
 
-obj_p aggr_sum(obj_p val, obj_p bins, obj_p filter)
+typedef struct aggr_ctx_t
 {
+    u64_t offset;
+    obj_p val;
+    obj_p bins;
+} *aggr_ctx_p;
+
+obj_p aggr_sum_ctx(raw_p x, u64_t input_len)
+{
+    aggr_ctx_p ctx = (aggr_ctx_p)x;
     u64_t i, l, n;
     i64_t *xi, *xm, *xo, *ids;
     f64_t *xf, *fo;
-    obj_p res;
+    obj_p val, bins, res;
 
+    val = ctx->val;
+    bins = ctx->bins;
     n = as_list(bins)[0]->i64;
-    l = as_list(bins)[1]->len;
 
     switch (val->type)
     {
     case TYPE_I64:
-    case TYPE_TIMESTAMP:
-    case TYPE_SYMBOL:
-        xi = as_i64(val);
-        xm = as_i64(as_list(bins)[1]);
+        xi = as_i64(val) + ctx->offset;
+        xm = as_i64(as_list(bins)[1]) + ctx->offset;
         res = vector(val->type, n);
         xo = as_i64(res);
+
         for (i = 0; i < n; i++)
             xo[i] = 0;
 
-        if (filter != NULL_OBJ)
-        {
-            ids = as_i64(filter);
-            for (i = 0; i < l; i++)
-                xo[xm[i]] = addi64(xo[xm[i]], xi[ids[i]]);
-        }
-        else
-        {
-            for (i = 0; i < l; i++)
-                xo[xm[i]] = addi64(xo[xm[i]], xi[i]);
-        }
-        return res;
-    case TYPE_F64:
-        xf = as_f64(val);
+        for (i = 0; i < input_len; i++)
+            xo[xm[i]] = addi64(xo[xm[i]], xi[i]);
 
-        xm = as_i64(as_list(bins)[1]);
-        res = vector_f64(n);
-        fo = as_f64(res);
-
-        for (i = 0; i < n; i++)
-            fo[i] = 0;
-
-        if (filter != NULL_OBJ)
-        {
-            ids = as_i64(filter);
-            for (i = 0; i < l; i++)
-                fo[xm[i]] = addf64(fo[xm[i]], xf[ids[i]]);
-        }
-        else
-        {
-            for (i = 0; i < l; i++)
-                fo[xm[i]] = addf64(fo[xm[i]], xf[i]);
-        }
         return res;
     default:
         return error(ERR_TYPE, "sum: unsupported type: '%s'", type_name(val->type));
     }
 }
 
+obj_p aggr_sum(obj_p val, obj_p bins, obj_p filter)
+{
+    pool_p pool = runtime_get()->pool;
+    u64_t i, j, l, n, chunk;
+    i64_t *xi, *xo;
+    obj_p res, part, parts;
+
+    n = pool_executors_count(pool) + 1;
+    pool_prepare(pool, n);
+    struct aggr_ctx_t ctx[n];
+
+    l = val->len;
+    chunk = l / n;
+
+    for (i = 0; i < n; i++)
+    {
+        if (i == n - 1)
+            j = l - i * chunk;
+        else
+            j = chunk;
+
+        ctx[i].offset = i * chunk;
+        ctx[i].val = val;
+        ctx[i].bins = bins;
+
+        pool_add_task(pool, i, aggr_sum_ctx, NULL, &ctx[i], j);
+    }
+
+    parts = pool_run(pool, n);
+    l = parts->len;
+    res = clone_obj(as_list(parts)[0]);
+    xo = as_i64(res);
+    n = as_list(bins)[0]->i64;
+
+    for (i = 1; i < l; i++)
+    {
+        xi = as_i64(as_list(parts)[i]);
+
+        for (j = 0; j < n; j++)
+            xo[j] = addi64(xo[j], xi[j]);
+    }
+
+    return res;
+}
+
+obj_p aggr_first_ctx(raw_p x, u64_t input_len)
+{
+    aggr_ctx_p ctx = (aggr_ctx_p)x;
+    u64_t i, l, n;
+    i64_t *xi, *xm, *xo, *ids;
+    f64_t *xf, *fo;
+    obj_p val, bins, res;
+
+    val = ctx->val;
+    bins = ctx->bins;
+    n = as_list(bins)[0]->i64;
+
+    switch (val->type)
+    {
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+        xi = as_i64(val) + ctx->offset;
+        xm = as_i64(as_list(bins)[1]) + ctx->offset;
+        res = vector(val->type, n);
+        xo = as_i64(res);
+
+        for (i = 0; i < n; i++)
+            xo[i] = NULL_I64;
+
+        for (i = 0; i < input_len; i++)
+            if (xo[xm[i]] == NULL_I64)
+                xo[xm[i]] = xi[i];
+
+        return res;
+    default:
+        return error(ERR_TYPE, "first: unsupported type: '%s'", type_name(val->type));
+    }
+}
+
 obj_p aggr_first(obj_p val, obj_p bins, obj_p filter)
+{
+    pool_p pool = runtime_get()->pool;
+    u64_t i, j, l, n, chunk;
+    i64_t *xi, *xo;
+    obj_p res, part, parts;
+
+    n = pool_executors_count(pool) + 1;
+    pool_prepare(pool, n);
+    struct aggr_ctx_t ctx[n];
+
+    l = val->len;
+    chunk = l / n;
+
+    for (i = 0; i < n; i++)
+    {
+        if (i == n - 1)
+            j = l - i * chunk;
+        else
+            j = chunk;
+
+        ctx[i].offset = i * chunk;
+        ctx[i].val = val;
+        ctx[i].bins = bins;
+
+        pool_add_task(pool, i, aggr_first_ctx, NULL, &ctx[i], j);
+    }
+
+    parts = pool_run(pool, n);
+    l = parts->len;
+    res = clone_obj(as_list(parts)[0]);
+    xo = as_i64(res);
+    n = as_list(bins)[0]->i64;
+
+    for (i = 1; i < l; i++)
+    {
+        xi = as_i64(as_list(parts)[i]);
+
+        for (j = 0; j < n; j++)
+            if (xo[j] == NULL_I64)
+                xo[j] = xi[j];
+    }
+
+    return res;
+}
+
+obj_p aggr_first1(obj_p val, obj_p bins, obj_p filter)
 {
     u64_t i, l, n;
     u8_t *xb, *bo, NULL_GUID[16] = {0};
