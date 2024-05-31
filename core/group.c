@@ -64,7 +64,9 @@ obj_p group_bins(obj_p obj, obj_p tab, obj_p filter)
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        return index_group_i64(as_i64(obj), ids, l);
+        v = index_group_i64(as_i64(obj), ids, l);
+        as_list(v)[3] = clone_obj(obj);
+        return v;
     case TYPE_F64:
         return index_group_i64((i64_t *)as_f64(obj), ids, l);
     case TYPE_GUID:

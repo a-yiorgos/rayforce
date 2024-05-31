@@ -131,6 +131,11 @@ nil_t pool_destroy(pool_p pool)
     heap_unmap(pool, sizeof(struct pool_t) + sizeof(executor_t) * pool->executors_count);
 }
 
+pool_p pool_get(nil_t)
+{
+    return runtime_get()->pool;
+}
+
 nil_t pool_prepare(pool_p pool, u64_t tasks_count)
 {
     if (!pool)

@@ -39,26 +39,31 @@ obj_p aggr_sum_ctx(raw_p x, u64_t input_len)
 {
     aggr_ctx_p ctx = (aggr_ctx_p)x;
     u64_t i, l, n;
-    i64_t *xi, *xm, *xo, *ids;
+    i64_t *xi, *xm, *xk, *xo, *ids, min;
     f64_t *xf, *fo;
     obj_p val, bins, res;
 
     val = ctx->val;
     bins = ctx->bins;
     n = as_list(bins)[0]->i64;
+    min = as_list(ctx->bins)[1]->i64;
 
     switch (val->type)
     {
     case TYPE_I64:
         xi = as_i64(val) + ctx->offset;
-        xm = as_i64(as_list(bins)[1]) + ctx->offset;
+        xm = as_i64(as_list(bins)[2]);
+        xk = as_i64(as_list(bins)[3]) + ctx->offset;
         res = ctx->out;
         xo = as_i64(res);
 
         memset(xo, 0, n * sizeof(i64_t));
 
         for (i = 0; i < input_len; i++)
-            xo[xm[i]] = addi64(xo[xm[i]], xi[i]);
+        {
+            n = xk[i] - min;
+            xo[xm[n]] += xi[i];
+        }
 
         return res;
     default:
@@ -125,21 +130,22 @@ obj_p aggr_first_ctx(raw_p x, u64_t input_len)
 {
     aggr_ctx_p ctx = (aggr_ctx_p)x;
     u64_t i, l, n;
-    i64_t *xi, *xm, *xo, *ids;
+    i64_t *xi, *xm, *xk, *xo, *ids, min;
     f64_t *xf, *fo;
     obj_p val, bins, res;
 
     val = ctx->val;
     bins = ctx->bins;
     n = as_list(bins)[0]->i64;
+    min = as_list(ctx->bins)[1]->i64;
 
     switch (val->type)
     {
     case TYPE_I64:
     case TYPE_SYMBOL:
-    case TYPE_TIMESTAMP:
         xi = as_i64(val) + ctx->offset;
-        xm = as_i64(as_list(bins)[1]) + ctx->offset;
+        xm = as_i64(as_list(bins)[2]);
+        xk = as_i64(as_list(bins)[3]) + ctx->offset;
         res = ctx->out;
         xo = as_i64(res);
 
@@ -147,8 +153,10 @@ obj_p aggr_first_ctx(raw_p x, u64_t input_len)
             xo[i] = NULL_I64;
 
         for (i = 0; i < input_len; i++)
-            if (xo[xm[i]] == NULL_I64)
-                xo[xm[i]] = xi[i];
+        {
+            n = xk[i] - min;
+            xo[xm[n]] = xi[i];
+        }
 
         return res;
     default:
@@ -167,7 +175,7 @@ obj_p aggr_first(obj_p val, obj_p bins, obj_p filter)
 
     if (n == 1)
     {
-        struct aggr_ctx_t ctx = {0, val, bins, vector_i64(as_list(bins)[0]->i64)};
+        struct aggr_ctx_t ctx = {0, val, bins, vector(val->type, as_list(bins)[0]->i64)};
         return aggr_first_ctx(&ctx, val->len);
     }
 

@@ -30,6 +30,7 @@
 #include "items.h"
 #include "unary.h"
 #include "string.h"
+#include "pool.h"
 
 u64_t __hash_get(i64_t row, nil_t *seed)
 {
@@ -82,31 +83,95 @@ nil_t __index_list_precalc_hash(obj_p cols, u64_t *out, u64_t ncols, u64_t nrows
         index_hash_obj(as_list(cols)[i], out, filter, nrows, deref);
 }
 
+typedef struct index_scope_ctx_t
+{
+    i64_t *values;
+    i64_t *indices;
+    i64_t min;
+    i64_t max;
+} *index_scope_ctx_p;
+
+obj_p index_scope_ctx(raw_p x, u64_t n)
+{
+    i64_t i, min, max, *values;
+    index_scope_ctx_p ctx = (index_scope_ctx_p)x;
+
+    values = ctx->values;
+
+    // if (indices)
+    // {
+    //     min = max = values[indices[0]];
+    //     for (i = 0; i < len; i++)
+    //     {
+    //         min = values[indices[i]] < min ? values[indices[i]] : min;
+    //         max = values[indices[i]] > max ? values[indices[i]] : max;
+    //     }
+    // }
+    // else
+    // {
+    min = max = values[0];
+    for (i = 0; i < n; i++)
+    {
+        min = values[i] < min ? values[i] : min;
+        max = values[i] > max ? values[i] : max;
+    }
+
+    ctx->min = min;
+    ctx->max = max;
+
+    return NULL_OBJ;
+    // }
+}
+
 index_scope_t index_scope(i64_t values[], i64_t indices[], u64_t len)
 {
-    u64_t i;
+    u64_t i, n, chunks, chunk;
     i64_t min, max;
+    pool_p pool = pool_get();
+    obj_p v;
 
-    if (indices)
+    chunks = pool_executors_count(pool);
+
+    if (chunks == 1)
     {
-        min = max = values[indices[0]];
-        for (i = 0; i < len; i++)
-        {
-            min = values[indices[i]] < min ? values[indices[i]] : min;
-            max = values[indices[i]] > max ? values[indices[i]] : max;
-        }
+        struct index_scope_ctx_t ctx = (struct index_scope_ctx_t){.values = values, .indices = indices};
+        index_scope_ctx(&ctx, len);
+        return (index_scope_t){ctx.min, ctx.max, (u64_t)(ctx.max - ctx.min + 1)};
     }
     else
     {
-        min = max = values[0];
-        for (i = 0; i < len; i++)
-        {
-            min = values[i] < min ? values[i] : min;
-            max = values[i] > max ? values[i] : max;
-        }
-    }
+        struct index_scope_ctx_t ctx[chunks];
+        pool_prepare(pool, chunks);
 
-    return (index_scope_t){min, max, (u64_t)(max - min + 1)};
+        chunk = len / chunks;
+        for (i = 0; i < chunks - 1; i++)
+        {
+            ctx[i].values = values + i * chunk;
+            // ctx[i].indices = indices + i * chunk;
+            ctx[i].min = ctx[i].values[0];
+            ctx[i].max = ctx[i].values[0];
+
+            pool_add_task(pool, i, index_scope_ctx, NULL, (raw_p)&ctx[i], chunk);
+        }
+
+        ctx[i].values = values + i * chunk;
+        // ctx[i].indices = indices + i * chunk;
+        ctx[i].min = ctx[i].values[0];
+        ctx[i].max = ctx[i].values[0];
+
+        pool_add_task(pool, i, index_scope_ctx, NULL, (raw_p)&ctx[i], len - i * chunk);
+        v = pool_run(pool, chunks);
+        drop_obj(v);
+
+        min = max = ctx[0].min;
+        for (i = 0; i < chunks; i++)
+        {
+            min = ctx[i].min < min ? ctx[i].min : min;
+            max = ctx[i].max > max ? ctx[i].max : max;
+        }
+
+        return (index_scope_t){min, max, (u64_t)(max - min + 1)};
+    }
 }
 
 obj_p index_distinct_i8(i8_t values[], u64_t len, b8_t term)
@@ -513,11 +578,20 @@ obj_p index_group_i64_scoped(i64_t values[], i64_t indices[], u64_t len, const i
         keys = vector_i64(scope.range);
         hk = as_i64(keys);
 
-        vals = vector_i64(len);
-        hv = as_i64(vals);
-
         for (i = 0; i < scope.range; i++)
             hk[i] = NULL_I64;
+
+        for (i = 0, j = 0; i < len; i++)
+        {
+            n = values[i] - scope.min;
+            if (hk[n] == NULL_I64)
+                hk[n] = j++;
+        }
+
+        return vn_list(4, i64(j), i64(scope.min), keys, NULL_OBJ);
+
+        vals = vector_i64(len);
+        hv = as_i64(vals);
 
         // distribute bins
         if (indices)

@@ -62,6 +62,7 @@ typedef struct pool_t
 
 pool_p pool_create(u64_t executors_count);
 nil_t pool_destroy(pool_p pool);
+pool_p pool_get(nil_t);
 u64_t pool_executors_count(pool_p pool);
 nil_t pool_prepare(pool_p pool, u64_t tasks_count);
 nil_t pool_add_task(pool_p pool, u64_t id, task_fn fn, drop_fn drop, raw_p arg, u64_t len);
