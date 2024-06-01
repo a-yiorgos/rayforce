@@ -304,6 +304,9 @@ __attribute__((hot)) raw_p heap_realloc(raw_p ptr, u64_t new_size)
     u64_t i, old_size, cap, order;
     raw_p new_ptr;
 
+    if (ptr == NULL)
+        return heap_alloc(new_size);
+
     block = raw2block(ptr);
     old_size = bsizeof(block->order);
     cap = blocksize(new_size);
