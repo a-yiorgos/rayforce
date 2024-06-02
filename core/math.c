@@ -849,63 +849,35 @@ obj_p ray_mod(obj_p x, obj_p y)
     }
 }
 
-typedef i64_t vi64_t __attribute__((vector_size(32)));
-#define as_vi64(x) ((vi64_t *)as_string(x))
-
 obj_p ray_sum(obj_p x)
 {
     u64_t i, l;
     i64_t isum, *xii;
     f64_t fsum, *xfi;
-    vi64_t *vi, vsum;
 
     switch (x->type)
     {
-    // case -TYPE_I64:
-    //     return clone_obj(x);
-    // case -TYPE_F64:
-    //     return clone_obj(x);
+    case -TYPE_I64:
+        return clone_obj(x);
+    case -TYPE_F64:
+        return clone_obj(x);
     case TYPE_I64:
         l = x->len;
         xii = as_i64(x);
         for (i = 0, isum = 0; i < l; i++)
-            isum += xii[i];
+            isum += (xii[i] == NULL_I64) ? 0 : xii[i];
 
         return i64(isum);
-        // case TYPE_F64:
-        //     l = x->len;
-        //     xfi = as_f64(x);
-        //     for (i = 0, fsum = 0; i < l; i++)
-        //         fsum += xfi[i];
+    case TYPE_F64:
+        l = x->len;
+        xfi = as_f64(x);
+        for (i = 0, fsum = 0; i < l; i++)
+            fsum += xfi[i];
 
-        //     return f64(fsum);
-        // case TYPE_GROUPMAP:
-        //     return aggr_sum(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
+        return f64(fsum);
+    case TYPE_GROUPMAP:
+        return aggr_sum(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
 
-    default:
-        throw(ERR_TYPE, "sum: unsupported type: '%s", type_name(x->type));
-    }
-}
-
-obj_p ray_sum1(obj_p x)
-{
-    u64_t i, l;
-    i64_t isum, *xii;
-    f64_t fsum, *xfi;
-    vi64_t *vi, vsum;
-
-    switch (x->type)
-    {
-    case TYPE_I64:
-        l = x->len / 4;
-        vi = as_vi64(x);
-        vsum = (vi64_t){0, 0, 0, 0};
-        for (i = 0; i < l; i++)
-            vsum += vi[i];
-
-        isum = vsum[0] + vsum[1] + vsum[2] + vsum[3];
-
-        return i64(isum);
     default:
         throw(ERR_TYPE, "sum: unsupported type: '%s", type_name(x->type));
     }

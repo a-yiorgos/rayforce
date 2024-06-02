@@ -52,6 +52,7 @@ sys_info_t sys_info(i32_t threads)
     info.build_date[strcspn(info.build_date, "\n")] = 0; // Remove the newline
     info.cores = cpu_cores();
     info.threads = (threads == 0) ? info.cores : threads;
+    strncpy(info.cpu, "Unknown CPU", sizeof(info.cpu));
     if (getcwd(info.cwd, sizeof(info.cwd)) == NULL)
         printf("Unable to get current working directory\n");
 
@@ -67,7 +68,7 @@ sys_info_t sys_info(i32_t threads)
 
 #elif defined(OS_LINUX)
     FILE *cpuFile = fopen("/proc/cpuinfo", "r");
-    c8_t line[256] = {0};
+    c8_t line[256];
 
     while (fgets(line, sizeof(line), cpuFile))
     {
@@ -75,11 +76,6 @@ sys_info_t sys_info(i32_t threads)
         {
             strncpy(info.cpu, strchr(line, ':') + 2, sizeof(info.cpu) - 1);
             info.cpu[strcspn(info.cpu, "\n")] = 0; // Remove the newline
-            break;
-        }
-        else
-        {
-            strncpy(info.cpu, "Unknown CPU", sizeof(info.cpu) - 1);
             break;
         }
     }

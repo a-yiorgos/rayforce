@@ -36,7 +36,6 @@ obj_p ray_xbar(obj_p x, obj_p y);
 obj_p ray_round(obj_p x);
 obj_p ray_floor(obj_p x);
 obj_p ray_sum(obj_p x);
-obj_p ray_sum1(obj_p x);
 obj_p ray_avg(obj_p x);
 obj_p ray_min(obj_p x);
 obj_p ray_max(obj_p x);
