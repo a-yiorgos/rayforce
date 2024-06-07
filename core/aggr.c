@@ -46,8 +46,10 @@ obj_p aggr_map(task_fn aggr, obj_p val, obj_p bins, obj_p filter)
 
     if (n == 1)
     {
-        struct aggr_partial_t partial = {val->len, 0, val, bins, vector_i64(buckets)};
-        return (aggr)(&partial);
+        res = vector(val->type, buckets);
+        struct aggr_partial_t partial = {val->len, 0, val, bins, res};
+        (aggr)(&partial);
+        return vn_list(1, res);
     }
 
     pool_prepare(pool, n);
@@ -661,20 +663,18 @@ obj_p aggr_count_partial(raw_p arg)
     bins = partial->bins;
     l = partial->len;
     n = as_list(bins)[0]->i64;
-    min = as_list(bins)[1]->i64;
+    min = as_list(partial->bins)[1]->i64;
 
     switch (val->type)
     {
     case TYPE_I64:
-    case TYPE_SYMBOL:
         xi = as_i64(val) + partial->offset;
         xm = as_i64(as_list(bins)[2]);
         xk = as_i64(as_list(bins)[3]) + partial->offset;
         res = partial->out;
         xo = as_i64(res);
 
-        for (i = 0; i < n; i++)
-            xo[i] = 0;
+        memset(xo, 0, n * sizeof(i64_t));
 
         for (i = 0; i < l; i++)
         {
@@ -683,8 +683,25 @@ obj_p aggr_count_partial(raw_p arg)
         }
 
         return res;
+
+    case TYPE_F64:
+        xf = as_f64(val) + partial->offset;
+        xm = as_i64(as_list(bins)[2]);
+        xk = as_i64(as_list(bins)[3]) + partial->offset;
+        res = partial->out;
+        fo = as_f64(res);
+
+        memset(fo, 0, n * sizeof(f64_t));
+
+        for (i = 0; i < l; i++)
+        {
+            n = xk[i] - min;
+            fo[xm[n]] = addf64(fo[xm[n]], xf[i]);
+        }
+
+        return res;
     default:
-        return error(ERR_TYPE, "first: unsupported type: '%s'", type_name(val->type));
+        return error(ERR_TYPE, "count: unsupported type: '%s'", type_name(val->type));
     }
 }
 
@@ -718,38 +735,26 @@ obj_p aggr_avg(obj_p val, obj_p bins, obj_p filter)
     u64_t i, l, n;
     i64_t *xi, *xm, *ci, *ids;
     f64_t *xf, *fo;
-    obj_p res;
-
-    n = as_list(bins)[0]->i64;
-    l = as_list(bins)[1]->len;
-
-    group_fill_counts(bins);
-
-    ci = as_i64(as_list(bins)[2]);
+    obj_p res, sums, cnts;
 
     switch (val->type)
     {
     case TYPE_I64:
-        xi = as_i64(val);
-        xm = as_i64(as_list(bins)[1]);
-        res = vector_f64(n);
-        fo = as_f64(res);
-        memset(fo, 0, n * sizeof(i64_t));
-        if (filter != NULL_OBJ)
-        {
-            ids = as_i64(filter);
-            for (i = 0; i < l; i++)
-                fo[xm[i]] = addi64(fo[xm[i]], xi[ids[i]]);
-        }
-        else
-        {
-            for (i = 0; i < l; i++)
-                fo[xm[i]] = addi64(fo[xm[i]], xi[i]);
-        }
+        sums = aggr_sum(val, bins, filter);
+        cnts = aggr_count(val, bins, filter);
 
-        // calc avgs
-        for (i = 0; i < n; i++)
-            fo[i] = divi64(fo[i], ci[i]);
+        xi = as_i64(sums);
+        ci = as_i64(cnts);
+
+        l = sums->len;
+        res = vector_f64(l);
+        fo = as_f64(res);
+
+        for (i = 0; i < l; i++)
+            fo[i] = fdivi64(xi[i], ci[i]);
+
+        drop_obj(sums);
+        drop_obj(cnts);
 
         return res;
     case TYPE_F64:

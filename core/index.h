@@ -26,7 +26,7 @@
 
 #include "rayforce.h"
 
-#define INDEX_SCOPE_LIMIT 1024 * 1024
+#define INDEX_SCOPE_LIMIT 1024 * 1024 * 1024
 
 typedef struct __index_list_ctx_t
 {

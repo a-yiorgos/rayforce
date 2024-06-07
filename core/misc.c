@@ -31,6 +31,7 @@
 #include "unary.h"
 #include "error.h"
 #include "index.h"
+#include "aggr.h"
 
 obj_p ray_type(obj_p x)
 {
@@ -46,7 +47,13 @@ obj_p ray_type(obj_p x)
 
 obj_p ray_count(obj_p x)
 {
-    return i64(ops_count(x));
+    switch (x->type)
+    {
+    case TYPE_GROUPMAP:
+        return aggr_count(as_list(x)[0], as_list(x)[1], as_list(x)[2]);
+    default:
+        return i64(ops_count(x));
+    }
 }
 
 obj_p ray_rc(obj_p x)
