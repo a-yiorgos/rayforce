@@ -41,7 +41,7 @@
 
 raw_p mmap_stack(u64_t size);
 raw_p mmap_alloc(u64_t size);
-raw_p mmap_file(i64_t fd, u64_t size);
+raw_p mmap_file(i64_t fd, u64_t size, i32_t shared);
 i64_t mmap_free(raw_p addr, u64_t size);
 i64_t mmap_sync(raw_p addr, u64_t size);
 raw_p mmap_reserve(raw_p addr, u64_t size);

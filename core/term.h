@@ -51,8 +51,8 @@ typedef struct term_t
 history_p history_create();
 nil_t history_destroy(history_p history);
 nil_t history_add(history_p history, str_p line);
-str_p history_prev(history_p history);
-str_p history_next(history_p history);
+i64_t history_prev(history_p history, str_p dst);
+i64_t history_next(history_p history, str_p dst);
 
 term_p term_create();
 nil_t term_prompt(term_p term);

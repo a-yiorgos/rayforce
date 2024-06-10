@@ -56,7 +56,7 @@ i64_t extend_file_size(i64_t fd, u64_t new_size)
 
 history_p history_create()
 {
-    i64_t fd, fsize;
+    i64_t pos, fd, fsize;
     str_p lines;
     history_p history;
 
@@ -83,7 +83,7 @@ history_p history_create()
     }
 
     // Map file to memory
-    lines = (str_p)mmap_file(fd, fsize);
+    lines = (str_p)mmap_file(fd, fsize, 1);
     if (lines == NULL)
     {
         perror("can't map history file");
@@ -100,11 +100,16 @@ history_p history_create()
         return NULL;
     }
 
+    // Find the current end of the data in the file
+    pos = 0;
+    while (pos < fsize && lines[pos] != '\0')
+        pos++;
+
     history->fd = fd;
     history->lines = lines;
     history->size = fsize;
-    history->pos = 0;
-    history->index = 0;
+    history->pos = pos;
+    history->index = pos;
 
     return history;
 }
@@ -122,88 +127,86 @@ nil_t history_add(history_p history, str_p line)
 {
     u64_t len = strlen(line);
     u64_t pos = history->pos;
-    u64_t index = history->index;
     u64_t size = history->size;
 
-    // if (len + pos + 1 > size)
-    // {
-    //     // Resize the history buffer
-    //     size = size * 2;
-    //     history->lines = (str_p)mmap_reserve(history->lines, size);
-    //     if (history->lines == NULL)
-    //     {
-    //         perror("can't resize history buffer");
-    //         return;
-    //     }
+    if (len + pos + 1 > size)
+    {
+        // Resize the history buffer
+        size = size * 2;
+        history->lines = (str_p)mmap_reserve(history->lines, size);
+        if (history->lines == NULL)
+        {
+            perror("can't resize history buffer");
+            return;
+        }
 
-    //     history->size = size;
-    // }
+        history->size = size;
+    }
 
     // Add the line to the history buffer
     memcpy(history->lines + pos, line, len);
     history->lines[pos + len] = '\n';
     history->pos += len + 1;
-    history->index++;
+    history->index = history->pos;
 
     // Sync the history buffer to the file
     if (mmap_sync(history->lines, history->size) == -1)
         perror("can't sync history buffer");
 }
 
-str_p history_prev(history_p history)
+i64_t history_prev(history_p history, str_p dst)
 {
-    u64_t pos = history->pos;
     u64_t index = history->index;
-    str_p line = NULL;
+    i64_t len = 0;
 
     if (index == 0)
-        return NULL;
+        return len;
+
+    // index--; // Skip the current line break
 
     // Find the previous line
-    while (pos > 0)
+    while (index > 0)
     {
-        if (history->lines[--pos] == '\n')
+        if (history->lines[--index] == '\n')
         {
-            line = history->lines + pos + 1;
+            len = history->index - index - 1;
+            strncpy(dst, history->lines + index + 1, len);
             break;
         }
     }
 
-    history->pos = pos;
-    history->index--;
+    history->index = index;
 
-    return line;
+    return len;
 }
 
-str_p history_next(history_p history)
+i64_t history_next(history_p history, str_p dst)
 {
-    u64_t pos = history->pos;
     u64_t index = history->index;
-    str_p line = NULL;
+    i64_t len = 0;
 
     if (index == history->size)
-        return NULL;
+        return len;
 
     // Find the next line
-    while (pos < history->size)
+    while (index < history->size)
     {
-        if (history->lines[pos++] == '\n')
+        if (history->lines[index++] == '\n')
         {
-            line = history->lines + pos;
+            len = index - history->index - 1;
+            strncpy(dst, history->lines + history->index, len);
             break;
         }
     }
 
-    history->pos = pos;
-    history->index++;
+    history->index = index;
 
-    return line;
+    return len;
 }
 
 term_p term_create()
 {
     term_p term;
-    history_p history;
 
     term = (term_p)heap_mmap(sizeof(struct term_t));
 
@@ -409,9 +412,8 @@ nil_t term_backspace(term_p term)
 obj_p term_read(term_p term)
 {
     c8_t c;
-    i64_t exit_code;
+    i64_t l, exit_code;
     obj_p res = NULL;
-    str_p line;
 
     if (read(STDIN_FILENO, &c, 1) == 1)
     {
@@ -464,22 +466,20 @@ obj_p term_read(term_p term)
                     switch (c)
                     {
                     case 'A': // Up arrow
-                        line = history_prev(term->history);
-                        if (line != NULL)
+                        l = history_prev(term->history, term->buf);
+                        if (l > 0)
                         {
-                            term->buf_len = strlen(line);
-                            term->buf_pos = term->buf_len;
-                            memcpy(term->buf, line, term->buf_len);
+                            term->buf_len = l;
+                            term->buf_pos = l;
                             term_redraw(term);
                         }
                         break;
                     case 'B': // Down arrow
-                        line = history_next(term->history);
-                        if (line != NULL)
+                        l = history_next(term->history, term->buf);
+                        if (l > 0)
                         {
-                            term->buf_len = strlen(line);
-                            term->buf_pos = term->buf_len;
-                            memcpy(term->buf, line, term->buf_len);
+                            term->buf_len = l;
+                            term->buf_pos = l;
                             term_redraw(term);
                         }
                         break;
@@ -499,11 +499,12 @@ obj_p term_read(term_p term)
                             fflush(stdout);
                         }
                         break;
+                    default:
+                        break;
                     }
-
-                    // term_redraw(term);
                 }
             }
+
             return res;
         default:
             // regular character

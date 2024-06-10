@@ -486,7 +486,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
             return res;
         }
 
-        buf = (str_p)mmap_file(fd, size);
+        buf = (str_p)mmap_file(fd, size, 0);
 
         if (buf == NULL)
         {

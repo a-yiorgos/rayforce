@@ -241,7 +241,7 @@ obj_p ray_get(obj_p x)
 
             drop_obj(path);
 
-            res = (obj_p)mmap_file(fd, size);
+            res = (obj_p)mmap_file(fd, size, 0);
 
             if (is_external_serialized(res))
             {
