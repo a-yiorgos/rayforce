@@ -41,7 +41,7 @@ u64_t get_time_millis(nil_t)
     return uli.QuadPart / 10000ULL - 11644473600000ULL; // Convert to milliseconds since Unix epoch
 }
 
-obj_p ray_time(obj_p x)
+obj_p ray_timeit(obj_p x)
 {
     LARGE_INTEGER start, end, freq;
     f64_t elapsed;
@@ -70,7 +70,7 @@ u64_t get_time_millis(nil_t)
     return (u64_t)ts.tv_sec * 1000 + (u64_t)ts.tv_nsec / 1000000;
 }
 
-obj_p ray_time(obj_p x)
+obj_p ray_timeit(obj_p x)
 {
     struct timespec start, end;
     f64_t elapsed;

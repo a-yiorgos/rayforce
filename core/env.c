@@ -146,7 +146,7 @@ nil_t init_functions(obj_p functions)
     regf(functions,  "hclose",            TYPE_UNARY,    FN_NONE,                   ray_hclose);
     regf(functions,  "rc",                TYPE_UNARY,    FN_NONE,                   ray_rc);
     regf(functions,  "select",            TYPE_UNARY,    FN_NONE,                   ray_select);
-    regf(functions,  "time",              TYPE_UNARY,    FN_NONE | FN_SPECIAL_FORM, ray_time);
+    regf(functions,  "timeit",            TYPE_UNARY,    FN_NONE | FN_SPECIAL_FORM, ray_timeit);
     regf(functions,  "bins",              TYPE_UNARY,    FN_NONE,                   ray_bins);
     regf(functions,  "update",            TYPE_UNARY,    FN_NONE,                   ray_update);
     regf(functions,  "graphic",           TYPE_UNARY,    FN_NONE,                   ray_graphic_format);
@@ -370,7 +370,8 @@ obj_p env_get_internal_function_by_id(i64_t id)
 
 str_p env_get_internal_function_lit(lit_p name, u64_t len)
 {
-    i64_t i, l, n, *names;
+    i64_t i, l, *names;
+    u64_t n;
     str_p nm;
 
     l = as_list(runtime_get()->env.functions)[0]->len;

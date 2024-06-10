@@ -95,21 +95,14 @@ i64_t term_highlight_into(term_p term, obj_p *dst)
         {
         case '(':
         case ')':
-            n += str_fmt_into(dst, -1, "%s%s%c%s", BOLD, WHITE, term->buf[i], RESET);
-            break;
         case '[':
         case ']':
-            n += str_fmt_into(dst, -1, "%s%s%c%s", BOLD, WHITE, term->buf[i], RESET);
-            break;
         case '{':
         case '}':
-            n += str_fmt_into(dst, -1, "%s%s%c%s", BOLD, WHITE, term->buf[i], RESET);
-            break;
-        case ',':
-            n += str_fmt_into(dst, -1, "%s%c%s", GRAY, term->buf[i], RESET);
+            n += str_fmt_into(dst, -1, "%s%c%s", MAGENTA, term->buf[i], RESET);
             break;
         case ':':
-            j = 1;
+            j = i + 1;
             if (i == 0 && l > 1)
             {
                 for (; j < l; j++)
@@ -118,11 +111,11 @@ i64_t term_highlight_into(term_p term, obj_p *dst)
                         break;
                 }
 
-                i = j - 1;
                 c = 1;
             }
 
-            n += str_fmt_into(dst, -1, "%s%.*s%s", GRAY, j, term->buf, RESET);
+            n += str_fmt_into(dst, -1, "%s%.*s%s", GRAY, j - i, term->buf + i, RESET);
+            i = j - 1;
 
             break;
         default:
@@ -135,7 +128,7 @@ i64_t term_highlight_into(term_p term, obj_p *dst)
                 }
 
                 // try to find in a verbs list
-                verb = env_get_internal_function_lit(term->buf + i, j);
+                verb = env_get_internal_function_lit(term->buf + i, j - i);
                 if (verb != NULL)
                 {
                     n += str_fmt_into(dst, -1, "%s%s%s%s", BOLD, GREEN, verb, RESET);
