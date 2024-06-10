@@ -118,14 +118,10 @@ typedef enum
         n = n > k ? n : k; \
     }
 
-nil_t prompt(nil_t)
+i64_t prompt_fmt_into(obj_p *dst)
 {
-    if (__USE_UNICODE)
-        printf("%s%s %s", GREEN, unicode_glyphs[GLYPH_R_ARROW], RESET);
-    else
-        printf("%s%s %s", GREEN, ascii_glyphs[GLYPH_R_ARROW], RESET);
-
-    fflush(stdout);
+    return (__USE_UNICODE) ? str_fmt_into(dst, NO_LIMIT, "%s%s %s", GREEN, unicode_glyphs[GLYPH_R_ARROW], RESET)
+                           : str_fmt_into(dst, NO_LIMIT, "%s%s %s", GREEN, ascii_glyphs[GLYPH_R_ARROW], RESET);
 }
 
 nil_t debug_str(obj_p str)

@@ -404,7 +404,7 @@ i64_t poll_run(poll_p poll)
     selector_p selector;
     struct epoll_event ev, events[MAX_EVENTS];
 
-    prompt();
+    term_prompt(poll->term);
 
     while (poll->code == NULL_I64)
     {
@@ -431,7 +431,8 @@ i64_t poll_run(poll_p poll)
                         io_write(STDOUT_FILENO, MSG_TYPE_RESP, res);
                         drop_obj(res);
                     }
-                    prompt();
+
+                    term_prompt(poll->term);
                 }
             }
             // accept new connections

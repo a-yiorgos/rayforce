@@ -33,11 +33,16 @@ typedef struct term_t
 {
     struct termios oldattr;
     struct termios newattr;
-    i32_t bufpos;
+    i32_t buf_pos;
     c8_t buf[TERM_BUF_SIZE];
+    str_p history;
+    u64_t history_size;
+    u64_t history_pos;
+    u64_t history_index;
 } *term_p;
 
 term_p term_create();
+nil_t term_prompt(term_p term);
 nil_t term_destroy(term_p term);
 obj_p term_read(term_p term);
 
