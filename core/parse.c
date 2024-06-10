@@ -38,12 +38,6 @@
 #include "timestamp.h"
 #include "error.h"
 
-#define COMMANDS_LIST "\
-  :?  - Displays help.\n\
-  :t  - Measures the execution time of an expression.\n\
-  :g  - Use rich graphic formatting.\n\
-  :q  - Exits the application."
-
 span_t span_start(parser_t *parser)
 {
     span_t s = {
@@ -950,48 +944,6 @@ obj_p parse_dict(parser_t *parser)
     return d;
 }
 
-obj_p parse_command(parser_t *parser)
-{
-    obj_p v, err;
-    span_t span = span_start(parser);
-
-    shift(parser, 1); // skip ':'
-
-    if ((*parser->current) == '?')
-    {
-        shift(parser, 1);
-        printf("%s** Commands list:\n%s%s\n", YELLOW, COMMANDS_LIST, RESET);
-        return NULL_OBJ;
-    }
-    if ((*parser->current) == 't')
-    {
-        shift(parser, 1);
-        v = parse_do(parser);
-        if (is_error(v))
-            return v;
-
-        return vn_list(2, env_get_internal_function("time"), v);
-    }
-    if ((*parser->current) == 'q')
-    {
-        shift(parser, 1);
-        return vn_list(1, env_get_internal_function("exit"));
-    }
-    if ((*parser->current) == 'g')
-    {
-        shift(parser, 1);
-        v = parse_do(parser);
-        if (is_error(v))
-            return v;
-
-        return vn_list(2, env_get_internal_function("graphic"), v);
-    }
-
-    nfo_insert(parser->nfo, parser->count, span);
-    err = parse_error(parser, parser->count++, str_fmt(-1, "Invalid command. Type ':?' for commands list."));
-    return err;
-}
-
 nil_t skip_whitespaces(parser_t *parser)
 {
     while (B8_TRUE)
@@ -1147,9 +1099,6 @@ obj_p parse(lit_p input, obj_p nfo)
         .column = 0,
         .replace_symbols = B8_TRUE,
     };
-
-    if (*parser.current == ':')
-        return parse_command(&parser);
 
     res = parse_do(&parser);
 

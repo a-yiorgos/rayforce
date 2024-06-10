@@ -45,7 +45,6 @@
 #include "sys.h"
 
 __thread i32_t __EVENT_FD; // eventfd to notify epoll loop of shutdown
-__thread u8_t __STDIN_BUF[BUF_SIZE + 1];
 
 nil_t sigint_handler(i32_t signo)
 {
@@ -122,6 +121,7 @@ poll_p poll_init(i64_t port)
     poll->ipc_fd = listen_fd;
     poll->replfile = string_from_str("repl", 4);
     poll->ipcfile = string_from_str("ipc", 3);
+    poll->term = term_create();
     poll->selectors = freelist_create(128);
     poll->timers = timers_create(16);
 
@@ -145,6 +145,8 @@ nil_t poll_destroy(poll_p poll)
 
     drop_obj(poll->replfile);
     drop_obj(poll->ipcfile);
+
+    term_destroy(poll->term);
 
     freelist_free(poll->selectors);
     timers_destroy(poll->timers);
@@ -396,7 +398,7 @@ nil_t process_request(poll_p poll, selector_p selector)
 i64_t poll_run(poll_p poll)
 {
     i64_t epoll_fd = poll->poll_fd, listen_fd = poll->ipc_fd,
-          n, nfds, len, sock, timeout = TIMEOUT_INFINITY;
+          n, nfds, sock, timeout = TIMEOUT_INFINITY;
     obj_p str, res;
     poll_result_t poll_result;
     selector_p selector;
@@ -417,16 +419,20 @@ i64_t poll_run(poll_p poll)
             // stdin
             if (ev.data.fd == STDIN_FILENO)
             {
-                len = read(STDIN_FILENO, __STDIN_BUF, BUF_SIZE);
-                if (len > 1)
+                str = term_read(poll->term);
+                if (str != NULL)
                 {
-                    str = cstring_from_str((str_p)__STDIN_BUF, len - 1);
-                    res = ray_eval_str(str, poll->replfile);
-                    drop_obj(str);
-                    io_write(STDOUT_FILENO, MSG_TYPE_RESP, res);
-                    drop_obj(res);
+                    if (is_error(str))
+                        io_write(STDOUT_FILENO, MSG_TYPE_RESP, str);
+                    else if (str != NULL_OBJ)
+                    {
+                        res = ray_eval_str(str, poll->replfile);
+                        drop_obj(str);
+                        io_write(STDOUT_FILENO, MSG_TYPE_RESP, res);
+                        drop_obj(res);
+                    }
+                    prompt();
                 }
-                prompt();
             }
             // accept new connections
             else if (ev.data.fd == listen_fd)

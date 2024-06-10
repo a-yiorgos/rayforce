@@ -35,6 +35,7 @@
 #include "queue.h"
 #include "freelist.h"
 #include "timer.h"
+#include "term.h"
 
 #define MAX_EVENTS 1024
 #define BUF_SIZE 2048
@@ -123,6 +124,7 @@ typedef struct poll_t
     i64_t ipc_fd;
     obj_p replfile;
     obj_p ipcfile;
+    term_p term;
     freelist_p selectors; // freelist of selectors
     timers_p timers;      // timers heap
 } *poll_p;
