@@ -483,11 +483,13 @@ nil_t term_autocomplete(term_p term)
 
     if (term->tabidx == 0)
     {
-        debug("SAVE CURRENT HISTORY!!");
+        debug("SAVE!!!!!!!!!!!");
+        term->history->curr_saved = 0;
         history_save_current(term->history, term->buf, term->buf_len);
     }
     else
     {
+        debug("RESTORE!!!!!!!!!!!");
         l = history_restore_current(term->history, term->buf);
         term->buf_len = l;
         term->buf_pos = l;
