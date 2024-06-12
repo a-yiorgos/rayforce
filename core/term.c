@@ -522,37 +522,46 @@ nil_t term_backspace(term_p term)
 
 nil_t term_autocomplete(term_p term)
 {
-    u64_t i, l, n, pos;
-    c8_t *buf;
+    u64_t l, n, len, pos, start, end;
+    c8_t *tbuf, *hbuf;
     str_p verb;
 
-    pos = term->history->curr_len;
-    buf = term->history->curr;
+    pos = term->buf_pos;
+    len = term->history->curr_len;
+    hbuf = term->history->curr;
+    tbuf = term->buf;
 
     // Find start of the word
-    for (i = pos; i > 0; i--)
+    for (start = pos; start > 0; start--)
     {
-        if (!is_alphanum(buf[i - 1]) && buf[i - 1] != '-')
+        if (!is_alphanum(tbuf[start - 1]) && tbuf[start - 1] != '-')
             break;
     }
 
-    n = pos - i;
+    // Find end of the word
+    for (end = start; end < len; end++)
+    {
+        if (!is_alphanum(hbuf[end]) && hbuf[end] != '-')
+            break;
+    }
+
+    n = end - start;
     if (n == 0)
         return;
 
-    verb = env_get_internal_function_lit(buf + i, n, &term->fnidx, B8_FALSE);
+    verb = env_get_internal_function_lit(tbuf + start, n, &term->fnidx, B8_FALSE);
     if (verb != NULL)
         goto redraw;
 
-    verb = env_get_internal_kw_lit(term->buf + i, n, B8_FALSE);
+    verb = env_get_internal_kw_lit(tbuf + start, n, B8_FALSE);
     if (verb != NULL)
         goto redraw;
 
-    verb = env_get_internal_lit_lit(term->buf + i, n, B8_FALSE);
+    verb = env_get_internal_lit_lit(tbuf + start, n, B8_FALSE);
     if (verb != NULL)
         goto redraw;
 
-    verb = env_get_global_lit_lit(term->buf + i, n, &term->varidx, &term->colidx);
+    verb = env_get_global_lit_lit(tbuf + start, n, &term->varidx, &term->colidx);
     if (verb != NULL)
         goto redraw;
 
@@ -560,9 +569,10 @@ nil_t term_autocomplete(term_p term)
 
 redraw:
     l = strlen(verb);
-    strncpy(term->buf + i, verb, l);
-    term->buf_len = i + l;
-    term->buf_pos = i + l;
+    strncpy(tbuf + start, verb, l);
+    strncpy(tbuf + start + l, hbuf + end, len - end);
+    term->buf_len = start + l + len - end;
+    term->buf_pos = start + l;
     term_redraw(term);
 }
 
