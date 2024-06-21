@@ -446,6 +446,8 @@ str_p env_get_internal_lit_lit(lit_p name, u64_t len, b8_t exact)
             return (str_p) "0i";
         if (len == 2 && strncmp(name, "0f", 2) == 0)
             return (str_p) "0f";
+        if (len == 2 && strncmp(name, "0g", 2) == 0)
+            return (str_p) "0g";
         if (len == 2 && strncmp(name, "by", 2) == 0)
             return (str_p) "by";
         if (len == 4 && strncmp(name, "from", 4) == 0)
@@ -457,10 +459,6 @@ str_p env_get_internal_lit_lit(lit_p name, u64_t len, b8_t exact)
     }
     else
     {
-        if (len <= 2 && strncmp(name, "0i", len) == 0)
-            return (str_p) "0i";
-        if (len <= 2 && strncmp(name, "0f", len) == 0)
-            return (str_p) "0f";
         if (len <= 2 && strncmp(name, "by", len) == 0)
             return (str_p) "by";
         if (len <= 4 && strncmp(name, "from", len) == 0)

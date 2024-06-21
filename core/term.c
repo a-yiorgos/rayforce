@@ -550,7 +550,7 @@ i64_t term_redraw_into(term_p term, obj_p *dst)
 
             break;
         default:
-            if ((i == 0 || !is_alpha(term->buf[i - 1])) && is_alpha(term->buf[i]))
+            if ((i == 0 || !is_alphanum(term->buf[i - 1])) && is_alphanum(term->buf[i]))
             {
                 for (j = i + 1; j < l; j++)
                 {
@@ -580,7 +580,7 @@ i64_t term_redraw_into(term_p term, obj_p *dst)
                 verb = env_get_internal_lit_lit(term->buf + i, j - i, B8_TRUE);
                 if (verb != NULL)
                 {
-                    n += str_fmt_into(dst, -1, "%s%s%s%s", BOLD, GREEN, verb, RESET);
+                    n += str_fmt_into(dst, -1, "%s%s%s%s", BOLD, YELLOW, verb, RESET);
                     i += strlen(verb) - 1;
                     c = 1;
                     break;
