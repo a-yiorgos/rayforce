@@ -833,13 +833,9 @@ b8_t term_autocomplete_word(term_p term)
 
     return B8_FALSE;
 
+    // Note: word is not being freed here bacause it is a global string like entry or symbol
 redraw:
     l = strlen(word);
-
-    // if the word is the same as the current one, then skip it
-    if (l == n && strncmp(word, hbuf + start, n) == 0)
-        return B8_FALSE;
-
     memcpy(tbuf + start, word, l);
     memcpy(tbuf + start + l, hbuf + end, len - end);
     tbuf[start + l + len - end] = '\0';
