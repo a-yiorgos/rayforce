@@ -833,9 +833,9 @@ obj_p ray_update(obj_p obj)
             return groupby;
         }
 
-        bins = group_bins(groupby, tab, filters);
+        bins = index_group(groupby, filters);
         drop_obj(groupby);
-        prm = group_map(tab, bins, filters);
+        prm = group_map(tab, bins);
 
         if (is_error(prm))
         {

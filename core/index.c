@@ -735,6 +735,22 @@ obj_p index_group_i64(obj_p obj, obj_p filter)
     return index_group_i64_scoped(obj, filter, scope);
 }
 
+obj_p index_group_f64(obj_p obj, obj_p filter)
+{
+    index_scope_t scope;
+    i64_t *indices;
+    f64_t *values;
+    u64_t len;
+
+    values = as_f64(obj);
+    indices = is_null(filter) ? NULL : as_i64(filter);
+    len = indices ? filter->len : obj->len;
+
+    scope = index_scope((i64_t *)values, indices, len);
+
+    return index_group_i64_scoped(obj, filter, scope);
+}
+
 obj_p index_group_guid(obj_p obj, obj_p filter)
 {
     u64_t i, j, len;
@@ -835,6 +851,38 @@ obj_p index_group_obj(obj_p obj, obj_p filter)
     ht_bk_destroy(hash);
 
     return index_group_build(j, vals, NULL_I64, index_group_get_indexed, NULL_OBJ, clone_obj(filter));
+}
+
+obj_p index_group(obj_p val, obj_p filter)
+{
+    obj_p bins, v;
+
+    switch (val->type)
+    {
+    case TYPE_B8:
+    case TYPE_U8:
+    case TYPE_C8:
+        return index_group_i8(val, filter);
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        return index_group_i64(val, filter);
+    case TYPE_F64:
+        return index_group_i64(val, filter);
+    case TYPE_GUID:
+        return index_group_guid(val, filter);
+    case TYPE_ENUM:
+        return index_group_i64(enum_val(val), filter);
+    case TYPE_LIST:
+        return index_group_obj(val, filter);
+    case TYPE_ANYMAP:
+        v = ray_value(val);
+        bins = index_group_obj(v, filter);
+        drop_obj(v);
+        return bins;
+    default:
+        throw(ERR_TYPE, "'index group' unable to group by: %s", type_name(val->type));
+    }
 }
 
 obj_p index_group_list_direct(obj_p obj, obj_p filter)
@@ -979,6 +1027,43 @@ obj_p index_group_list_direct(obj_p obj, obj_p filter)
     drop_obj(ht);
 
     return res;
+}
+
+obj_p group_bins_list(obj_p obj, obj_p tab, obj_p filter)
+{
+    u64_t i, c, n, l;
+    i64_t *ids;
+    obj_p bins;
+
+    // if (ops_count(obj) == 0)
+    //     return error(ERR_LENGTH, "group index: empty source");
+
+    // if (filter != NULL_OBJ)
+    // {
+    //     l = filter->len;
+    //     ids = as_i64(filter);
+    // }
+    // else
+    // {
+    //     l = ops_count(as_list(obj)[0]);
+    //     ids = NULL;
+    // }
+
+    // if (l > ops_count(tab))
+    //     throw(ERR_LENGTH, "'group index': groups count: %lld can't be greater than source length: %lld", l, ops_count(tab));
+
+    // n = obj->len;
+
+    // c = ops_count(as_list(obj)[0]);
+    // for (i = 1; i < n; i++)
+    // {
+    //     if (ops_count(as_list(obj)[i]) != c)
+    //         throw(ERR_LENGTH, "'group index': source length: %lld must be equal to groups count: %lld", ops_count(as_list(obj)[i]), c);
+    // }
+
+    // bins = index_group_list(obj, ids, l);
+
+    return bins;
 }
 
 obj_p index_group_list(obj_p obj, obj_p filter)

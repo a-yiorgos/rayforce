@@ -63,13 +63,13 @@ obj_p remap_group(obj_p *gvals, obj_p cols, obj_p tab, obj_p filter, obj_p gkeys
     switch (gkeys->type)
     {
     case -TYPE_SYMBOL:
-        index = group_bins(cols, tab, filter);
+        index = index_group(cols, filter);
         timeit_tick("build index");
 
         if (is_error(index))
             return index;
 
-        res = group_map(tab, index, filter);
+        res = group_map(tab, index);
         v = (gcols == NULL_OBJ) ? aggr_first(cols, index) : aggr_first(gcols, index);
         if (is_error(v))
         {
@@ -85,13 +85,13 @@ obj_p remap_group(obj_p *gvals, obj_p cols, obj_p tab, obj_p filter, obj_p gkeys
 
         return res;
     case TYPE_SYMBOL:
-        index = group_bins_list(cols, tab, filter);
+        index = index_group_list(cols, filter);
         timeit_tick("build compound index");
 
         if (is_error(index))
             return index;
 
-        res = group_map(tab, index, filter);
+        res = group_map(tab, index);
 
         l = cols->len;
         lst = list(l);
