@@ -1029,49 +1029,15 @@ obj_p index_group_list_direct(obj_p obj, obj_p filter)
     return res;
 }
 
-obj_p group_bins_list(obj_p obj, obj_p tab, obj_p filter)
-{
-    u64_t i, c, n, l;
-    i64_t *ids;
-    obj_p bins;
-
-    // if (ops_count(obj) == 0)
-    //     return error(ERR_LENGTH, "group index: empty source");
-
-    // if (filter != NULL_OBJ)
-    // {
-    //     l = filter->len;
-    //     ids = as_i64(filter);
-    // }
-    // else
-    // {
-    //     l = ops_count(as_list(obj)[0]);
-    //     ids = NULL;
-    // }
-
-    // if (l > ops_count(tab))
-    //     throw(ERR_LENGTH, "'group index': groups count: %lld can't be greater than source length: %lld", l, ops_count(tab));
-
-    // n = obj->len;
-
-    // c = ops_count(as_list(obj)[0]);
-    // for (i = 1; i < n; i++)
-    // {
-    //     if (ops_count(as_list(obj)[i]) != c)
-    //         throw(ERR_LENGTH, "'group index': source length: %lld must be equal to groups count: %lld", ops_count(as_list(obj)[i]), c);
-    // }
-
-    // bins = index_group_list(obj, ids, l);
-
-    return bins;
-}
-
 obj_p index_group_list(obj_p obj, obj_p filter)
 {
     u64_t i, len;
     i64_t g, idx, *hk, *hv, *xo, *indices;
     obj_p ht, res, *values;
     __index_list_ctx_t ctx;
+
+    if (ops_count(obj) == 0)
+        return error(ERR_LENGTH, "group index list: empty source");
 
     // If the list values are small, use direct hashing
     res = index_group_list_direct(obj, filter);
@@ -1083,54 +1049,52 @@ obj_p index_group_list(obj_p obj, obj_p filter)
     len = indices ? filter->len : values[0]->len;
 
     // Otherwise use a hash table
-    // ht = ht_oa_create(len, TYPE_I64);
-    // res = vector_i64(len);
-    // xo = as_i64(res);
-    // ctx = (__index_list_ctx_t){obj, obj, (u64_t *)as_i64(res)};
+    ht = ht_oa_create(len, TYPE_I64);
+    res = vector_i64(len);
+    xo = as_i64(res);
+    ctx = (__index_list_ctx_t){obj, obj, (u64_t *)as_i64(res)};
 
-    // // distribute bins
-    // __index_list_precalc_hash(obj, (u64_t *)as_i64(res), obj->len, len, filter, B8_FALSE);
+    // distribute bins
+    __index_list_precalc_hash(obj, (u64_t *)as_i64(res), obj->len, len, filter, B8_FALSE);
 
-    // if (filter)
-    // {
-    //     for (i = 0, g = 0; i < len; i++)
-    //     {
-    //         idx = ht_oa_tab_next_with(&ht, filter[i], &__index_list_hash_get, &__index_list_cmp_row, &ctx);
-    //         hk = as_i64(as_list(ht)[0]);
-    //         hv = as_i64(as_list(ht)[1]);
+    if (indices)
+    {
+        for (i = 0, g = 0; i < len; i++)
+        {
+            idx = ht_oa_tab_next_with(&ht, indices[i], &__index_list_hash_get, &__index_list_cmp_row, &ctx);
+            hk = as_i64(as_list(ht)[0]);
+            hv = as_i64(as_list(ht)[1]);
 
-    //         if (hk[idx] == NULL_I64)
-    //         {
-    //             hk[idx] = filter[i];
-    //             hv[idx] = g++;
-    //         }
+            if (hk[idx] == NULL_I64)
+            {
+                hk[idx] = indices[i];
+                hv[idx] = g++;
+            }
 
-    //         xo[i] = hv[idx];
-    //     }
-    // }
-    // else
-    // {
-    //     for (i = 0, g = 0; i < len; i++)
-    //     {
-    //         idx = ht_oa_tab_next_with(&ht, i, &__index_list_hash_get, &__index_list_cmp_row, &ctx);
-    //         hk = as_i64(as_list(ht)[0]);
-    //         hv = as_i64(as_list(ht)[1]);
+            xo[i] = hv[idx];
+        }
+    }
+    else
+    {
+        for (i = 0, g = 0; i < len; i++)
+        {
+            idx = ht_oa_tab_next_with(&ht, i, &__index_list_hash_get, &__index_list_cmp_row, &ctx);
+            hk = as_i64(as_list(ht)[0]);
+            hv = as_i64(as_list(ht)[1]);
 
-    //         if (hk[idx] == NULL_I64)
-    //         {
-    //             hk[idx] = i;
-    //             hv[idx] = g++;
-    //         }
+            if (hk[idx] == NULL_I64)
+            {
+                hk[idx] = i;
+                hv[idx] = g++;
+            }
 
-    //         xo[i] = hv[idx];
-    //     }
-    // }
+            xo[i] = hv[idx];
+        }
+    }
 
-    // drop_obj(ht);
+    drop_obj(ht);
 
-    // return vn_list(3, i64(g), res, NULL_OBJ);
-
-    panic("not implemented");
+    return index_group_build(g, res, NULL_I64, index_group_get_indexed, NULL_OBJ, clone_obj(filter));
 }
 
 nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t deref)
