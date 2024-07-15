@@ -348,12 +348,13 @@ obj_p parse_number(parser_t *parser)
 {
     str_p end;
     i64_t num_i64;
+    u64_t num_u64;
     f64_t num_f64;
     obj_p num;
     span_t span = span_start(parser);
-    u8_t NULL_GUID[16] = {0};
+    u8_t NULL_GUID[16] = {0}, num_u8;
 
-    // check if null
+    // check if null or byte literal
     if (*parser->current == '0')
     {
         if (*(parser->current + 1) == 'i')
@@ -387,6 +388,24 @@ obj_p parse_number(parser_t *parser)
         {
             shift(parser, 2);
             num = guid(NULL_GUID);
+            nfo_insert(parser->nfo, (i64_t)num, span);
+
+            return num;
+        }
+
+        if (*(parser->current + 1) == 'x')
+        {
+            num_u64 = strtoul(parser->current, &end, 16);
+            if (num_u64 > 255)
+            {
+                span.end_column += (end - parser->current);
+                nfo_insert(parser->nfo, parser->count, span);
+                return parse_error(parser, parser->count++, str_fmt(-1, "Number is out of range"));
+            }
+            num_u8 = (u8_t)num_u64;
+            shift(parser, end - parser->current);
+            span_extend(parser, &span);
+            num = u8(num_u8);
             nfo_insert(parser->nfo, (i64_t)num, span);
 
             return num;
@@ -651,6 +670,20 @@ obj_p parse_vector(parser_t *parser)
 
             vec->type = TYPE_B8;
             push_raw(&vec, &tok->b8);
+        }
+        else if (tok->type == -TYPE_U8)
+        {
+            if (vec->len > 0 && vec->type != TYPE_U8)
+            {
+                err = parse_error(parser, (i64_t)tok, str_fmt(-1, "Invalid token in vector"));
+                drop_obj(vec);
+                drop_obj(tok);
+
+                return err;
+            }
+
+            vec->type = TYPE_U8;
+            push_raw(&vec, &tok->u8);
         }
         else if (tok->type == -TYPE_I64)
         {
