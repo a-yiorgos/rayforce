@@ -222,7 +222,7 @@ obj_p select_fetch_table(obj_p obj, query_ctx_p ctx)
 {
     obj_p prm, val;
 
-    prm = at_sym(obj, "from");
+    prm = at_sym(obj, "from", 4);
 
     if (is_null(prm))
         throw(ERR_LENGTH, "'select' expects 'from' param");
@@ -251,7 +251,7 @@ obj_p select_apply_filters(obj_p obj, query_ctx_p ctx)
 {
     obj_p prm, val, fil;
 
-    prm = at_sym(obj, "where");
+    prm = at_sym(obj, "where", 5);
     if (prm != NULL_OBJ)
     {
         val = eval(prm);
@@ -279,7 +279,7 @@ obj_p select_apply_groupings(obj_p obj, query_ctx_p ctx)
     obj_p prm, val, gkeys = NULL_OBJ, gvals = NULL_OBJ,
                     groupby = NULL_OBJ, gcol = NULL_OBJ;
 
-    prm = at_sym(obj, "by");
+    prm = at_sym(obj, "by", 2);
     if (prm != NULL_OBJ)
     {
         timeit_span_start("group");
@@ -288,7 +288,7 @@ obj_p select_apply_groupings(obj_p obj, query_ctx_p ctx)
         groupby = get_gvals(prm);
 
         if (gkeys == NULL_OBJ)
-            gkeys = symbol("By");
+            gkeys = symbol("By", 2);
         else if (prm->type != TYPE_DICT)
             gvals = eval(gkeys);
 

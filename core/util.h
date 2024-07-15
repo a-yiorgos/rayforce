@@ -106,6 +106,7 @@ nil_t dump_stack(nil_t);
     }
 
 #define enum_key(x) (x->mmod == MMOD_INTERNAL ? str_from_symbol(as_list(x)[0]->i64) : as_string((obj_p)((str_p)x - PAGE_SIZE)))
+#define enum_key_len(x) (x->mmod == MMOD_INTERNAL ? strlen(str_from_symbol(as_list(x)[0]->i64)) : ((obj_p)((str_p)x - PAGE_SIZE))->len)
 #define enum_val(x) (x->mmod == MMOD_INTERNAL ? as_list(x)[1] : x)
 
 #define anymap_key(x) (((obj_p)((str_p)x - PAGE_SIZE))->obj)

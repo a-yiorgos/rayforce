@@ -748,7 +748,7 @@ obj_p ray_update(obj_p obj)
         throw(ERR_LENGTH, "'update' takes dict with symbol keys");
 
     // Retrive a table
-    tabsym = at_sym(obj, "from");
+    tabsym = at_sym(obj, "from", 4);
 
     if (is_null(tabsym))
         throw(ERR_LENGTH, "'update' expects 'from' param");
@@ -795,7 +795,7 @@ obj_p ray_update(obj_p obj)
     mount_env(tab);
 
     // Apply filters
-    prm = at_sym(obj, "where");
+    prm = at_sym(obj, "where", 5);
     if (prm != NULL_OBJ)
     {
         val = eval(prm);
@@ -818,7 +818,7 @@ obj_p ray_update(obj_p obj)
     }
 
     // Apply groupping
-    prm = at_sym(obj, "by");
+    prm = at_sym(obj, "by", 2);
     if (prm != NULL_OBJ)
     {
         groupby = eval(prm);

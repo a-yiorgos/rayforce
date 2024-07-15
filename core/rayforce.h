@@ -141,7 +141,7 @@ extern obj_p u8(u8_t val);                    // byte atom
 extern obj_p c8(c8_t c);                      // char
 extern obj_p i64(i64_t val);                  // i64 atom
 extern obj_p f64(f64_t val);                  // f64 atom
-extern obj_p symbol(lit_p ptr);               // symbol
+extern obj_p symbol(lit_p ptr, u64_t len);    // symbol
 extern obj_p symboli64(i64_t id);             // symbol from i64
 extern obj_p timestamp(i64_t val);            // timestamp
 extern obj_p guid(u8_t buf[16]);              // GUID
@@ -212,7 +212,7 @@ extern obj_p ins_sym(obj_p *obj, i64_t idx, lit_p str); // write interned string
 extern obj_p at_idx(obj_p obj, i64_t idx);              // read value from an obj at index
 extern obj_p at_ids(obj_p obj, i64_t ids[], u64_t len); // read values from an obj at indexes
 extern obj_p at_obj(obj_p obj, obj_p idx);              // read from obj indexed by obj
-extern obj_p at_sym(obj_p obj, lit_p str);              // read value indexed by symbol created from str
+extern obj_p at_sym(obj_p obj, lit_p str, u64_t len);   // read value indexed by symbol created from str
 
 // Format
 extern str_p str_from_symbol(i64_t id);                   // return interned string by interned id

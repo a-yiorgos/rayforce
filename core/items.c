@@ -898,7 +898,7 @@ obj_p ray_key(obj_p x)
     case TYPE_DICT:
         return clone_obj(as_list(x)[0]);
     case TYPE_ENUM:
-        return symbol(enum_key(x));
+        return symbol(enum_key(x), enum_key_len(x));
     case TYPE_ANYMAP:
         return clone_obj(anymap_key(x));
     default:

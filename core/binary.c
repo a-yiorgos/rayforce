@@ -477,7 +477,7 @@ obj_p __ray_set(obj_p x, obj_p y)
 
                 drop_obj(res);
 
-                s = symbol("sym");
+                s = symbol("sym", 3);
                 res = __ray_set(s, sym);
 
                 drop_obj(s);
@@ -500,7 +500,7 @@ obj_p __ray_set(obj_p x, obj_p y)
                 // symbol column need to be converted to enum
                 if (v->type == TYPE_SYMBOL)
                 {
-                    s = symbol("sym");
+                    s = symbol("sym", 4);
                     e = ray_enum(s, v);
                     drop_obj(s);
                     drop_obj(v);

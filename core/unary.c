@@ -207,7 +207,7 @@ obj_p ray_get(obj_p x)
 
             if (!is_error(v))
             {
-                s = symbol("sym");
+                s = symbol("sym", 3);
                 drop_obj(ray_set(s, v));
                 drop_obj(s);
             }

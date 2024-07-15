@@ -182,9 +182,9 @@ obj_p f64(f64_t val)
     return f;
 }
 
-obj_p symbol(lit_p s)
+obj_p symbol(lit_p s, u64_t n)
 {
-    i64_t id = symbols_intern(s, strlen(s));
+    i64_t id = symbols_intern(s, n);
     obj_p a = atom(TYPE_SYMBOL);
     a->i64 = id;
 
@@ -871,11 +871,11 @@ obj_p at_obj(obj_p obj, obj_p idx)
     }
 }
 
-obj_p at_sym(obj_p obj, lit_p str)
+obj_p at_sym(obj_p obj, lit_p str, u64_t n)
 {
     obj_p sym, res;
 
-    sym = symbol(str);
+    sym = symbol(str, n);
     res = at_obj(obj, sym);
     drop_obj(sym);
 
@@ -1426,7 +1426,7 @@ obj_p cast_obj(i8_t type, obj_p obj)
     case mtype2(-TYPE_TIMESTAMP, -TYPE_I64):
         return timestamp(obj->i64);
     case mtype2(-TYPE_SYMBOL, TYPE_C8):
-        return symbol(as_string(obj));
+        return symbol(as_string(obj), obj->len);
     case mtype2(-TYPE_I64, TYPE_C8):
         return i64(strtol(as_string(obj), NULL, 10));
     case mtype2(-TYPE_F64, TYPE_C8):
