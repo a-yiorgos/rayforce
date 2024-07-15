@@ -164,6 +164,8 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
 
     switch (obj->type)
     {
+    case TYPE_NULL:
+        return sizeof(i8_t);
     case -TYPE_B8:
         buf[0] = obj->b8;
         return sizeof(i8_t) + sizeof(b8_t);
