@@ -83,15 +83,17 @@ nil_t __index_list_precalc_hash(obj_p cols, u64_t *out, u64_t ncols, u64_t nrows
         index_hash_obj(as_list(cols)[i], out, filter, nrows, resolve);
 }
 
-obj_p index_scope_partial(u64_t len, i64_t *values, i64_t *indices, i64_t *pmin, i64_t *pmax)
+obj_p index_scope_partial(u64_t len, i64_t *values, i64_t *indices, u64_t offset, i64_t *pmin, i64_t *pmax)
 {
     i64_t min, max;
-    u64_t i;
+    u64_t i, l;
+
+    l = len + offset;
 
     if (indices)
     {
-        min = max = values[indices[0]];
-        for (i = 0; i < len; i++)
+        min = max = values[indices[offset]];
+        for (i = offset; i < l; i++)
         {
             min = values[indices[i]] < min ? values[indices[i]] : min;
             max = values[indices[i]] > max ? values[indices[i]] : max;
@@ -99,8 +101,8 @@ obj_p index_scope_partial(u64_t len, i64_t *values, i64_t *indices, i64_t *pmin,
     }
     else
     {
-        min = max = values[0];
-        for (i = 0; i < len; i++)
+        min = max = values[offset];
+        for (i = offset; i < l; i++)
         {
             min = values[i] < min ? values[i] : min;
             max = values[i] > max ? values[i] : max;
@@ -125,8 +127,8 @@ index_scope_t index_scope(i64_t values[], i64_t indices[], u64_t len)
 
     chunks = pool_executors_count(pool);
 
-    if (chunks == 1)
-        index_scope_partial(len, values, indices, &min, &max);
+    if (chunks == 1 || chunks >= len)
+        index_scope_partial(len, values, indices, 0, &min, &max);
     else
     {
         i64_t mins[chunks];
@@ -135,9 +137,9 @@ index_scope_t index_scope(i64_t values[], i64_t indices[], u64_t len)
 
         chunk = len / chunks;
         for (i = 0; i < chunks - 1; i++)
-            pool_add_task(pool, index_scope_partial, 5, chunk, values + i * chunk, indices ? indices + i * chunk : NULL, &mins[i], &maxs[i]);
+            pool_add_task(pool, index_scope_partial, 6, chunk, values, indices, i * chunk, &mins[i], &maxs[i]);
 
-        pool_add_task(pool, index_scope_partial, 5, len - i * chunk, values + i * chunk, indices ? indices + i * chunk : NULL, &mins[i], &maxs[i]);
+        pool_add_task(pool, index_scope_partial, 6, len - i * chunk, values, indices, i * chunk, &mins[i], &maxs[i]);
         v = pool_run(pool, chunks);
         drop_obj(v);
 
@@ -499,11 +501,11 @@ obj_p index_find_obj(obj_p x[], u64_t xl, obj_p y[], u64_t yl)
     return res;
 }
 
-i64_t index_group_get_id(obj_p index, u64_t i)
+nil_t index_group_next(obj_p index, u64_t i, u64_t *$x, u64_t *$y)
 {
-    index_group_get_id_f fn = (index_group_get_id_f)as_list(index)[3]->i64;
+    index_group_next_f fn = (index_group_next_f)as_list(index)[3]->i64;
 
-    return fn(index, i);
+    fn(index, i, $x, $y);
 }
 
 u64_t index_group_count(obj_p index)
@@ -519,18 +521,18 @@ u64_t index_group_len(obj_p index)
     return as_list(index)[4]->len; // source
 }
 
-i64_t index_group_get_simple(obj_p index, u64_t i)
+nil_t index_group_get_simple(obj_p index, u64_t i, u64_t *$x, u64_t *$y)
 {
     i64_t *group_ids, *source, shift;
 
     group_ids = as_i64(as_list(index)[1]);
     shift = as_list(index)[2]->i64;
     source = as_i64(as_list(index)[4]);
-
-    return group_ids[source[i] - shift];
+    *$x = i;
+    *$y = group_ids[source[i] - shift];
 }
 
-i64_t index_group_get_simple_w_filter(obj_p index, u64_t i)
+nil_t index_group_get_simple_w_filter(obj_p index, u64_t i, u64_t *$x, u64_t *$y)
 {
     i64_t *group_ids, *source, *filter, shift;
 
@@ -538,32 +540,32 @@ i64_t index_group_get_simple_w_filter(obj_p index, u64_t i)
     shift = as_list(index)[2]->i64;
     source = as_i64(as_list(index)[4]);
     filter = as_i64(as_list(index)[5]);
-
-    return group_ids[source[filter[i]] - shift];
+    *$x = filter[i];
+    *$y = group_ids[source[filter[i]] - shift];
 }
 
-i64_t index_group_get_indexed(obj_p index, u64_t i)
+nil_t index_group_get_indexed(obj_p index, u64_t i, u64_t *$x, u64_t *$y)
 {
     i64_t *group_ids;
 
     group_ids = as_i64(as_list(index)[1]);
-
-    return group_ids[i];
+    *$x = i;
+    *$y = group_ids[i];
 }
 
-i64_t index_group_get_indexed_w_filter(obj_p index, u64_t i)
+nil_t index_group_get_indexed_w_filter(obj_p index, u64_t i, u64_t *$x, u64_t *$y)
 {
     i64_t *group_ids, *filter;
 
     group_ids = as_i64(as_list(index)[1]);
     filter = as_i64(as_list(index)[5]);
-
-    return group_ids[filter[i]];
+    *$x = filter[i];
+    *$y = group_ids[filter[i]];
 }
 
-obj_p index_group_build(u64_t groups_count, obj_p group_ids, i64_t index_min, index_group_get_id_f fn, obj_p source, obj_p filter)
+obj_p index_group_build(u64_t groups_count, obj_p group_ids, i64_t index_min, index_group_next_f fn, obj_p source, obj_p filter)
 {
-    index_group_get_id_f real_fn;
+    index_group_next_f real_fn;
 
     if (fn == index_group_get_simple)
     {

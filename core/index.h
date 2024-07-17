@@ -26,7 +26,7 @@
 
 #include "rayforce.h"
 
-#define INDEX_SCOPE_LIMIT 1024 * 1024 * 1024
+#define INDEX_SCOPE_LIMIT 1024 * 1024
 
 typedef struct __index_list_ctx_t
 {
@@ -49,9 +49,9 @@ typedef struct index_scope_t
     u64_t range;
 } index_scope_t;
 
-typedef i64_t (*index_group_get_id_f)(obj_p, u64_t);
+typedef nil_t (*index_group_next_f)(obj_p, u64_t, u64_t *, u64_t *);
 
-i64_t index_group_get_id(obj_p index, u64_t i);
+nil_t index_group_next(obj_p index, u64_t i, u64_t *$x, u64_t *$y);
 u64_t index_group_count(obj_p index);
 u64_t index_group_len(obj_p index);
 obj_p index_distinct_i8(i8_t values[], u64_t len, b8_t term);

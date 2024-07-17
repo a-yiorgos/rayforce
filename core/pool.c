@@ -375,7 +375,7 @@ obj_p pool_run(pool_p pool, u64_t tasks_count)
     }
 
     // collect results
-    res = vector(TYPE_LIST, tasks_count);
+    res = list(tasks_count);
 
     for (i = 0; i < tasks_count; i++)
     {
