@@ -207,9 +207,13 @@ u64_t ops_rank(obj_p *x, u64_t n)
 
     return l;
 }
-obj_p ops_where_partial(b8_t *mask, u64_t len, i64_t *ids)
+
+obj_p ops_where_partial(b8_t *mask, u64_t len, i64_t *ids, u64_t offset)
 {
     u64_t i, j, k, m, n64, b, *block;
+
+    mask += offset;
+    ids += offset;
 
     n64 = len / 64 * 64;
 
@@ -225,7 +229,7 @@ obj_p ops_where_partial(b8_t *mask, u64_t len, i64_t *ids)
                 for (m = 0; m < 8; m++) // 8 bytes in each u64_t
                 {
                     if (b & 0xFF)
-                        ids[j++] = i + k * 8 + m;
+                        ids[j++] = i + k * 8 + m + offset;
                     b >>= 8;
                 }
             }
@@ -236,7 +240,7 @@ obj_p ops_where_partial(b8_t *mask, u64_t len, i64_t *ids)
     for (; i < len; i++)
     {
         if (mask[i])
-            ids[j++] = i;
+            ids[j++] = i + offset;
     }
 
     return i64(j);
@@ -255,7 +259,7 @@ obj_p ops_where(b8_t *mask, u64_t len)
     res = vector_i64(len);
     ids = as_i64(res);
 
-    if (n == 1)
+    if (n == 1 || len <= n)
     {
         argv[0] = mask;
         argv[1] = (raw_p)len;
@@ -273,9 +277,9 @@ obj_p ops_where(b8_t *mask, u64_t len)
     chunk = len / n;
 
     for (i = 0; i < n - 1; i++)
-        pool_add_task(pool, ops_where_partial, 3, mask + i * chunk, chunk, ids + i * chunk);
+        pool_add_task(pool, ops_where_partial, 4, mask, chunk, ids, i * chunk);
 
-    pool_add_task(pool, ops_where_partial, 3, mask + i * chunk, len - i * chunk, ids + i * chunk);
+    pool_add_task(pool, ops_where_partial, 4, mask, len - i * chunk, ids, i * chunk);
 
     parts = pool_run(pool, n);
 

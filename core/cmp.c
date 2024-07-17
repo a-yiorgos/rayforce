@@ -159,6 +159,17 @@ obj_p ray_eq(obj_p x, obj_p y)
             as_b8(vec)[i] = as_i64(x)[i] == as_i64(y)[i];
 
         return vec;
+        // case mtype2(TYPE_SYMBOL, TYPE_ENUM):
+        //     if (x->len != y->len)
+        //         return error_str(ERR_LENGTH, "eq: vectors of different length");
+
+        //     l = x->len;
+        //     vec = vector_b8(l);
+
+        //     for (i = 0; i < l; i++)
+        //         as_b8(vec)[i] = as_i64(x)[i] == as_i64(y)[i];
+
+        //     return vec;
 
     case mtype2(TYPE_F64, TYPE_F64):
         if (x->len != y->len)

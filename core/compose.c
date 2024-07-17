@@ -592,7 +592,7 @@ obj_p ray_group(obj_p x)
 {
     obj_p c, g, k, v;
     u64_t i, m, n, l;
-
+    return index_group(x, NULL_OBJ);
     switch (x->type)
     {
     // case TYPE_U8:
