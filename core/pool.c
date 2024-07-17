@@ -301,7 +301,6 @@ nil_t pool_prepare(pool_p pool, u64_t tasks_count)
     obj_p env = interpreter_env_get();
 
     n = pool->executors_count;
-    pool->done_count = 0;
 
     if (tasks_count > mpmc_size(pool->task_queue))
     {
@@ -350,6 +349,7 @@ obj_p pool_run(pool_p pool)
 
     tasks_count = pool->tasks_count;
     n = pool->executors_count;
+    pool->done_count = 0;
 
     // wake up all executors
     mutex_lock(&pool->mutex);
@@ -393,6 +393,8 @@ obj_p pool_run(pool_p pool)
         data = mpmc_pop(pool->result_queue);
         if (data.id < 0 || data.id >= (i64_t)tasks_count)
             panic("Pool run: corrupted data: %lld\n", data.id);
+
+        debug_obj(data.result);
 
         ins_obj(&res, data.id, data.result);
     }
