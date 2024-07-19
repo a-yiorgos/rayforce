@@ -909,9 +909,16 @@ obj_p ray_first(obj_p x)
 
 obj_p ray_last(obj_p x)
 {
-    u64_t l = ops_count(x);
+    u64_t l;
 
-    return at_idx(x, l ? l - 1 : l);
+    switch (x->type)
+    {
+    case TYPE_GROUPMAP:
+        return aggr_last(as_list(x)[0], as_list(x)[1]);
+    default:
+        l = ops_count(x);
+        return at_idx(x, l ? l - 1 : l);
+    }
 }
 
 obj_p ray_key(obj_p x)
