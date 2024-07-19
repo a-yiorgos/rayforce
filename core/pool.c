@@ -300,6 +300,7 @@ nil_t pool_prepare(pool_p pool)
     mutex_lock(&pool->mutex);
 
     pool->tasks_count = 0;
+    pool->done_count = 0;
 
     n = pool->executors_count;
     for (i = 0; i < n; i++)
@@ -356,7 +357,6 @@ obj_p pool_run(pool_p pool)
 
     rc_sync(B8_TRUE);
 
-    // pool->done_count = 0;
     tasks_count = pool->tasks_count;
     m = (pool->executors_count < tasks_count) ? pool->executors_count : tasks_count;
 
@@ -409,7 +409,6 @@ obj_p pool_run(pool_p pool)
         interpreter_env_unset(pool->executors[i].interpreter);
     }
 
-    pool->done_count = 0;
     rc_sync(B8_FALSE);
 
     mutex_unlock(&pool->mutex);

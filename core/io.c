@@ -337,6 +337,8 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
     if (num_batches == 1 || total_lines <= num_batches)
         return parse_csv_range(types, num_types, buf, size, total_lines, 0, cols, sep);
 
+    pool_prepare(pool);
+
     lines_per_batch = (total_lines + num_batches - 1) / num_batches; // Calculate lines per batch
 
     for (batch = 0; batch < num_batches; ++batch)
@@ -376,7 +378,6 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
         pool_add_task(pool, parse_csv_range, 8, types, num_types, batch_start, batch_size, lines_in_batch, start_line, cols, sep);
     }
 
-    pool_prepare(pool);
     res = pool_run(pool);
 
     if (is_error(res))
