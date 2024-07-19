@@ -39,7 +39,7 @@
 #define aggr_iter(index, len, offset, aggr)             \
     do                                                  \
     {                                                   \
-        u64_t $x, $y;                                   \
+        u64_t $i, $x, $y;                               \
         i64_t *group_ids, *source, *filter, shift;      \
         group_ids = as_i64(as_list(index)[1]);          \
                                                         \
@@ -50,18 +50,18 @@
             if (as_list(index)[4] != NULL_OBJ)          \
             {                                           \
                 filter = as_i64(as_list(index)[4]);     \
-                for (i = 0; i < len; i++)               \
+                for ($i = 0; $i < len; $i++)            \
                 {                                       \
-                    $x = filter[i + offset];            \
+                    $x = filter[$i + offset];           \
                     $y = group_ids[source[$x] - shift]; \
                     aggr;                               \
                 }                                       \
             }                                           \
             else                                        \
             {                                           \
-                for (i = 0; i < len; i++)               \
+                for ($i = 0; $i < len; $i++)            \
                 {                                       \
-                    $x = i + offset;                    \
+                    $x = $i + offset;                   \
                     $y = group_ids[source[$x] - shift]; \
                     aggr;                               \
                 }                                       \
@@ -72,18 +72,18 @@
             if (as_list(index)[4] != NULL_OBJ)          \
             {                                           \
                 filter = as_i64(as_list(index)[4]);     \
-                for (i = 0; i < len; i++)               \
+                for ($i = 0; $i < len; $i++)            \
                 {                                       \
-                    $x = filter[i + offset];            \
+                    $x = filter[$i + offset];           \
                     $y = group_ids[$x];                 \
                     aggr;                               \
                 }                                       \
             }                                           \
             else                                        \
             {                                           \
-                for (i = 0; i < len; i++)               \
+                for ($i = 0; $i < len; $i++)            \
                 {                                       \
-                    $x = i + offset;                    \
+                    $x = $i + offset;                   \
                     $y = group_ids[$x];                 \
                     aggr;                               \
                 }                                       \
@@ -790,31 +790,63 @@ obj_p aggr_avg(obj_p val, obj_p index)
         drop_obj(cnts);
 
         return res;
-    // case TYPE_F64:
-    //     xf = as_f64(val);
-    //     xm = as_i64(as_list(index)[1]);
-    //     res = vector_f64(n);
-    //     fo = as_f64(res);
-    //     memset(fo, 0, n * sizeof(i64_t));
-    //     if (filter != NULL_OBJ)
-    //     {
-    //         ids = as_i64(filter);
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addf64(fo[xm[i]], xf[ids[i]]);
-    //     }
-    //     else
-    //     {
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addf64(fo[xm[i]], xf[i]);
-    //     }
+    case TYPE_F64:
+        sums = aggr_sum(val, index);
+        cnts = aggr_count(val, index);
 
-    //     // calc avgs
-    //     for (i = 0; i < n; i++)
-    //         fo[i] = fdivf64(fo[i], ci[i]);
+        xf = as_f64(sums);
+        ci = as_i64(cnts);
 
-    //     return res;
+        l = sums->len;
+        res = vector_f64(l);
+        fo = as_f64(res);
+
+        for (i = 0; i < l; i++)
+            fo[i] = fdivf64(xf[i], ci[i]);
+
+        drop_obj(sums);
+        drop_obj(cnts);
+
+        return res;
+
     default:
         return error(ERR_TYPE, "avg: unsupported type: '%s'", type_name(val->type));
+    }
+}
+
+obj_p aggr_med_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
+{
+
+    unused(val);
+    u64_t i, n;
+    i64_t *xi, *xm, *ids;
+    f64_t *xf, *fo;
+
+    n = index_group_count(index);
+
+    switch (val->type)
+    {
+    case TYPE_I64:
+        xi = as_i64(val);
+        xm = as_i64(as_list(index)[1]);
+        fo = as_f64(res);
+        memset(fo, 0, n * sizeof(i64_t));
+        aggr_iter(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
+        for (i = 0; i < n; i++)
+            fo[i] = divi64(fo[i], 2);
+        return res;
+    case TYPE_F64:
+        xf = as_f64(val);
+        xm = as_i64(as_list(index)[1]);
+        fo = as_f64(res);
+        memset(fo, 0, n * sizeof(i64_t));
+        aggr_iter(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
+        for (i = 0; i < n; i++)
+            fo[i] = fdivf64(fo[i], 2);
+        return res;
+    default:
+        drop_obj(res);
+        return error(ERR_TYPE, "median: unsupported type: '%s'", type_name(val->type));
     }
 }
 
@@ -825,60 +857,27 @@ obj_p aggr_med(obj_p val, obj_p index)
     f64_t *xf, *fo;
     obj_p res;
 
-    // n = as_list(bins)[0]->i64;
-    // l = as_list(bins)[1]->len;
-
-    // switch (val->type)
-    // {
+    switch (val->type)
+    {
     // case TYPE_I64:
-    //     xi = as_i64(val);
-    //     xm = as_i64(as_list(bins)[1]);
     //     res = vector_f64(n);
     //     fo = as_f64(res);
     //     memset(fo, 0, n * sizeof(i64_t));
-    //     if (filter != NULL_OBJ)
-    //     {
-    //         ids = as_i64(filter);
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addi64(fo[xm[i]], xi[ids[i]]);
-    //     }
-    //     else
-    //     {
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addi64(fo[xm[i]], xi[i]);
-    //     }
-
-    //     // calc medians
+    //     aggr_iter(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
     //     for (i = 0; i < n; i++)
     //         fo[i] = divi64(fo[i], 2);
-
     //     return res;
     // case TYPE_F64:
-    //     xf = as_f64(val);
-    //     xm = as_i64(as_list(bins)[1]);
     //     res = vector_f64(n);
     //     fo = as_f64(res);
     //     memset(fo, 0, n * sizeof(i64_t));
-    //     if (filter != NULL_OBJ)
-    //     {
-    //         ids = as_i64(filter);
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addf64(fo[xm[i]], xf[ids[i]]);
-    //     }
-    //     else
-    //     {
-    //         for (i = 0; i < l; i++)
-    //             fo[xm[i]] = addf64(fo[xm[i]], xf[i]);
-    //     }
-
-    //     // calc medians
+    //     aggr_iter(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
     //     for (i = 0; i < n; i++)
     //         fo[i] = fdivf64(fo[i], 2);
-
     //     return res;
-    // default:
-    return error(ERR_TYPE, "median: unsupported type: '%s'", type_name(val->type));
-    // }
+    default:
+        return error(ERR_TYPE, "median: unsupported type: '%s'", type_name(val->type));
+    }
 }
 
 obj_p aggr_dev(obj_p val, obj_p index)

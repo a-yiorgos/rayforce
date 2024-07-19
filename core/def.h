@@ -43,6 +43,7 @@
 #define OS_LINUX
 #define OS_UNIX
 #define _POSIX_C_SOURCE 200809L // Define POSIX source version for CLOCK_REALTIME
+#define _GNU_SOURCE
 #ifndef __USE_MISC
 #define __USE_MISC
 #define _DEFAULT_SOURCE
@@ -56,6 +57,7 @@
 #include <time.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <sched.h>
 #include <pthread.h>
 #elif defined(__APPLE__) && defined(__MACH__)
 #define OS_MACOS

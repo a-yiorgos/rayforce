@@ -30,6 +30,7 @@
 #include "items.h"
 #include "unary.h"
 #include "string.h"
+#include "runtime.h"
 #include "pool.h"
 
 u64_t __hash_get(i64_t row, nil_t *seed)
@@ -511,7 +512,10 @@ u64_t index_group_len(obj_p index)
     if (as_list(index)[4] != NULL_OBJ) // filter
         return as_list(index)[4]->len;
 
-    return as_list(index)[3]->len; // source
+    if (as_list(index)[3] != NULL_OBJ) // source
+        return as_list(index)[3]->len;
+
+    return as_list(index)[1]->len; // group_ids
 }
 
 obj_p index_group_build(u64_t groups_count, obj_p group_ids, i64_t index_min, obj_p source, obj_p filter)
@@ -570,17 +574,38 @@ obj_p index_group_i8(obj_p obj, obj_p filter)
     return index_group_build(j, vals, NULL_I64, NULL_OBJ, clone_obj(filter));
 }
 
+obj_p index_group_i64_scoped_partial(i64_t input[], i64_t filter[], i64_t group_ids[], u64_t len, u64_t offset, i64_t min, i64_t out[])
+{
+    u64_t i, l;
+
+    l = len + offset;
+
+    if (filter != NULL)
+    {
+        for (i = offset; i < l; i++)
+            out[i] = group_ids[input[filter[i]] - min];
+    }
+    else
+    {
+        for (i = offset; i < l; i++)
+            out[i] = group_ids[input[i] - min];
+    }
+
+    return NULL_OBJ;
+}
+
 obj_p index_group_i64_scoped(obj_p obj, obj_p filter, const index_scope_t scope)
 {
-    u64_t i, j, n, len;
+    u64_t i, j, n, len, groups, chunks, chunk;
     i64_t idx, *hk, *hv, *hp, *values, *indices;
-    obj_p keys, vals, ht;
+    obj_p keys, vals, v, ht;
+    pool_p pool;
 
     values = as_i64(obj);
     indices = is_null(filter) ? NULL : as_i64(filter);
     len = indices ? filter->len : obj->len;
 
-    if (scope.range <= INDEX_SCOPE_LIMIT)
+    if (scope.range <= len)
     {
         keys = vector_i64(scope.range);
         hk = as_i64(keys);
@@ -590,24 +615,50 @@ obj_p index_group_i64_scoped(obj_p obj, obj_p filter, const index_scope_t scope)
 
         if (indices)
         {
-            for (i = 0, j = 0; i < len; i++)
+            for (i = 0, groups = 0; i < len; i++)
             {
                 n = values[indices[i]] - scope.min;
                 if (hk[n] == NULL_I64)
-                    hk[n] = j++;
+                    hk[n] = groups++;
             }
         }
         else
         {
-            for (i = 0, j = 0; i < len; i++)
+            for (i = 0, groups = 0; i < len; i++)
             {
                 n = values[i] - scope.min;
                 if (hk[n] == NULL_I64)
-                    hk[n] = j++;
+                    hk[n] = groups++;
             }
         }
 
-        return index_group_build(j, keys, scope.min, clone_obj(obj), clone_obj(filter));
+        if (scope.range <= INDEX_SCOPE_LIMIT)
+            return index_group_build(groups, keys, scope.min, clone_obj(obj), clone_obj(filter));
+
+        vals = vector_i64(len);
+        hv = as_i64(vals);
+
+        pool = pool_get();
+        chunks = pool_executors_count(pool);
+
+        if (chunks == 1 || chunks >= len)
+            index_group_i64_scoped_partial(values, indices, hk, len, 0, scope.min, hv);
+        else
+        {
+            pool_prepare(pool);
+            chunk = len / chunks;
+            for (i = 0; i < chunks - 1; i++)
+                pool_add_task(pool, index_group_i64_scoped_partial, 7, values, indices, hk, chunk, i * chunk, scope.min, hv);
+
+            pool_add_task(pool, index_group_i64_scoped_partial, 7, values, indices, hk, len - i * chunk, i * chunk, scope.min, hv);
+
+            v = pool_run(pool);
+            drop_obj(v);
+        }
+
+        drop_obj(keys);
+
+        return index_group_build(groups, vals, NULL_I64, NULL_OBJ, clone_obj(filter));
     }
 
     // use hash table if range is large

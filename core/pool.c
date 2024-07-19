@@ -234,7 +234,9 @@ raw_p executor_run(raw_p arg)
 pool_p pool_create(u64_t executors_count)
 {
     u64_t i;
+    i32_t rc;
     pool_p pool;
+    cpu_set_t cpuset;
 
     pool = (pool_p)heap_mmap(sizeof(struct pool_t) + (sizeof(executor_t) * executors_count));
     pool->executors_count = executors_count;
@@ -248,11 +250,18 @@ pool_p pool_create(u64_t executors_count)
     pool->done = cond_create();
     mutex_lock(&pool->mutex);
 
+    rc = thread_pin(thread_self(), 0);
+    if (rc != 0)
+        printf("Pool create: failed to pin main thread to core 0\n");
+
     for (i = 0; i < executors_count; i++)
     {
         pool->executors[i].id = i;
         pool->executors[i].pool = pool;
         pool->executors[i].handle = thread_create(executor_run, &pool->executors[i]);
+        rc = thread_pin(pool->executors[i].handle, i + 1);
+        if (rc != 0)
+            printf("Pool create: failed to pin thread %lld to core %lld\n", i, i);
     }
 
     mutex_unlock(&pool->mutex);
@@ -361,7 +370,7 @@ nil_t pool_add_task(pool_p pool, raw_p fn, u64_t argc, ...)
 
 obj_p pool_run(pool_p pool)
 {
-    u64_t i, n, m, tasks_count;
+    u64_t i, n, tasks_count, executors_count;
     obj_p res;
     task_data_t data;
 
@@ -370,11 +379,16 @@ obj_p pool_run(pool_p pool)
     rc_sync(B8_TRUE);
 
     tasks_count = pool->tasks_count;
-    m = (pool->executors_count < tasks_count) ? pool->executors_count : tasks_count;
+    executors_count = pool->executors_count;
 
     // wake up needed executors
-    for (i = 0; i < m; i++)
-        cond_signal(&pool->run);
+    if (executors_count < tasks_count)
+    {
+        for (i = 0; i < executors_count; i++)
+            cond_signal(&pool->run);
+    }
+    else
+        cond_broadcast(&pool->run);
 
     mutex_unlock(&pool->mutex);
 

@@ -192,6 +192,13 @@ thread_t thread_create(raw_p (*fn)(raw_p), raw_p arg)
     return thread;
 }
 
+thread_t thread_self(nil_t)
+{
+    thread_t thread;
+    thread.handle = pthread_self();
+    return thread;
+}
+
 i32_t thread_destroy(thread_t *thread)
 {
     return pthread_cancel(thread->handle);
@@ -205,6 +212,16 @@ i32_t thread_join(thread_t thread)
 i32_t thread_detach(thread_t thread)
 {
     return pthread_detach(thread.handle);
+}
+
+i32_t thread_pin(thread_t thread, u64_t core)
+{
+    cpu_set_t cpuset;
+
+    CPU_ZERO(&cpuset);
+    CPU_SET(core, &cpuset);
+
+    return pthread_setaffinity_np(thread.handle, sizeof(cpu_set_t), &cpuset);
 }
 
 nil_t thread_exit(raw_p res)

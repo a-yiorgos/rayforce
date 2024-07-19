@@ -45,8 +45,6 @@ typedef struct
 
 #else
 
-#include "pthread.h"
-
 typedef struct
 {
     pthread_t handle;
@@ -77,9 +75,11 @@ i32_t cond_signal(cond_t *cond);
 i32_t cond_broadcast(cond_t *cond);
 
 thread_t thread_create(raw_p (*fn)(raw_p), raw_p arg);
+thread_t thread_self(nil_t);
 i32_t thread_destroy(thread_t *thread);
 i32_t thread_join(thread_t thread);
 i32_t thread_detach(thread_t thread);
+i32_t thread_pin(thread_t thread, u64_t core);
 nil_t thread_exit(raw_p res);
 
 #endif // THREAD_H
