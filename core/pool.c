@@ -31,7 +31,7 @@
 #include "heap.h"
 #include "string.h"
 
-#define MPMC_SIZE 2048
+#define DEFAULT_MPMC_SIZE 64
 
 mpmc_p mpmc_create(u64_t size)
 {
@@ -240,8 +240,8 @@ pool_p pool_create(u64_t executors_count)
     pool->executors_count = executors_count;
     pool->done_count = 0;
     pool->tasks_count = 0;
-    pool->task_queue = mpmc_create(MPMC_SIZE);
-    pool->result_queue = mpmc_create(MPMC_SIZE);
+    pool->task_queue = mpmc_create(DEFAULT_MPMC_SIZE);
+    pool->result_queue = mpmc_create(DEFAULT_MPMC_SIZE);
     pool->state = POOL_STATE_RUN;
     pool->mutex = mutex_create();
     pool->run = cond_create();
@@ -314,26 +314,16 @@ nil_t pool_prepare(pool_p pool)
 
 nil_t pool_add_task(pool_p pool, raw_p fn, u64_t argc, ...)
 {
-    u64_t i;
+    u64_t i, size;
     va_list args;
-    task_data_t data;
+    task_data_t data, old_data;
+    mpmc_p queue;
 
     mutex_lock(&pool->mutex);
 
     data.id = pool->tasks_count++;
     data.fn = fn;
     data.argc = argc;
-
-    // TODO: resize task queue
-    // if (tasks_count > mpmc_size(pool->task_queue))
-    //     {
-    //         // Grow task queue
-    //         mpmc_destroy(pool->task_queue);
-    //         pool->task_queue = mpmc_create(tasks_count);
-    //         // Grow result queue
-    //         mpmc_destroy(pool->result_queue);
-    //         pool->result_queue = mpmc_create(tasks_count);
-    //     }
 
     va_start(args, argc);
 
@@ -342,7 +332,29 @@ nil_t pool_add_task(pool_p pool, raw_p fn, u64_t argc, ...)
 
     va_end(args);
 
-    mpmc_push(pool->task_queue, data);
+    if (mpmc_push(pool->task_queue, data) == -1) // queue is full
+    {
+        size = pool->tasks_count * 2;
+        // Grow task queue
+        queue = mpmc_create(size);
+
+        for (;;)
+        {
+            old_data = mpmc_pop(pool->task_queue);
+            if (old_data.id == -1)
+                break;
+            mpmc_push(queue, old_data);
+        }
+
+        if (mpmc_push(queue, data) == -1)
+            panic("Pool add task: oom");
+
+        mpmc_destroy(pool->task_queue);
+        pool->task_queue = queue;
+        // Grow result queue
+        mpmc_destroy(pool->result_queue);
+        pool->result_queue = mpmc_create(size);
+    }
 
     mutex_unlock(&pool->mutex);
 }
