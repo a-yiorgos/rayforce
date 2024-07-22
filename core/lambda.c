@@ -27,6 +27,7 @@
 #include "eval.h"
 #include "util.h"
 #include "group.h"
+#include "pool.h"
 
 obj_p lambda(obj_p args, obj_p body, obj_p nfo)
 {
@@ -47,15 +48,42 @@ obj_p lambda(obj_p args, obj_p body, obj_p nfo)
     return obj;
 }
 
+obj_p lambda_map_partial(obj_p f, obj_p *lst, u64_t n, u64_t arg)
+{
+    u64_t i;
+
+    for (i = 0; i < n; i++)
+        stack_push(at_idx(lst[i], arg));
+
+    return call(f, n);
+}
+
 obj_p lambda_map(obj_p f, obj_p *x, u64_t n)
 {
-    u64_t i, j, l;
+    u64_t i, j, l, executors;
     obj_p v, res;
+    pool_p pool;
 
     l = ops_rank(x, n);
 
     if (n == 0 || l == 0 || l == 0xfffffffffffffffful)
         return NULL_OBJ;
+
+    pool = pool_get();
+    executors = pool_executors_count(pool);
+
+    if (executors > 1)
+    {
+        pool_prepare(pool);
+
+        for (j = 0; j < l; j++)
+            pool_add_task(pool, lambda_map_partial, 4, f, x, n, j);
+
+        res = pool_run(pool);
+        unwrap_list(res);
+
+        goto cleanup;
+    }
 
     for (j = 0; j < n; j++)
         stack_push(at_idx(x[j], 0));
@@ -100,8 +128,5 @@ cleanup:
 
 obj_p lambda_call(u8_t attrs, obj_p f, obj_p *x, u64_t n)
 {
-    if (attrs & FN_GROUP_MAP)
-        return lambda_map(f, x, n);
-
     return call(f, n);
 }

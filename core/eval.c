@@ -64,12 +64,13 @@ nil_t error_add_loc(obj_p err, i64_t id, ctx_p ctx)
         push_raw(&as_error(err)->locs, &loc);
 }
 
-interpreter_p interpreter_create(nil_t)
+interpreter_p interpreter_create(u64_t id)
 {
     interpreter_p interpreter;
     obj_p f;
 
     interpreter = (interpreter_p)heap_mmap(sizeof(struct interpreter_t));
+    interpreter->id = id;
     interpreter->sp = 0;
     interpreter->stack = (obj_p *)heap_stack(sizeof(obj_p) * EVAL_STACK_SIZE);
     interpreter->cp = 0;
@@ -196,6 +197,7 @@ __attribute__((hot)) obj_p eval(obj_p obj)
             else
             {
                 x = eval(args[0]);
+
                 if (is_error(x))
                     return x;
 
@@ -211,6 +213,7 @@ __attribute__((hot)) obj_p eval(obj_p obj)
                     drop_obj(x);
                     x = y;
                 }
+
                 res = unary_call(car->attrs, (unary_f)car->i64, x);
                 drop_obj(x);
             }
@@ -322,19 +325,19 @@ __attribute__((hot)) obj_p eval(obj_p obj)
                 if (is_error(x))
                     return x;
 
-                if (x->type == TYPE_GROUPMAP)
-                {
-                    attrs = FN_GROUP_MAP;
-                    y = aggr_collect(as_list(x)[0], as_list(x)[1]);
-                    drop_obj(x);
-                    x = y;
-                }
-                else if (x->type == TYPE_FILTERMAP)
-                {
-                    y = filter_collect(x);
-                    drop_obj(x);
-                    x = y;
-                }
+                // if (x->type == TYPE_GROUPMAP)
+                // {
+                //     attrs = FN_GROUP_MAP;
+                //     y = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                //     drop_obj(x);
+                //     x = y;
+                // }
+                // else if (x->type == TYPE_FILTERMAP)
+                // {
+                //     y = filter_collect(x);
+                //     drop_obj(x);
+                //     x = y;
+                // }
 
                 stack_push(x);
             }

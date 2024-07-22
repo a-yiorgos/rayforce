@@ -881,7 +881,6 @@ obj_p ray_sum(obj_p x)
 
         pool = pool_get();
         chunks = pool_executors_count(pool);
-        pool_prepare(pool);
 
         if (chunks == 1)
         {
@@ -891,6 +890,7 @@ obj_p ray_sum(obj_p x)
             return i64(isum);
         }
 
+        pool_prepare(pool);
         chunk = l / chunks;
 
         for (i = 0; i < chunks - 1; i++)

@@ -42,17 +42,9 @@
 #include "time.h"
 #include "runtime.h"
 
-obj_p remap_filter(obj_p x, obj_p y)
+obj_p remap_filter(obj_p tab, obj_p index)
 {
-    u64_t i, l;
-    obj_p res;
-
-    l = as_list(x)[1]->len;
-    res = list(l);
-    for (i = 0; i < l; i++)
-        as_list(res)[i] = filter_map(clone_obj(as_list(as_list(x)[1])[i]), clone_obj(y));
-
-    return table(clone_obj(as_list(x)[0]), res);
+    return filter_map(tab, index);
 }
 
 obj_p remap_group(obj_p *gvals, obj_p cols, obj_p tab, obj_p filter, obj_p gkeys, obj_p gcols)
@@ -330,7 +322,6 @@ obj_p select_apply_groupings(obj_p obj, query_ctx_p ctx)
 
         mount_env(prm);
         ctx->tablen = tablen;
-
         drop_obj(prm);
 
         if (is_error(gcol))
@@ -348,10 +339,17 @@ obj_p select_apply_groupings(obj_p obj, query_ctx_p ctx)
     else if (ctx->filter != NULL_OBJ)
     {
         // Unmount table columns from a local env
+        tablen = ctx->tablen;
         unmount_env(ctx->tablen);
-        // Create filtermaps over table
+        ctx->tablen = 0;
+
         val = remap_filter(ctx->table, ctx->filter);
+
+        if (is_error(val))
+            return val;
+
         mount_env(val);
+        ctx->tablen = tablen;
         drop_obj(val);
     }
 
@@ -377,7 +375,6 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx)
             sym = at_idx(keys, i);
             prm = at_obj(obj, sym);
             drop_obj(sym);
-
             val = eval(prm);
             drop_obj(prm);
 

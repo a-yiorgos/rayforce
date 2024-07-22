@@ -197,13 +197,13 @@ obj_p aggr_sum(obj_p val, obj_p index)
     }
 }
 
-obj_p aggr_first(obj_p val, obj_p index)
+obj_p aggr_first_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
 {
-    u64_t i, j, l, n;
+    u64_t i, n;
     i64_t *xi, *yi;
     f64_t *xf, *yf;
     guid_t *xg, *yg;
-    obj_p res, *xo, *yo;
+    obj_p *xo, *yo;
 
     n = index_group_count(index);
 
@@ -213,55 +213,116 @@ obj_p aggr_first(obj_p val, obj_p index)
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         xi = as_i64(val);
-        res = vector(val->type, n);
         yi = as_i64(res);
 
         for (i = 0; i < n; i++)
             yi[i] = NULL_I64;
 
-        for (i = 0; i < n; i++)
-            if (yi[i] == NULL_I64)
-                yi[i] = xi[i];
+        aggr_iter(index, len, offset, if (yi[$y] == NULL_I64) yi[$y] = xi[$x]);
 
         return res;
-
     case TYPE_F64:
         xf = as_f64(val);
-        res = vector(val->type, n);
         yf = as_f64(res);
 
         for (i = 0; i < n; i++)
             yf[i] = NULL_F64;
 
-        for (i = 0; i < n; i++)
-            if (ops_is_nan(yf[i]))
-                yf[i] = xf[i];
+        aggr_iter(index, len, offset, if (ops_is_nan(yf[$y])) yf[$y] = xf[$x]);
 
         return res;
     case TYPE_GUID:
         xg = as_guid(val);
-        res = vector(val->type, n);
         yg = as_guid(res);
 
         for (i = 0; i < n; i++)
             memcpy(yg[i], NULL_GUID, sizeof(guid_t));
 
-        for (i = 0; i < n; i++)
-            if (memcmp(yg[i], NULL_GUID, sizeof(guid_t)) == 0)
-                memcpy(yg[i], xg[i], sizeof(guid_t));
+        aggr_iter(index, len, offset,
+                  if (memcmp(yg[$y], NULL_GUID, sizeof(guid_t)) == 0)
+                      memcpy(yg[$y], xg[$x], sizeof(guid_t)));
 
         return res;
     case TYPE_LIST:
         xo = as_list(val);
-        res = vector(val->type, n);
         yo = as_list(res);
 
         for (i = 0; i < n; i++)
             yo[i] = NULL_OBJ;
 
-        for (i = 0; i < n; i++)
-            if (yo[i] == NULL_OBJ)
-                yo[i] = clone_obj(xo[i]);
+        aggr_iter(index, len, offset, if (yo[$y] == NULL_OBJ) yo[$y] = clone_obj(xo[$x]));
+
+        return res;
+    default:
+        return error(ERR_TYPE, "first: unsupported type: '%s'", type_name(val->type));
+    }
+}
+
+obj_p aggr_first(obj_p val, obj_p index)
+{
+    u64_t i, j, l, n;
+    i64_t k, *xi, *xo, *group_ids, shift;
+    f64_t *fo, *fi;
+    obj_p res, parts;
+
+    n = index_group_count(index);
+
+    switch (val->type)
+    {
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        // val is a column by which we group
+        if ((as_list(index)[3] != NULL_OBJ) && as_list(index)[3] == val)
+        {
+            group_ids = as_i64(as_list(index)[1]);
+            l = as_list(index)[1]->len;
+            shift = as_list(index)[2]->i64;
+
+            res = vector(val->type, n);
+            xo = as_i64(res);
+
+            for (i = 0; i < l; i++)
+            {
+                k = group_ids[i];
+                if (k != NULL_I64)
+                    xo[k] = i + shift;
+            }
+
+            return res;
+        }
+
+        parts = aggr_map(aggr_first_partial, val, index);
+        unwrap_list(parts);
+        l = parts->len;
+        res = clone_obj(as_list(parts)[0]);
+
+        xo = as_i64(res);
+        for (i = 1; i < l; i++)
+        {
+            xi = as_i64(as_list(parts)[i]);
+            for (j = 0; j < n; j++)
+                if (xo[j] == NULL_I64)
+                    xo[j] = xi[j];
+        }
+        drop_obj(parts);
+
+        return res;
+
+    case TYPE_F64:
+        parts = aggr_map(aggr_first_partial, val, index);
+        unwrap_list(parts);
+        l = parts->len;
+        res = clone_obj(as_list(parts)[0]);
+        fo = as_f64(res);
+        for (i = 1; i < l; i++)
+        {
+            fi = as_f64(as_list(parts)[i]);
+            for (j = 0; j < n; j++)
+                if (ops_is_nan(fo[j]))
+                    fo[j] = fi[j];
+        }
+        drop_obj(parts);
 
         return res;
     default:
@@ -326,7 +387,6 @@ obj_p aggr_last(obj_p val, obj_p index)
 
         return res;
     default:
-        drop_obj(res);
         return error(ERR_TYPE, "last: unsupported type: '%s'", type_name(val->type));
     }
 }

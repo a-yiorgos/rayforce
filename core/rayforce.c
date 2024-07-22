@@ -1563,7 +1563,7 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj)
     else
         rc = __atomic_sub_fetch(&obj->rc, 1, __ATOMIC_RELAXED);
 
-    if (rc)
+    if (rc > 0)
         return;
 
     switch (obj->type)

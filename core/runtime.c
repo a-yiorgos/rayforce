@@ -135,7 +135,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
     __RUNTIME->args = NULL_OBJ;
     __RUNTIME->pool = NULL;
 
-    interpreter_create();
+    interpreter_create(0);
 
     if (argc)
     {

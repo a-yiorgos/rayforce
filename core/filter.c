@@ -26,22 +26,32 @@
 #include "util.h"
 #include "ops.h"
 
-/*
- *  filter_map is a list:
- *  [0] - indexed object
- *  [1] - vector of indices
- */
-
-obj_p filter_map(obj_p x, obj_p y)
+obj_p filter_map(obj_p val, obj_p index)
 {
-    obj_p res;
+    u64_t i, l;
+    obj_p v, res;
 
-    res = vn_list(2, x, y);
-    res->type = TYPE_FILTERMAP;
-    return res;
+    switch (val->type)
+    {
+    case TYPE_TABLE:
+        l = as_list(val)[1]->len;
+        res = list(l);
+        for (i = 0; i < l; i++)
+        {
+            v = as_list(as_list(val)[1])[i];
+            as_list(res)[i] = filter_map(v, index);
+        }
+
+        return table(clone_obj(as_list(val)[0]), res);
+
+    default:
+        res = vn_list(2, clone_obj(val), clone_obj(index));
+        res->type = TYPE_FILTERMAP;
+        return res;
+    }
 }
 
-obj_p filter_collect(obj_p x)
+obj_p filter_collect(obj_p index)
 {
-    return at_ids(as_list(x)[0], as_i64(as_list(x)[1]), as_list(x)[1]->len);
+    return at_ids(as_list(index)[0], as_i64(as_list(index)[1]), as_list(index)[1]->len);
 }

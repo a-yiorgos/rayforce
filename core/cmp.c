@@ -23,9 +23,11 @@
 
 #include "cmp.h"
 #include "util.h"
+#include "unary.h"
 #include "heap.h"
 #include "ops.h"
 #include "error.h"
+#include "items.h"
 #include "runtime.h"
 #include "pool.h"
 
@@ -70,9 +72,10 @@ obj_p cmp_map(raw_p cmp, obj_p lhs, obj_p rhs)
 
 obj_p ray_eq_partial(u64_t len, u64_t offset, obj_p lhs, obj_p rhs, obj_p res)
 {
-    u64_t i;
-    i64_t *xi, *yi, si;
+    u64_t i, l;
+    i64_t *xi, *yi, *ei, si;
     b8_t *out;
+    obj_p k, sym, e;
 
     out = as_b8(res) + offset;
 
@@ -86,11 +89,34 @@ obj_p ray_eq_partial(u64_t len, u64_t offset, obj_p lhs, obj_p rhs, obj_p res)
         for (i = 0; i < len; i++)
             out[i] = xi[i] == si;
         break;
+    case mtype2(TYPE_ENUM, -TYPE_SYMBOL):
+        k = ray_key(lhs);
+        sym = ray_get(k);
+        drop_obj(k);
+
+        e = enum_val(lhs);
+        l = e->len;
+
+        if (is_null(sym) || sym->type != TYPE_SYMBOL)
+        {
+            drop_obj(sym);
+            raise(ERR_TYPE, "eq: invalid enum");
+        }
+
+        xi = as_i64(sym) + offset;
+        ei = as_i64(e) + offset;
+
+        for (i = 0; i < len; i++)
+            out[i] = xi[ei[i]] == rhs->i64;
+
+        drop_obj(sym);
+        break;
+
     default:
         break;
-    }
 
-    return NULL_OBJ;
+        return NULL_OBJ;
+    }
 }
 
 obj_p ray_eq(obj_p x, obj_p y)
@@ -114,6 +140,7 @@ obj_p ray_eq(obj_p x, obj_p y)
     case mtype2(TYPE_I64, -TYPE_I64):
     case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
     case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+    case mtype2(TYPE_ENUM, -TYPE_SYMBOL):
         return cmp_map(ray_eq_partial, x, y);
     case mtype2(TYPE_F64, -TYPE_F64):
         l = x->len;
@@ -123,7 +150,6 @@ obj_p ray_eq(obj_p x, obj_p y)
             as_b8(vec)[i] = as_f64(x)[i] == y->f64;
 
         return vec;
-
     case mtype2(TYPE_F64, -TYPE_I64):
         l = x->len;
         vec = vector_b8(l);

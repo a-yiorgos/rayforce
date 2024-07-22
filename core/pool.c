@@ -29,9 +29,10 @@
 #include "atomic.h"
 #include "util.h"
 #include "heap.h"
+#include "eval.h"
 #include "string.h"
 
-#define DEFAULT_MPMC_SIZE 64
+#define DEFAULT_MPMC_SIZE 2048
 
 mpmc_p mpmc_create(u64_t size)
 {
@@ -184,7 +185,7 @@ raw_p executor_run(raw_p arg)
     obj_p res;
 
     executor->heap = heap_create(executor->id + 1);
-    executor->interpreter = interpreter_create();
+    executor->interpreter = interpreter_create(executor->id + 1);
     rc_sync(B8_TRUE);
 
     for (;;)
@@ -435,7 +436,7 @@ obj_p pool_run(pool_p pool)
 
 u64_t pool_executors_count(pool_p pool)
 {
-    if (pool)
+    if (pool || interpreter_current()->id != 0)
         return pool->executors_count + 1;
     else
         return 1;

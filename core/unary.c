@@ -45,12 +45,17 @@
 #include "index.h"
 #include "group.h"
 #include "string.h"
+#include "pool.h"
 
 // Atomic unary functions (iterates through list of argument items down to atoms)
 obj_p unary_call_atomic(unary_f f, obj_p x)
 {
-    u64_t i, l;
-    obj_p res = NULL_OBJ, item = NULL_OBJ, a, *v;
+    u64_t i, l, n;
+    obj_p res = NULL_OBJ, item = NULL_OBJ, a, *v, parts;
+    pool_p pool;
+
+    pool = pool_get();
+    n = pool_executors_count(pool);
 
     switch (x->type)
     {
@@ -61,6 +66,20 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
             return NULL_OBJ;
 
         v = as_list(x);
+
+        if (n > 1)
+        {
+            pool_prepare(pool);
+
+            for (i = 0; i < l; i++)
+                pool_add_task(pool, unary_call_atomic, 2, f, v[i]);
+
+            parts = pool_run(pool);
+            unwrap_list(parts);
+
+            return parts;
+        }
+
         item = unary_call_atomic(f, v[0]);
 
         if (is_error(item))

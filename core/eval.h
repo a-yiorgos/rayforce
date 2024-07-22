@@ -44,6 +44,7 @@ typedef struct ctx_t
 
 typedef struct interpreter_t
 {
+    u64_t id;        // Interpreter id.
     i64_t sp;        // Stack pointer.
     obj_p *stack;    // Stack.
     i64_t cp;        // Context pointer.
@@ -53,7 +54,7 @@ typedef struct interpreter_t
 
 extern __thread interpreter_p __INTERPRETER;
 
-interpreter_p interpreter_create(nil_t);
+interpreter_p interpreter_create(u64_t id);
 nil_t interpreter_destroy(nil_t);
 interpreter_p interpreter_current(nil_t);
 obj_p call(obj_p obj, u64_t arity);
