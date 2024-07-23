@@ -154,9 +154,9 @@ i32_t runtime_create(i32_t argc, str_p argv[])
         }
         else
         {
-            __RUNTIME->sys_info = sys_info(1);
-            // if (__RUNTIME->sys_info.threads > 1)
-            //     __RUNTIME->pool = pool_create(__RUNTIME->sys_info.threads - 1);
+            __RUNTIME->sys_info = sys_info(0);
+            if (__RUNTIME->sys_info.threads > 1)
+                __RUNTIME->pool = pool_create(__RUNTIME->sys_info.threads - 1);
         }
 
         arg = runtime_get_arg("port");
