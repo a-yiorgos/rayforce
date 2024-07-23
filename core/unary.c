@@ -55,7 +55,6 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
     pool_p pool;
 
     pool = pool_get();
-    n = pool_executors_count(pool);
 
     switch (x->type)
     {
@@ -66,6 +65,7 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
             return NULL_OBJ;
 
         v = as_list(x);
+        n = pool_split_by(pool, l);
 
         if (n > 1)
         {

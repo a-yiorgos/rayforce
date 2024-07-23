@@ -98,11 +98,11 @@ obj_p aggr_map(raw_p aggr, obj_p val, obj_p index)
     obj_p res;
     raw_p argv[6];
 
-    n = pool_executors_count(pool);
     group_count = index_group_count(index);
     group_len = index_group_len(index);
+    n = pool_split_by(pool, group_count);
 
-    if (n == 1 || group_count < 2)
+    if (n == 1)
     {
         res = vector(val->type, group_count);
         argv[0] = (raw_p)group_len;

@@ -126,9 +126,9 @@ index_scope_t index_scope(i64_t values[], i64_t indices[], u64_t len)
     if (len == 0)
         return (index_scope_t){NULL_I64, NULL_I64, 0};
 
-    chunks = pool_executors_count(pool);
+    chunks = pool_split_by(pool, len);
 
-    if (chunks == 1 || chunks >= len)
+    if (chunks == 1)
         index_scope_partial(len, values, indices, 0, &min, &max);
     else
     {
@@ -639,9 +639,9 @@ obj_p index_group_i64_scoped(obj_p obj, obj_p filter, const index_scope_t scope)
         hv = as_i64(vals);
 
         pool = pool_get();
-        chunks = pool_executors_count(pool);
+        chunks = pool_split_by(pool, len);
 
-        if (chunks == 1 || chunks >= len)
+        if (chunks == 1)
             index_group_i64_scoped_partial(values, indices, hk, len, 0, scope.min, hv);
         else
         {

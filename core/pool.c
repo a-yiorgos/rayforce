@@ -33,6 +33,7 @@
 #include "string.h"
 
 #define DEFAULT_MPMC_SIZE 2048
+#define POOL_SPLIT_THRESHOLD 4096
 
 mpmc_p mpmc_create(u64_t size)
 {
@@ -443,10 +444,14 @@ obj_p pool_run(pool_p pool)
     return res;
 }
 
-u64_t pool_executors_count(pool_p pool)
+u64_t pool_split_by(pool_p pool, u64_t input_len)
 {
-    if (pool || interpreter_current()->id != 0)
-        return pool->executors_count + 1;
-    else
+    if (pool == NULL)
         return 1;
+    else if (interpreter_current()->id != 0)
+        return 1;
+    else if (input_len <= pool->executors_count + 1)
+        return 1;
+    else
+        return pool->executors_count + 1;
 }

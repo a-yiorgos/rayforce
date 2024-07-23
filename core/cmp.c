@@ -41,7 +41,7 @@ obj_p cmp_map(raw_p cmp, obj_p lhs, obj_p rhs)
     ray_cmp_f cmp_fn = (ray_cmp_f)cmp;
 
     l = lhs->len;
-    n = pool_executors_count(pool);
+    n = pool_split_by(pool, l);
     res = vector_b8(l);
 
     if (n == 1)

@@ -332,9 +332,9 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
     str_p batch_start, batch_end;
     pool_p pool = runtime_get()->pool;
 
-    num_batches = pool_executors_count(pool);
+    num_batches = pool_split_by(pool, total_lines);
 
-    if (num_batches == 1 || total_lines <= num_batches)
+    if (num_batches == 1)
         return parse_csv_range(types, num_types, buf, size, total_lines, 0, cols, sep);
 
     pool_prepare(pool);
