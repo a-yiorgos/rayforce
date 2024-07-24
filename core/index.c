@@ -73,18 +73,7 @@ i64_t __index_list_cmp_row(i64_t row1, i64_t row2, nil_t *seed)
     return 0;
 }
 
-nil_t __index_list_precalc_hash(obj_p cols, u64_t *out, u64_t ncols, u64_t nrows, i64_t filter[], b8_t resolve)
-{
-    u64_t i;
-
-    for (i = 0; i < nrows; i++)
-        out[i] = 0x9ddfea08eb382d69ull;
-
-    for (i = 0; i < ncols; i++)
-        index_hash_obj(as_list(cols)[i], out, filter, nrows, resolve);
-}
-
-nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t resolve)
+obj_p index_hash_obj_partial(obj_p obj, u64_t out[], i64_t filter[], u64_t len, u64_t offset, b8_t resolve)
 {
     u8_t *u8v;
     f64_t *f64v;
@@ -98,28 +87,28 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
     case -TYPE_B8:
     case -TYPE_U8:
     case -TYPE_C8:
-        out[0] = hash_index_u64((u64_t)obj->u8, out[0]);
+        out[offset] = hash_index_u64((u64_t)obj->u8, out[offset]);
         break;
     case -TYPE_I64:
     case -TYPE_SYMBOL:
     case -TYPE_TIMESTAMP:
-        out[0] = hash_index_u64((u64_t)obj->i64, out[0]);
+        out[offset] = hash_index_u64((u64_t)obj->i64, out[offset]);
         break;
     case -TYPE_F64:
-        out[0] = hash_index_u64((u64_t)obj->f64, out[0]);
+        out[offset] = hash_index_u64((u64_t)obj->f64, out[offset]);
         break;
     case -TYPE_GUID:
-        out[0] = hash_index_u64(*(u64_t *)as_guid(obj), *((u64_t *)as_guid(obj) + 1));
+        out[offset] = hash_index_u64(*(u64_t *)as_guid(obj), *((u64_t *)as_guid(obj) + 1));
         break;
     case TYPE_B8:
     case TYPE_U8:
     case TYPE_C8:
         u8v = as_u8(obj);
         if (filter)
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64((u64_t)u8v[filter[i]], out[i]);
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64((u64_t)u8v[i], out[i]);
         break;
     case TYPE_I64:
@@ -127,19 +116,19 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
     case TYPE_TIMESTAMP:
         u64v = (u64_t *)as_i64(obj);
         if (filter)
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(u64v[filter[i]], out[i]);
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(u64v[i], out[i]);
         break;
     case TYPE_F64:
         u64v = (u64_t *)as_f64(obj);
         if (filter)
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(u64v[filter[i]], out[i]);
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(u64v[i], out[i]);
         break;
     case TYPE_GUID:
@@ -151,7 +140,7 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
                 out[i] = hash_index_u64(*((u64_t *)&g64v[filter[i]] + 1), out[i]);
             }
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
             {
                 out[i] = hash_index_u64(*(u64_t *)&g64v[i], out[i]);
                 out[i] = hash_index_u64(*((u64_t *)&g64v[i] + 1), out[i]);
@@ -159,10 +148,10 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
         break;
     case TYPE_LIST:
         if (filter)
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(hash_index_obj(as_list(obj)[filter[i]]), out[i]);
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
                 out[i] = hash_index_u64(hash_index_obj(as_list(obj)[i]), out[i]);
         break;
     case TYPE_ENUM:
@@ -174,10 +163,10 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
             u64v = (u64_t *)as_symbol(v);
             ids = as_i64(enum_val(obj));
             if (filter)
-                for (i = 0; i < len; i++)
+                for (i = offset; i < len + offset; i++)
                     out[i] = hash_index_u64(u64v[ids[filter[i]]], out[i]);
             else
-                for (i = 0; i < len; i++)
+                for (i = offset; i < len + offset; i++)
                     out[i] = hash_index_u64(u64v[ids[i]], out[i]);
             drop_obj(v);
         }
@@ -185,23 +174,23 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
         {
             u64v = (u64_t *)as_i64(enum_val(obj));
             if (filter)
-                for (i = 0; i < len; i++)
+                for (i = offset; i < len + offset; i++)
                     out[i] = hash_index_u64(u64v[filter[i]], out[i]);
             else
-                for (i = 0; i < len; i++)
+                for (i = offset; i < len + offset; i++)
                     out[i] = hash_index_u64(u64v[i], out[i]);
         }
         break;
     case TYPE_ANYMAP:
         if (filter)
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
             {
                 v = at_idx(obj, filter[i]);
                 out[i] = hash_index_u64(hash_index_obj(v), out[i]);
                 drop_obj(v);
             }
         else
-            for (i = 0; i < len; i++)
+            for (i = offset; i < len + offset; i++)
             {
                 v = at_idx(obj, i);
                 out[i] = hash_index_u64(hash_index_obj(v), out[i]);
@@ -211,6 +200,50 @@ nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t res
     default:
         panic("hash list: unsupported type: %d", obj->type);
     }
+
+    return NULL_OBJ;
+}
+
+nil_t __index_list_precalc_hash(obj_p cols, u64_t out[], u64_t ncols, u64_t nrows, i64_t filter[], b8_t resolve)
+{
+    u64_t i, j, l, n, chunks, chunk;
+    pool_p pool;
+    obj_p v;
+
+    pool = pool_get();
+    chunks = pool_split_by(pool, nrows);
+    chunk = nrows / chunks;
+
+    // init hashes
+    for (i = 0; i < nrows; i++)
+        out[i] = 0x9ddfea08eb382d69ull;
+
+    // calculate hashes
+    if (chunks == 1)
+    {
+        for (i = 0; i < ncols; i++)
+            index_hash_obj_partial(as_list(cols)[i], out, filter, nrows, 0, resolve);
+    }
+    else
+    {
+        for (i = 0; i < ncols; i++)
+        {
+            pool_prepare(pool);
+
+            for (j = 0; j < chunks - 1; j++)
+                pool_add_task(pool, index_hash_obj_partial, 6, as_list(cols)[i], out, filter, chunk, j * chunk, resolve);
+
+            pool_add_task(pool, index_hash_obj_partial, 6, as_list(cols)[i], out, filter, nrows - j * chunk, j * chunk, resolve);
+
+            v = pool_run(pool);
+            drop_obj(v);
+        }
+    }
+}
+
+nil_t index_hash_obj(obj_p obj, u64_t out[], i64_t filter[], u64_t len, b8_t resolve)
+{
+    index_hash_obj_partial(obj, out, filter, len, 0, resolve);
 }
 
 obj_p index_scope_partial(u64_t len, i64_t *values, i64_t *indices, u64_t offset, i64_t *pmin, i64_t *pmax)

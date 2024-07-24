@@ -214,7 +214,7 @@ obj_p aggr_first_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p 
     case TYPE_TIMESTAMP:
         xi = as_i64(val);
         yi = as_i64(res);
-        debug_obj(index);
+
         for (i = 0; i < n; i++)
             yi[i] = NULL_I64;
 
