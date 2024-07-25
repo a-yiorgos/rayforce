@@ -1216,7 +1216,7 @@ obj_p index_group_list(obj_p obj, obj_p filter)
     if (ops_count(obj) == 0)
         return error(ERR_LENGTH, "group index list: empty source");
 
-    // If the list values are small, use perfect hashing
+    // If the list values range is small, use perfect hashing
     res = index_group_list_perfect(obj, filter);
     if (!is_null(res))
     {

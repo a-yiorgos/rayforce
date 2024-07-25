@@ -409,6 +409,45 @@ i64_t ht_bk_insert_par(ht_bk_p ht, i64_t key, i64_t val)
     }
 }
 
+i64_t ht_bk_insert_with_par(ht_bk_p ht, i64_t key, i64_t val, hash_f hash, cmp_f cmp, raw_p seed)
+{
+    i64_t index;
+    bucket_p new_bucket, current_bucket, b;
+
+    index = hash(key, seed) % ht->size;
+
+    new_bucket = (bucket_p)heap_alloc(sizeof(struct bucket_t));
+    if (new_bucket == NULL)
+        return NULL_I64;
+
+    new_bucket->key = key;
+    new_bucket->val = val;
+
+    for (;;)
+    {
+        current_bucket = __atomic_load_n(&ht->table[index], __ATOMIC_ACQUIRE);
+        b = current_bucket;
+
+        while (b != NULL)
+        {
+            if (cmp(b->key, key, seed) == 0)
+            {
+                heap_free(new_bucket);
+                return b->val; // Key already exists
+            }
+
+            b = __atomic_load_n(&b->next, __ATOMIC_ACQUIRE);
+        }
+
+        new_bucket->next = current_bucket;
+        if (__atomic_compare_exchange_n(&ht->table[index], &current_bucket, new_bucket, 1, __ATOMIC_RELEASE, __ATOMIC_RELAXED))
+        {
+            __atomic_fetch_add(&ht->count, 1, __ATOMIC_RELAXED);
+            return val;
+        }
+    }
+}
+
 i64_t ht_bk_get(ht_bk_p ht, i64_t key)
 {
     u64_t index = key % ht->size;
