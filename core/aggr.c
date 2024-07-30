@@ -266,23 +266,18 @@ obj_p aggr_first(obj_p val, obj_p index)
 
         return res;
 
-        // case TYPE_GUID:
-        //     parts = aggr_map(aggr_first_partial, val, index);
-        //     unwrap_list(parts);
-        //     l = parts->len;
-        //     res = clone_obj(as_list(parts)[0]);
-        //     go = as_guid(res);
-        //     for (i = 1; i < l; i++)
-        //     {
-        //         gi = as_guid(as_list(parts)[i]);
-        //         for (j = 0; j < n; j++)
-        //             if (memcmp(go[j], NULL_GUID, sizeof(guid_t)) == 0)
-        //                 memcpy(go[j], gi[j], sizeof(guid_t));
-        //     }
+    case TYPE_GUID:
+        res = vector_guid(n);
 
-        //     drop_obj(parts);
+        gi = as_guid(val);
+        go = as_guid(res);
 
-        //     return res;
+        for (i = 0; i < n; i++)
+            memcpy(go[i], NULL_GUID, sizeof(guid_t));
+
+        aggr_iter(index, l, 0, if (memcmp(go[$y], NULL_GUID, sizeof(guid_t)) == 0) memcpy(go[$y], gi[$x], sizeof(guid_t)));
+
+        return res;
 
         // case TYPE_LIST:
         //     xo = as_list(val);
