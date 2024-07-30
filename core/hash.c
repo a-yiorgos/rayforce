@@ -113,7 +113,7 @@ nil_t ht_oa_rehash(obj_p *obj, hash_f hash, raw_p seed)
 
 i64_t ht_oa_tab_next(obj_p *obj, i64_t key)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys;
 
     for (;;)
@@ -121,10 +121,14 @@ i64_t ht_oa_tab_next(obj_p *obj, i64_t key)
         size = as_list(*obj)[0]->len;
         keys = as_i64(as_list(*obj)[0]);
 
-        for (i = (u64_t)key % size; i < size; i++)
+        start = (u64_t)key % size;
+
+        for (i = start; i < size + start; i++)
         {
-            if ((keys[i] == NULL_I64) || (keys[i] == key))
-                return i;
+            idx = i % size;
+
+            if ((keys[idx] == NULL_I64) || (keys[idx] == key))
+                return idx;
         }
 
         ht_oa_rehash(obj, NULL, NULL);
@@ -133,7 +137,7 @@ i64_t ht_oa_tab_next(obj_p *obj, i64_t key)
 
 i64_t ht_oa_tab_next_with(obj_p *obj, i64_t key, hash_f hash, cmp_f cmp, raw_p seed)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys;
 
     for (;;)
@@ -141,10 +145,14 @@ i64_t ht_oa_tab_next_with(obj_p *obj, i64_t key, hash_f hash, cmp_f cmp, raw_p s
         size = as_list(*obj)[0]->len;
         keys = as_i64(as_list(*obj)[0]);
 
-        for (i = hash(key, seed) % size; i < size; i++)
+        start = hash(key, seed) % size;
+
+        for (i = start; i < size + start; i++)
         {
-            if (keys[i] == NULL_I64 || cmp(keys[i], key, seed) == 0)
-                return i;
+            idx = i % size;
+
+            if (keys[idx] == NULL_I64 || cmp(keys[idx], key, seed) == 0)
+                return idx;
         }
 
         ht_oa_rehash(obj, hash, seed);
@@ -153,7 +161,7 @@ i64_t ht_oa_tab_next_with(obj_p *obj, i64_t key, hash_f hash, cmp_f cmp, raw_p s
 
 i64_t ht_oa_tab_insert(obj_p *obj, i64_t key, i64_t val)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys, *vals;
 
     for (;;)
@@ -162,16 +170,20 @@ i64_t ht_oa_tab_insert(obj_p *obj, i64_t key, i64_t val)
         keys = as_i64(as_list(*obj)[0]);
         vals = as_i64(as_list(*obj)[1]);
 
-        for (i = (u64_t)key % size; i < size; i++)
+        start = (u64_t)key % size;
+
+        for (i = start; i < size + start; i++)
         {
-            if (keys[i] == NULL_I64)
+            idx = i % size;
+
+            if (keys[idx] == NULL_I64)
             {
-                keys[i] = key;
-                vals[i] = val;
+                keys[idx] = key;
+                vals[idx] = val;
                 return val;
             }
 
-            if (keys[i] == key)
+            if (keys[idx] == key)
                 return vals[i];
         }
 
@@ -181,7 +193,7 @@ i64_t ht_oa_tab_insert(obj_p *obj, i64_t key, i64_t val)
 
 i64_t ht_oa_tab_insert_with(obj_p *obj, i64_t key, i64_t val, hash_f hash, cmp_f cmp, raw_p seed)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys, *vals;
 
     for (;;)
@@ -190,17 +202,22 @@ i64_t ht_oa_tab_insert_with(obj_p *obj, i64_t key, i64_t val, hash_f hash, cmp_f
         keys = as_i64(as_list(*obj)[0]);
         vals = as_i64(as_list(*obj)[1]);
 
-        for (i = hash(key, seed) % size; i < size; i++)
+        start = hash(key, seed) % size;
+
+        // Linear probing with wrap-around
+        for (i = start; i < size + start; i++)
         {
-            if (keys[i] == NULL_I64)
+            idx = i % size; // Wrap around to the start of the table
+
+            if (keys[idx] == NULL_I64)
             {
-                keys[i] = key;
-                vals[i] = val;
+                keys[idx] = key;
+                vals[idx] = val;
                 return val;
             }
 
-            if (cmp(keys[i], key, seed) == 0)
-                return vals[i];
+            if (cmp(keys[idx], key, seed) == 0)
+                return vals[idx];
         }
 
         ht_oa_rehash(obj, hash, seed);
@@ -209,18 +226,22 @@ i64_t ht_oa_tab_insert_with(obj_p *obj, i64_t key, i64_t val, hash_f hash, cmp_f
 
 i64_t ht_oa_tab_get(obj_p obj, i64_t key)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys;
 
     size = as_list(obj)[0]->len;
     keys = as_i64(as_list(obj)[0]);
 
-    for (i = (u64_t)key % size; i < size; i++)
+    start = (u64_t)key % size;
+
+    for (i = start; i < size + start; i++)
     {
-        if (keys[i] == NULL_I64)
+        idx = i % size;
+
+        if (keys[idx] == NULL_I64)
             return NULL_I64;
-        else if (keys[i] == key)
-            return i;
+        else if (keys[idx] == key)
+            return idx;
     }
 
     return NULL_I64;
@@ -228,18 +249,22 @@ i64_t ht_oa_tab_get(obj_p obj, i64_t key)
 
 i64_t ht_oa_tab_get_with(obj_p obj, i64_t key, hash_f hash, cmp_f cmp, raw_p seed)
 {
-    u64_t i, size;
+    u64_t i, idx, size, start;
     i64_t *keys;
 
     size = as_list(obj)[0]->len;
     keys = as_i64(as_list(obj)[0]);
 
-    for (i = hash(key, seed) % size; i < size; i++)
+    start = hash(key, seed) % size;
+
+    for (i = start; i < size + start; i++)
     {
-        if (keys[i] == NULL_I64)
+        idx = i % size;
+
+        if (keys[idx] == NULL_I64)
             return NULL_I64;
-        else if (cmp(keys[i], key, seed) == 0)
-            return i;
+        else if (cmp(keys[idx], key, seed) == 0)
+            return idx;
     }
 
     return NULL_I64;

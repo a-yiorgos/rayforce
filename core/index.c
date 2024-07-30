@@ -909,7 +909,7 @@ obj_p index_group_i64_unscoped(obj_p obj, obj_p filter)
     vals = vector_i64(len);
     out = as_i64(vals);
 
-    g = index_group_distribute(values, indices, out, len, &hash_murmur3, &hash_cmp_i64);
+    g = index_group_distribute(values, indices, out, len, &hash_fnv1a, &hash_cmp_i64);
 
     return index_group_build(g, vals, NULL_I64, NULL_OBJ, clone_obj(filter));
 }
@@ -1289,9 +1289,9 @@ obj_p index_group_list_perfect(obj_p obj, obj_p filter)
 
 obj_p index_group_list(obj_p obj, obj_p filter)
 {
-    u64_t i, len, *hashes;
+    u64_t i, len;
     i64_t g, v, *xo, *indices;
-    obj_p res, *values, ht, hv;
+    obj_p res, *values, ht;
     __index_list_ctx_t ctx;
 
     if (ops_count(obj) == 0)
@@ -1311,16 +1311,16 @@ obj_p index_group_list(obj_p obj, obj_p filter)
 
     ht = ht_oa_create(len, TYPE_I64);
 
-    hv = vector_i64(len);
-    hashes = (u64_t *)as_i64(hv);
-
-    __index_list_precalc_hash(obj, hashes, obj->len, len, indices, B8_FALSE);
-    timeit_tick("group index precalc hash");
-
-    ctx = (__index_list_ctx_t){.lcols = obj, .rcols = obj, .hashes = hashes, .filter = indices};
-
     res = vector_i64(len);
     xo = as_i64(res);
+
+    __index_list_precalc_hash(obj, (u64_t *)xo, obj->len, len, indices, B8_FALSE);
+    timeit_tick("group index precalc hash");
+
+    ctx = (__index_list_ctx_t){.lcols = obj, .rcols = obj, .hashes = (u64_t *)xo, .filter = indices};
+
+    // NOTE: We can reuse the same vector for output indices, that is used for hashes, because
+    // it's guaranteed do not rehash the table caus ewe reserved enough space for it
 
     // distribute bins
     for (i = 0, g = 0; i < len; i++)
@@ -1332,7 +1332,6 @@ obj_p index_group_list(obj_p obj, obj_p filter)
         xo[i] = v;
     }
 
-    drop_obj(hv);
     drop_obj(ht);
 
     timeit_tick("group index list");
