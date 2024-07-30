@@ -700,14 +700,21 @@ obj_p index_group_build(u64_t groups_count, obj_p group_ids, i64_t index_min, ob
 
 obj_p index_group_distribute_partial(u64_t blob, u64_t *groups, i64_t keys[], i64_t filter[], i64_t out[], u64_t len, hash_f hash, cmp_f cmp)
 {
-    u64_t i, segment, parts, part;
+    const u64_t L1_CACHE_SIZE = 1024 * 1024; // 8MB via i64_t
+    u64_t i, j, tcount, segment, parts, size, part;
     i64_t *k, *v, n, idx;
-    obj_p ht;
+    obj_p tabs, *ht;
 
     parts = blob >> 32;
     part = blob & 0xff;
 
-    ht = ht_oa_create(len / parts, TYPE_I64);
+    // create tables to fit into L1 cache
+    size = (len / parts);
+    tcount = size / L1_CACHE_SIZE + 1;
+    tabs = list(tcount);
+
+    for (i = 0; i < tcount; i++)
+        as_list(tabs)[i] = ht_oa_create(L1_CACHE_SIZE, TYPE_I64);
 
     if (filter)
     {
@@ -720,9 +727,12 @@ obj_p index_group_distribute_partial(u64_t blob, u64_t *groups, i64_t keys[], i6
             if (segment != part)
                 continue;
 
-            idx = ht_oa_tab_next_with(&ht, n, hash, cmp, NULL);
-            k = as_i64(as_list(ht)[0]);
-            v = as_i64(as_list(ht)[1]);
+            j = n % tcount;
+            ht = as_list(tabs) + j;
+
+            idx = ht_oa_tab_next_with(ht, n, hash, cmp, NULL);
+            k = as_i64(as_list(*ht)[0]);
+            v = as_i64(as_list(*ht)[1]);
 
             if (k[idx] == NULL_I64)
             {
@@ -744,9 +754,12 @@ obj_p index_group_distribute_partial(u64_t blob, u64_t *groups, i64_t keys[], i6
             if (segment != part)
                 continue;
 
-            idx = ht_oa_tab_next_with(&ht, n, hash, cmp, NULL);
-            k = as_i64(as_list(ht)[0]);
-            v = as_i64(as_list(ht)[1]);
+            j = n % tcount;
+            ht = as_list(tabs) + j;
+
+            idx = ht_oa_tab_next_with(ht, n, hash, cmp, NULL);
+            k = as_i64(as_list(*ht)[0]);
+            v = as_i64(as_list(*ht)[1]);
 
             if (k[idx] == NULL_I64)
             {
@@ -758,7 +771,7 @@ obj_p index_group_distribute_partial(u64_t blob, u64_t *groups, i64_t keys[], i6
         }
     }
 
-    drop_obj(ht);
+    drop_obj(tabs);
 
     return NULL_OBJ;
 }

@@ -275,40 +275,20 @@ obj_p aggr_first(obj_p val, obj_p index)
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
     case TYPE_ENUM:
-        // val is a column by which we group
-        if ((as_list(index)[3] != NULL_OBJ) && as_list(index)[3] == val)
+        parts = aggr_map(aggr_first_partial, val, index);
+        unwrap_list(parts);
+        l = parts->len;
+        res = clone_obj(as_list(parts)[0]);
+
+        xo = as_i64(res);
+        for (i = 1; i < l; i++)
         {
-            group_ids = as_i64(as_list(index)[1]);
-            l = as_list(index)[1]->len;
-            shift = as_list(index)[2]->i64;
-
-            res = vector(val->type, n);
-            xo = as_i64(res);
-
-            for (i = 0; i < l; i++)
-            {
-                k = group_ids[i];
-                if (k != NULL_I64)
-                    xo[k] = i + shift;
-            }
+            xi = as_i64(as_list(parts)[i]);
+            for (j = 0; j < n; j++)
+                if (xo[j] == NULL_I64)
+                    xo[j] = xi[j];
         }
-        else
-        {
-            parts = aggr_map(aggr_first_partial, val, index);
-            unwrap_list(parts);
-            l = parts->len;
-            res = clone_obj(as_list(parts)[0]);
-
-            xo = as_i64(res);
-            for (i = 1; i < l; i++)
-            {
-                xi = as_i64(as_list(parts)[i]);
-                for (j = 0; j < n; j++)
-                    if (xo[j] == NULL_I64)
-                        xo[j] = xi[j];
-            }
-            drop_obj(parts);
-        }
+        drop_obj(parts);
 
         if (val->type == TYPE_ENUM)
         {
