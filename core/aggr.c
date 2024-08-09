@@ -34,9 +34,10 @@
 #include "string.h"
 #include "runtime.h"
 #include "index.h"
+#include "cmp.h"
 #include "pool.h"
 
-#define aggr_iter(index, len, offset, aggr)             \
+#define AGGR_ITER(index, len, offset, aggr)             \
     do                                                  \
     {                                                   \
         u64_t $i, $x, $y;                               \
@@ -128,87 +129,6 @@ obj_p aggr_map(raw_p aggr, obj_p val, obj_p index)
     return pool_run(pool);
 }
 
-obj_p aggr_sum_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
-{
-    u64_t i, n;
-    i64_t *xi, *xm, *xk, *xo;
-    f64_t *xf, *fo;
-
-    n = index_group_count(index);
-
-    switch (val->type)
-    {
-    case TYPE_I64:
-        xi = as_i64(val);
-        xo = as_i64(res);
-        memset(xo, 0, n * sizeof(i64_t));
-        aggr_iter(index, len, offset, xo[$y] = addi64(xo[$y], xi[$x]));
-        return res;
-    case TYPE_F64:
-        xf = as_f64(val);
-        fo = as_f64(res);
-        memset(fo, 0, n * sizeof(i64_t));
-        aggr_iter(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
-        return res;
-    default:
-        return error(ERR_TYPE, "sum: unsupported type: '%s'", type_name(val->type));
-    }
-}
-
-obj_p aggr_sum(obj_p val, obj_p index)
-{
-    u64_t i, j, l, n;
-    i64_t *xi, *xo;
-    f64_t *fo, *fi;
-    obj_p res, parts;
-
-    parts = aggr_map(aggr_sum_partial, val, index);
-    unwrap_list(parts);
-    n = index_group_count(index);
-    // l = index_group_len(index);
-    l = parts->len;
-    res = clone_obj(as_list(parts)[0]);
-
-    switch (val->type)
-    {
-    case TYPE_I64:
-        // res = vector(val->type, n);
-        // xi = as_i64(val);
-        // xo = as_i64(res);
-        // memset(xo, 0, n * sizeof(i64_t));
-
-        // aggr_iter(index, l, 0, xo[$y] = addi64(xo[$y], xi[$x]));
-
-        // return res;
-
-        xo = as_i64(res);
-
-        for (i = 1; i < l; i++)
-        {
-            xi = as_i64(as_list(parts)[i]);
-            for (j = 0; j < n; j++)
-                xo[j] = addi64(xo[j], xi[j]);
-        }
-
-        drop_obj(parts);
-        return res;
-    case TYPE_F64:
-        fo = as_f64(res);
-        for (i = 1; i < l; i++)
-        {
-            fi = as_f64(as_list(parts)[i]);
-            for (j = 0; j < n; j++)
-                fo[j] = addf64(fo[j], fi[j]);
-        }
-        drop_obj(parts);
-        return res;
-    default:
-        drop_obj(res);
-        drop_obj(parts);
-        return error(ERR_TYPE, "sum: unsupported type: '%s'", type_name(val->type));
-    }
-}
-
 obj_p aggr_first(obj_p val, obj_p index)
 {
     u64_t i, j, xl, l, n;
@@ -234,7 +154,7 @@ obj_p aggr_first(obj_p val, obj_p index)
         for (i = 0; i < n; i++)
             xo[i] = NULL_I64;
 
-        aggr_iter(index, l, 0, if (xo[$y] == NULL_I64) xo[$y] = xi[$x]);
+        AGGR_ITER(index, l, 0, if (xo[$y] == NULL_I64) xo[$y] = xi[$x]);
 
         if (val->type == TYPE_ENUM)
         {
@@ -274,7 +194,7 @@ obj_p aggr_first(obj_p val, obj_p index)
         for (i = 0; i < n; i++)
             fo[i] = NULL_F64;
 
-        aggr_iter(index, l, 0, if (ops_is_nan(fo[$y])) fo[$y] = fi[$x]);
+        AGGR_ITER(index, l, 0, if (ops_is_nan(fo[$y])) fo[$y] = fi[$x]);
 
         return res;
 
@@ -287,7 +207,7 @@ obj_p aggr_first(obj_p val, obj_p index)
         for (i = 0; i < n; i++)
             memcpy(go[i], NULL_GUID, sizeof(guid_t));
 
-        aggr_iter(index, l, 0, if (memcmp(go[$y], NULL_GUID, sizeof(guid_t)) == 0) memcpy(go[$y], gi[$x], sizeof(guid_t)));
+        AGGR_ITER(index, l, 0, if (memcmp(go[$y], NULL_GUID, sizeof(guid_t)) == 0) memcpy(go[$y], gi[$x], sizeof(guid_t)));
 
         return res;
 
@@ -298,7 +218,7 @@ obj_p aggr_first(obj_p val, obj_p index)
         //     for (i = 0; i < n; i++)
         //         yo[i] = NULL_OBJ;
 
-        //     aggr_iter(index, len, offset, if (yo[$y] == NULL_OBJ) yo[$y] = clone_obj(xo[$x]));
+        //     AGGR_ITER(index, len, offset, if (yo[$y] == NULL_OBJ) yo[$y] = clone_obj(xo[$x]));
 
         //     return res;
 
@@ -368,6 +288,88 @@ obj_p aggr_last(obj_p val, obj_p index)
     }
 }
 
+obj_p aggr_sum_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
+{
+    u64_t i, n;
+    i64_t *xi, *yi;
+    f64_t *xf, *yf;
+    obj_p *xo, *yo;
+    guid_t *xg, *yg;
+
+    n = index_group_count(index);
+
+    switch (val->type)
+    {
+    case TYPE_I64:
+        xi = as_i64(val);
+        yi = as_i64(res);
+
+        for (i = 0; i < n; i++)
+            yi[i] = 0;
+
+        AGGR_ITER(index, len, offset, yi[$y] = addi64(yi[$y], xi[$x]));
+
+        return res;
+    case TYPE_F64:
+        xf = as_f64(val);
+        yf = as_f64(res);
+
+        for (i = 0; i < n; i++)
+            yf[i] = 0.0;
+
+        AGGR_ITER(index, len, offset, yf[$y] = addf64(yf[$y], xf[$x]));
+
+        return res;
+    default:
+        drop_obj(res);
+        return error(ERR_TYPE, "sum: unsupported type: '%s'", type_name(val->type));
+    }
+}
+
+obj_p aggr_sum(obj_p val, obj_p index)
+{
+    u64_t i, j, l, n;
+    i64_t *xi, *yi;
+    f64_t *xf, *yf;
+    guid_t *xg, *yg;
+    obj_p parts, res, *xo, *yo;
+
+    parts = aggr_map(aggr_sum_partial, val, index);
+    unwrap_list(parts);
+    n = index_group_count(index);
+    l = parts->len;
+    res = clone_obj(as_list(parts)[0]);
+
+    switch (val->type)
+    {
+    case TYPE_I64:
+    case TYPE_SYMBOL:
+    case TYPE_TIMESTAMP:
+        yi = as_i64(res);
+        for (i = 1; i < l; i++)
+        {
+            xi = as_i64(as_list(parts)[i]);
+            for (j = 0; j < n; j++)
+                yi[j] = addi64(yi[j], xi[j]);
+        }
+
+        drop_obj(parts);
+        return res;
+    case TYPE_F64:
+        yf = as_f64(res);
+        for (i = 1; i < l; i++)
+        {
+            xf = as_f64(as_list(parts)[i]);
+            for (j = 0; j < n; j++)
+                yf[j] = addf64(yf[j], xf[j]);
+        }
+        drop_obj(parts);
+        return res;
+    default:
+        return error(ERR_TYPE, "last: unsupported type: '%s'", type_name(val->type));
+    }
+}
+
 obj_p aggr_max_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
 {
     u64_t i, n;
@@ -390,7 +392,7 @@ obj_p aggr_max_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yi[i] = NULL_I64;
 
-        aggr_iter(index, len, offset, yi[$y] = maxi64(yi[$y], xi[$x]));
+        AGGR_ITER(index, len, offset, yi[$y] = maxi64(yi[$y], xi[$x]));
 
         return res;
     case TYPE_F64:
@@ -400,7 +402,7 @@ obj_p aggr_max_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yf[i] = NULL_F64;
 
-        aggr_iter(index, len, offset, yf[$y] = maxf64(yf[$y], xf[$x]));
+        AGGR_ITER(index, len, offset, yf[$y] = maxf64(yf[$y], xf[$x]));
 
         return res;
     case TYPE_GUID:
@@ -409,7 +411,7 @@ obj_p aggr_max_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
 
         memset(yg, 0, n * sizeof(guid_t));
 
-        aggr_iter(index, len, offset,
+        AGGR_ITER(index, len, offset,
                   if (memcmp(xg[$y], yg[$x], sizeof(guid_t)) > 0)
                       memcpy(yg[$y], xg[$x], sizeof(guid_t)));
 
@@ -421,7 +423,7 @@ obj_p aggr_max_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yo[i] = NULL_OBJ;
 
-        aggr_iter(index, len, offset, if (ray_gt(xo[$x], yo[$y])) {
+        AGGR_ITER(index, len, offset, if (ray_gt(xo[$x], yo[$y])) {
             drop_obj(yo[$y]);
             yo[$y] = clone_obj(xo[$x]); });
 
@@ -525,7 +527,7 @@ obj_p aggr_min_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yi[i] = NULL_I64;
 
-        aggr_iter(index, len, offset, yi[$y] = mini64(yi[$y], xi[$x]));
+        AGGR_ITER(index, len, offset, yi[$y] = mini64(yi[$y], xi[$x]));
 
         return res;
     case TYPE_F64:
@@ -535,7 +537,7 @@ obj_p aggr_min_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yf[i] = NULL_F64;
 
-        aggr_iter(index, len, offset, yf[$y] = minf64(yf[$y], xf[$x]));
+        AGGR_ITER(index, len, offset, yf[$y] = minf64(yf[$y], xf[$x]));
 
         return res;
     case TYPE_GUID:
@@ -544,7 +546,7 @@ obj_p aggr_min_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
 
         memset(yg, 0, n * sizeof(guid_t));
 
-        aggr_iter(index, len, offset,
+        AGGR_ITER(index, len, offset,
                   if (memcmp(xg[$y], yg[$y], sizeof(guid_t)) < 0)
                       memcpy(yg[$y], xg[$x], sizeof(guid_t)));
 
@@ -556,7 +558,7 @@ obj_p aggr_min_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         for (i = 0; i < n; i++)
             yo[i] = NULL_OBJ;
 
-        aggr_iter(index, len, offset, if (ray_lt(xo[$x], yo[$y])) {
+        AGGR_ITER(index, len, offset, if (ray_lt(xo[$x], yo[$y])) {
             drop_obj(yo[$y]);
             yo[$y] = clone_obj(xo[$x]); });
 
@@ -650,7 +652,7 @@ obj_p aggr_count_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p 
     for (i = 0; i < n; i++)
         yi[i] = 0;
 
-    aggr_iter(index, len, offset, yi[$y]++);
+    AGGR_ITER(index, len, offset, yi[$y]++);
 
     return res;
 }
@@ -748,7 +750,7 @@ obj_p aggr_med_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         xm = as_i64(as_list(index)[1]);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        aggr_iter(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
+        AGGR_ITER(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
         for (i = 0; i < n; i++)
             fo[i] = divi64(fo[i], 2);
         return res;
@@ -757,7 +759,7 @@ obj_p aggr_med_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p re
         xm = as_i64(as_list(index)[1]);
         fo = as_f64(res);
         memset(fo, 0, n * sizeof(i64_t));
-        aggr_iter(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
+        AGGR_ITER(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
         for (i = 0; i < n; i++)
             fo[i] = fdivf64(fo[i], 2);
         return res;
@@ -780,7 +782,7 @@ obj_p aggr_med(obj_p val, obj_p index)
     //     res = vector_f64(n);
     //     fo = as_f64(res);
     //     memset(fo, 0, n * sizeof(i64_t));
-    //     aggr_iter(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
+    //     AGGR_ITER(index, len, offset, fo[$y] = addi64(fo[$y], xi[$x]));
     //     for (i = 0; i < n; i++)
     //         fo[i] = divi64(fo[i], 2);
     //     return res;
@@ -788,7 +790,7 @@ obj_p aggr_med(obj_p val, obj_p index)
     //     res = vector_f64(n);
     //     fo = as_f64(res);
     //     memset(fo, 0, n * sizeof(i64_t));
-    //     aggr_iter(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
+    //     AGGR_ITER(index, len, offset, fo[$y] = addf64(fo[$y], xf[$x]));
     //     for (i = 0; i < n; i++)
     //         fo[i] = fdivf64(fo[i], 2);
     //     return res;
@@ -890,7 +892,7 @@ obj_p aggr_collect(obj_p val, obj_p index)
         }
 
         // fill vectors with values
-        aggr_iter(index, l, 0, as_i64(as_list(res)[$y])[as_list(res)[$y]->len++] = as_i64(val)[$x]);
+        AGGR_ITER(index, l, 0, as_i64(as_list(res)[$y])[as_list(res)[$y]->len++] = as_i64(val)[$x]);
 
         drop_obj(cnt);
 
@@ -1052,7 +1054,7 @@ obj_p aggr_indices(obj_p val, obj_p index)
     }
 
     // fill vectors with indices
-    aggr_iter(index, l, 0, as_i64(as_list(res)[$y])[as_list(res)[$y]->len++] = $x);
+    AGGR_ITER(index, l, 0, as_i64(as_list(res)[$y])[as_list(res)[$y]->len++] = $x);
 
     drop_obj(cnt);
 
