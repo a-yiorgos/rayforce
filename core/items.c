@@ -1032,7 +1032,8 @@ obj_p ray_where(obj_p x)
                 cur[j++] = i;
 
         return res;
-
+    case TYPE_NULL:
+        return vector_i64(0);
     default:
         throw(ERR_TYPE, "where: unsupported type: '%s", type_name(x->type));
     }
