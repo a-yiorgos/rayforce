@@ -90,13 +90,13 @@ date_t date_from_days(i64_t v)
     i64_t days = v - years_by_days(years);
     i64_t yy = years + 1;
     u8_t leap = leap_year(yy);
-    u8_t mid = 0;
+    i8_t mid = 0;
 
-    for (mid = 12; mid >= 0; mid--)
-        if (MONTHDAYS_FWD[leap][mid] != 0 && days / MONTHDAYS_FWD[leap][mid] != 0)
+    for (mid = 13; mid > 0; mid--)
+        if (MONTHDAYS_FWD[leap][mid - 1] != 0 && days / MONTHDAYS_FWD[leap][mid - 1] != 0)
             break;
 
-    if (mid == 12)
+    if (mid == 13)
         mid = 0;
 
     i64_t mm = (1 + mid % 12);
