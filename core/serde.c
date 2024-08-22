@@ -148,7 +148,7 @@ u64_t size_obj(obj_p obj)
     case TYPE_NULL:
         return sizeof(i8_t);
     case TYPE_ERROR:
-        return sizeof(i8_t) + sizeof(i8_t) + as_list(obj)[1]->len + 1;
+        return sizeof(i8_t) + sizeof(i8_t) + size_obj(as_error(obj)->msg);
     default:
         return 0;
     }
@@ -288,11 +288,9 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
 
     case TYPE_ERROR:
         buf[0] = (i8_t)as_error(obj)->code;
-        buf++;
-        c = ops_count(as_error(obj)->msg);
-        memcpy(buf, as_string(as_error(obj)->msg), c);
-        buf[c] = '\0';
-        return sizeof(i8_t) + as_list(obj)[1]->len + c;
+        c = sizeof(i8_t);
+        c += save_obj(buf + c, len, as_error(obj)->msg);
+        return sizeof(i8_t) + c;
 
     default:
         return 0;
@@ -536,9 +534,8 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_ERROR:
         code = **buf;
         (*buf)++;
-        obj = error_str(code, (str_p)*buf);
-        *buf += as_list(obj)[1]->len + 1;
-
+        v = load_obj(buf, len);
+        obj = error_obj(code, v);
         return obj;
 
     default:

@@ -135,6 +135,7 @@ nil_t on_fail(str_p msg)
 #include "env.c"
 #include "sort.c"
 #include "lang.c"
+#include "serde.c"
 
 // Add tests here
 test_entry_t tests[] = {
@@ -160,6 +161,7 @@ test_entry_t tests[] = {
     {"test_lang_query", test_lang_query},
     {"test_lang_update", test_lang_update},
     {"test_lang_serde", test_lang_serde},
+    {"test_serde_different_sizes", test_serde_different_sizes},
 };
 // ---
 
