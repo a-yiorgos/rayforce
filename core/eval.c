@@ -376,7 +376,7 @@ obj_p amend(obj_p sym, obj_p val)
     env = &__INTERPRETER->stack[bp + as_lambda(lambda)->args->len];
 
     if (*env != NULL_OBJ)
-        set_obj(&as_list(*env)[0], sym, clone_obj(val));
+        set_obj(env, sym, clone_obj(val));
     else
     {
         *env = dict(vector(TYPE_SYMBOL, 1), vn_list(1, clone_obj(val)));
