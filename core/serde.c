@@ -63,10 +63,10 @@ u64_t size_of(obj_p obj)
 {
     u64_t size = sizeof(struct obj_t);
 
-    if (is_atom(obj))
+    if (IS_ATOM(obj))
         return size;
 
-    if (is_vector(obj))
+    if (IS_VECTOR(obj))
     {
         size += obj->len * size_of_type(obj->type);
         return size;
@@ -128,17 +128,17 @@ u64_t size_obj(obj_p obj)
         l = obj->len;
         size = sizeof(i8_t) + sizeof(u64_t);
         for (i = 0; i < l; i++)
-            size += strlen(str_from_symbol(as_symbol(obj)[i])) + 1;
+            size += strlen(str_from_symbol(AS_SYMBOL(obj)[i])) + 1;
         return size;
     case TYPE_LIST:
         l = obj->len;
         size = sizeof(i8_t) + sizeof(u64_t);
         for (i = 0; i < l; i++)
-            size += size_obj(as_list(obj)[i]);
+            size += size_obj(AS_LIST(obj)[i]);
         return size;
     case TYPE_TABLE:
     case TYPE_DICT:
-        return sizeof(i8_t) + size_obj(as_list(obj)[0]) + size_obj(as_list(obj)[1]);
+        return sizeof(i8_t) + size_obj(AS_LIST(obj)[0]) + size_obj(AS_LIST(obj)[1]);
     case TYPE_LAMBDA:
         return sizeof(i8_t) + size_obj(as_lambda(obj)->args) + size_obj(as_lambda(obj)->body);
     case TYPE_UNARY:
@@ -191,7 +191,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         buf[0] = obj->c8;
         return sizeof(i8_t) + sizeof(c8_t);
     case -TYPE_GUID:
-        memcpy(buf, as_string(obj), sizeof(guid_t));
+        memcpy(buf, AS_C8(obj), sizeof(guid_t));
         return sizeof(i8_t) + sizeof(guid_t);
 
     case TYPE_B8:
@@ -199,7 +199,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
         for (i = 0; i < l; i++)
-            buf[i] = as_b8(obj)[i];
+            buf[i] = AS_B8(obj)[i];
 
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(b8_t);
 
@@ -208,7 +208,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
         for (i = 0; i < l; i++)
-            buf[i] = as_u8(obj)[i];
+            buf[i] = AS_U8(obj)[i];
 
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(u8_t);
 
@@ -216,7 +216,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         l = ops_count(obj);
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
-        memcpy(buf, as_string(obj), l);
+        memcpy(buf, AS_C8(obj), l);
 
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(c8_t);
 
@@ -226,7 +226,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
         for (i = 0; i < l; i++)
-            memcpy(buf + i * sizeof(i64_t), &as_i64(obj)[i], sizeof(i64_t));
+            memcpy(buf + i * sizeof(i64_t), &AS_I64(obj)[i], sizeof(i64_t));
 
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(i64_t);
 
@@ -235,7 +235,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
         for (i = 0; i < l; i++)
-            memcpy(buf + i * sizeof(f64_t), &as_f64(obj)[i], sizeof(f64_t));
+            memcpy(buf + i * sizeof(f64_t), &AS_F64(obj)[i], sizeof(f64_t));
 
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(f64_t);
 
@@ -245,7 +245,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         buf += sizeof(u64_t);
         for (i = 0, c = 0; i < l; i++)
         {
-            s = str_from_symbol(as_symbol(obj)[i]);
+            s = str_from_symbol(AS_SYMBOL(obj)[i]);
             c += str_cpy((str_p)buf + c, s);
             buf[c] = '\0';
             c++;
@@ -257,7 +257,7 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         l = obj->len;
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
-        memcpy(buf, as_string(obj), l * sizeof(guid_t));
+        memcpy(buf, AS_C8(obj), l * sizeof(guid_t));
         return sizeof(i8_t) + sizeof(u64_t) + l * sizeof(guid_t);
 
     case TYPE_LIST:
@@ -265,14 +265,14 @@ u64_t save_obj(u8_t *buf, u64_t len, obj_p obj)
         memcpy(buf, &l, sizeof(u64_t));
         buf += sizeof(u64_t);
         for (i = 0, c = 0; i < l; i++)
-            c += save_obj(buf + c, len, as_list(obj)[i]);
+            c += save_obj(buf + c, len, AS_LIST(obj)[i]);
 
         return sizeof(i8_t) + sizeof(u64_t) + c;
 
     case TYPE_TABLE:
     case TYPE_DICT:
-        c = save_obj(buf, len, as_list(obj)[0]);
-        c += save_obj(buf + c, len, as_list(obj)[1]);
+        c = save_obj(buf, len, AS_LIST(obj)[0]);
+        c += save_obj(buf + c, len, AS_LIST(obj)[1]);
         return sizeof(i8_t) + c;
 
     case TYPE_LAMBDA:
@@ -335,7 +335,7 @@ obj_p ser_obj(obj_p obj)
         throw(ERR_NOT_SUPPORTED, "ser: unsupported type: %d", obj->type);
 
     buf = vector(TYPE_U8, sizeof(struct header_t) + size);
-    header = (header_t *)as_u8(buf);
+    header = (header_t *)AS_U8(buf);
 
     header->prefix = SERDE_PREFIX;
     header->version = RAYFORCE_VERSION;
@@ -344,7 +344,7 @@ obj_p ser_obj(obj_p obj)
     header->msgtype = 0;
     header->size = size;
 
-    if (save_obj(as_u8(buf) + sizeof(struct header_t), size, obj) == 0)
+    if (save_obj(AS_U8(buf) + sizeof(struct header_t), size, obj) == 0)
     {
         drop_obj(buf);
         throw(ERR_NOT_SUPPORTED, "ser: unsupported type: %d", obj->type);
@@ -409,24 +409,24 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_B8:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_b8(l);
-        memcpy(as_b8(obj), *buf, l * sizeof(b8_t));
+        obj = B8(l);
+        memcpy(AS_B8(obj), *buf, l * sizeof(b8_t));
         *buf += l * sizeof(b8_t);
         return obj;
 
     case TYPE_U8:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_u8(l);
-        memcpy(as_u8(obj), *buf, l * sizeof(u8_t));
+        obj = U8(l);
+        memcpy(AS_U8(obj), *buf, l * sizeof(u8_t));
         *buf += l * sizeof(u8_t);
         return obj;
 
     case TYPE_C8:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = string(l);
-        memcpy(as_string(obj), *buf, l * sizeof(c8_t));
+        obj = C8(l);
+        memcpy(AS_C8(obj), *buf, l * sizeof(c8_t));
         *buf += l * sizeof(c8_t);
         return obj;
 
@@ -434,8 +434,8 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_TIMESTAMP:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_i64(l);
-        memcpy(as_i64(obj), *buf, l * sizeof(i64_t));
+        obj = I64(l);
+        memcpy(AS_I64(obj), *buf, l * sizeof(i64_t));
         *buf += l * sizeof(i64_t);
         obj->type = type;
         return obj;
@@ -443,20 +443,21 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_F64:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_f64(l);
-        memcpy(as_f64(obj), *buf, l * sizeof(f64_t));
+        obj = F64(l);
+        memcpy(AS_F64(obj), *buf, l * sizeof(f64_t));
         *buf += l * sizeof(f64_t);
         return obj;
 
     case TYPE_SYMBOL:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_symbol(l);
+        obj = SYMBOL(l);
         for (i = 0; i < l; i++)
         {
             c = str_len((str_p)*buf, len);
             id = symbols_intern((str_p)*buf, c);
-            as_symbol(obj)[i] = id;
+            AS_SYMBOL(obj)
+            [i] = id;
             *buf += c + 1;
         }
         return obj;
@@ -464,26 +465,27 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_GUID:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = vector_guid(l);
-        memcpy(as_string(obj), *buf, l * sizeof(guid_t));
+        obj = GUID(l);
+        memcpy(AS_C8(obj), *buf, l * sizeof(guid_t));
         *buf += l * sizeof(guid_t);
         return obj;
 
     case TYPE_LIST:
         memcpy(&l, *buf, sizeof(u64_t));
         *buf += sizeof(u64_t);
-        obj = list(l);
+        obj = LIST(l);
         for (i = 0; i < l; i++)
         {
             v = load_obj(buf, len);
-            if (is_error(v))
+            if (IS_ERROR(v))
             {
                 obj->len = i;
                 drop_obj(obj);
                 return v;
             }
 
-            as_list(obj)[i] = v;
+            AS_LIST(obj)
+            [i] = v;
         }
         return obj;
 
@@ -491,12 +493,12 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_DICT:
         k = load_obj(buf, len);
 
-        if (is_error(k))
+        if (IS_ERROR(k))
             return k;
 
         v = load_obj(buf, len);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
         {
             drop_obj(k);
             return v;
@@ -510,12 +512,12 @@ obj_p load_obj(u8_t **buf, u64_t len)
     case TYPE_LAMBDA:
         k = load_obj(buf, len);
 
-        if (is_error(k))
+        if (IS_ERROR(k))
             return k;
 
         v = load_obj(buf, len);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
         {
             drop_obj(k);
             return v;
@@ -559,5 +561,5 @@ obj_p de_raw(u8_t *buf, u64_t len)
 
 obj_p de_obj(obj_p obj)
 {
-    return de_raw(as_u8(obj), obj->len);
+    return de_raw(AS_U8(obj), obj->len);
 }

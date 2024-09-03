@@ -37,6 +37,16 @@
 #include "cmp.h"
 #include "pool.h"
 
+#define __AS_i8(x) AS_I8(x)
+#define __AS_u8(x) AS_U8(x)
+#define __AS_b8(x) AS_B8(x)
+#define __AS_c8(x) AS_C8(x)
+#define __AS_symbol(x) AS_SYMBOL(x)
+#define __AS_i64(x) AS_I64(x)
+#define __AS_f64(x) AS_F64(x)
+#define __AS_guid(x) AS_GUID(x)
+#define __AS_list(x) AS_LIST(x)
+
 #define AGGR_ITER(index, len, offset, val, res, incoerse, outcoerse, ini, aggr) \
     ({                                                                          \
         u64_t $i, $x, $y, $n;                                                   \
@@ -44,20 +54,20 @@
         incoerse##_t *$in;                                                      \
         outcoerse##_t *$out;                                                    \
         $n = index_group_count(index);                                          \
-        group_ids = as_i64(as_list(index)[1]);                                  \
-        $in = as_##incoerse(val);                                               \
-        $out = as_##outcoerse(res);                                             \
+        group_ids = AS_I64(AS_LIST(index)[1]);                                  \
+        $in = __AS_##incoerse(val);                                             \
+        $out = __AS_##outcoerse(res);                                           \
         for ($y = 0; $y < $n; $y++)                                             \
         {                                                                       \
             ini;                                                                \
         }                                                                       \
-        if (as_list(index)[3] != NULL_OBJ)                                      \
+        if (AS_LIST(index)[3] != NULL_OBJ)                                      \
         {                                                                       \
-            source = as_i64(as_list(index)[3]);                                 \
-            shift = as_list(index)[2]->i64;                                     \
-            if (as_list(index)[4] != NULL_OBJ)                                  \
+            source = AS_I64(AS_LIST(index)[3]);                                 \
+            shift = AS_LIST(index)[2]->i64;                                     \
+            if (AS_LIST(index)[4] != NULL_OBJ)                                  \
             {                                                                   \
-                filter = as_i64(as_list(index)[4]);                             \
+                filter = AS_I64(AS_LIST(index)[4]);                             \
                 for ($i = 0; $i < len; $i++)                                    \
                 {                                                               \
                     $x = filter[$i + offset];                                   \
@@ -77,9 +87,9 @@
         }                                                                       \
         else                                                                    \
         {                                                                       \
-            if (as_list(index)[4] != NULL_OBJ)                                  \
+            if (AS_LIST(index)[4] != NULL_OBJ)                                  \
             {                                                                   \
-                filter = as_i64(as_list(index)[4]);                             \
+                filter = AS_I64(AS_LIST(index)[4]);                             \
                 for ($i = 0; $i < len; $i++)                                    \
                 {                                                               \
                     $x = filter[$i + offset];                                   \
@@ -105,12 +115,12 @@
         incoerse##_t *$in;                                     \
         outcoerse##_t *$out;                                   \
         obj_p $res;                                            \
-        $res = clone_obj(as_list(parts)[0]);                   \
+        $res = clone_obj(AS_LIST(parts)[0]);                   \
         $l = parts->len;                                       \
-        $out = as_##outcoerse($res);                           \
+        $out = __AS_##outcoerse($res);                         \
         for ($i = 1; $i < $l; $i++)                            \
         {                                                      \
-            $in = as_##incoerse(as_list(parts)[$i]);           \
+            $in = __AS_##incoerse(AS_LIST(parts)[$i]);         \
             for ($j = 0; $j < groups; $j++)                    \
             {                                                  \
                 $x = $j;                                       \
@@ -190,7 +200,7 @@ obj_p aggr_first(obj_p val, obj_p index)
     obj_p parts, res, ek, sym;
     n = index_group_count(index);
     parts = aggr_map(aggr_first_partial, val, val->type, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
 
     switch (val->type)
     {
@@ -207,7 +217,7 @@ obj_p aggr_first(obj_p val, obj_p index)
             sym = ray_get(ek);
             drop_obj(ek);
 
-            if (is_error(sym))
+            if (IS_ERROR(sym))
             {
                 drop_obj(res);
                 return sym;
@@ -220,8 +230,8 @@ obj_p aggr_first(obj_p val, obj_p index)
                 return error(ERR_TYPE, "first: can not resolve an enum");
             }
 
-            xe = as_symbol(sym);
-            xo = as_i64(res);
+            xe = AS_SYMBOL(sym);
+            xo = AS_I64(res);
             for (i = 0; i < n; i++)
                 xo[i] = xe[xo[i]];
 
@@ -280,7 +290,7 @@ obj_p aggr_last(obj_p val, obj_p index)
 
     n = index_group_count(index);
     parts = aggr_map(aggr_last_partial, val, val->type, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
 
     switch (val->type)
     {
@@ -296,7 +306,7 @@ obj_p aggr_last(obj_p val, obj_p index)
             sym = ray_get(ek);
             drop_obj(ek);
 
-            if (is_error(sym))
+            if (IS_ERROR(sym))
             {
                 drop_obj(res);
                 return sym;
@@ -309,8 +319,8 @@ obj_p aggr_last(obj_p val, obj_p index)
                 return error(ERR_TYPE, "first: can not resolve an enum");
             }
 
-            xe = as_symbol(sym);
-            xo = as_i64(res);
+            xe = AS_SYMBOL(sym);
+            xo = AS_I64(res);
             for (i = 0; i < n; i++)
                 xo[i] = xe[xo[i]];
 
@@ -359,7 +369,7 @@ obj_p aggr_sum(obj_p val, obj_p index)
 
     n = index_group_count(index);
     parts = aggr_map(aggr_sum_partial, val, val->type, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
 
     switch (val->type)
     {
@@ -401,7 +411,7 @@ obj_p aggr_max(obj_p val, obj_p index)
 
     n = index_group_count(index);
     parts = aggr_map(aggr_max_partial, val, val->type, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
 
     switch (val->type)
     {
@@ -443,7 +453,7 @@ obj_p aggr_min(obj_p val, obj_p index)
 
     n = index_group_count(index);
     parts = aggr_map(aggr_max_partial, val, val->type, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
 
     switch (val->type)
     {
@@ -463,20 +473,20 @@ obj_p aggr_min(obj_p val, obj_p index)
 
 obj_p aggr_count_partial(u64_t len, u64_t offset, obj_p val, obj_p index, obj_p res)
 {
-    unused(val);
+    UNUSED(val);
     switch (val->type)
     {
     case TYPE_I64:
-        AGGR_ITER(index, len, offset, val, res, i64, i64, $out[$y] = 0, {unused($in); $out[$y]++; });
+        AGGR_ITER(index, len, offset, val, res, i64, i64, $out[$y] = 0, {UNUSED($in); $out[$y]++; });
         return res;
     case TYPE_F64:
-        AGGR_ITER(index, len, offset, val, res, f64, i64, $out[$y] = 0, {unused($in); $out[$y]++; });
+        AGGR_ITER(index, len, offset, val, res, f64, i64, $out[$y] = 0, {UNUSED($in); $out[$y]++; });
         return res;
     case TYPE_GUID:
-        AGGR_ITER(index, len, offset, val, res, guid, i64, $out[$y] = 0, {unused($in); $out[$y]++; });
+        AGGR_ITER(index, len, offset, val, res, guid, i64, $out[$y] = 0, {UNUSED($in); $out[$y]++; });
         return res;
     case TYPE_LIST:
-        AGGR_ITER(index, len, offset, val, res, list, i64, $out[$y] = 0, {unused($in); $out[$y]++; });
+        AGGR_ITER(index, len, offset, val, res, list, i64, $out[$y] = 0, {UNUSED($in); $out[$y]++; });
         return res;
     default:
         return error(ERR_TYPE, "count: unsupported type: '%s'", type_name(val->type));
@@ -492,7 +502,7 @@ obj_p aggr_count(obj_p val, obj_p index)
 
     n = index_group_count(index);
     parts = aggr_map(aggr_count_partial, val, TYPE_I64, index);
-    unwrap_list(parts);
+    UNWRAP_LIST(parts);
     res = AGGR_COLLECT(parts, n, i64, i64, $out[$y] += $in[$x]);
     drop_obj(parts);
 
@@ -512,12 +522,12 @@ obj_p aggr_avg(obj_p val, obj_p index)
         sums = aggr_sum(val, index);
         cnts = aggr_count(val, index);
 
-        xi = as_i64(sums);
-        ci = as_i64(cnts);
+        xi = AS_I64(sums);
+        ci = AS_I64(cnts);
 
         l = sums->len;
-        res = vector_f64(l);
-        fo = as_f64(res);
+        res = F64(l);
+        fo = AS_F64(res);
 
         for (i = 0; i < l; i++)
             fo[i] = fdivi64(xi[i], ci[i]);
@@ -530,12 +540,12 @@ obj_p aggr_avg(obj_p val, obj_p index)
         sums = aggr_sum(val, index);
         cnts = aggr_count(val, index);
 
-        xf = as_f64(sums);
-        ci = as_i64(cnts);
+        xf = AS_F64(sums);
+        ci = AS_I64(cnts);
 
         l = sums->len;
-        res = vector_f64(l);
-        fo = as_f64(res);
+        res = F64(l);
+        fo = AS_F64(res);
 
         for (i = 0; i < l; i++)
             fo[i] = fdivf64(xf[i], ci[i]);
@@ -581,10 +591,10 @@ obj_p aggr_collect(obj_p val, obj_p index)
     obj_p cnt, k, v, res;
 
     cnt = aggr_count(val, index);
-    if (is_error(cnt))
+    if (IS_ERROR(cnt))
         return cnt;
 
-    cnts = as_i64(cnt);
+    cnts = AS_I64(cnt);
     n = cnt->len;
     l = index_group_len(index);
 
@@ -593,33 +603,33 @@ obj_p aggr_collect(obj_p val, obj_p index)
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, i64, list, {
             m = cnts[$y];
             $out[$y] = vector(val->type, m);
-            $out[$y]->len = 0; }, as_i64($out[$y])[$out[$y]->len++] = $in[$x]);
+            $out[$y]->len = 0; }, AS_I64($out[$y])[$out[$y]->len++] = $in[$x]);
         drop_obj(cnt);
 
         return res;
     case TYPE_F64:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, f64, list, {
             m = cnts[$y];
             $out[$y] = vector(val->type, m);
-            $out[$y]->len = 0; }, as_f64($out[$y])[$out[$y]->len++] = $in[$x]);
+            $out[$y]->len = 0; }, AS_F64($out[$y])[$out[$y]->len++] = $in[$x]);
         drop_obj(cnt);
 
         return res;
 
     case TYPE_ENUM:
         k = ray_key(val);
-        if (is_error(k))
+        if (IS_ERROR(k))
             return k;
 
         v = ray_get(k);
         drop_obj(k);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
             return v;
 
         if (v->type != TYPE_SYMBOL)
@@ -629,21 +639,21 @@ obj_p aggr_collect(obj_p val, obj_p index)
             return error(ERR_TYPE, "enum: '%s' is not a 'Symbol'", type_name(v->type));
         }
 
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, i64, list, {
             m = cnts[$y];
-            $out[$y] = vector_symbol(m);
-            $out[$y]->len = 0; }, as_symbol($out[$y])[$out[$y]->len++] = as_symbol(v)[$in[$x]]);
+            $out[$y] = SYMBOL(m);
+            $out[$y]->len = 0; }, AS_SYMBOL($out[$y])[$out[$y]->len++] = AS_SYMBOL(v)[$in[$x]]);
         drop_obj(v);
         drop_obj(cnt);
 
         return res;
     case TYPE_LIST:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, list, list, {
             m = cnts[$y];
-            $out[$y] = list(m);
-            $out[$y]->len = 0; }, as_list($out[$y])[$out[$y]->len++] = clone_obj($in[$x]));
+            $out[$y] = LIST(m);
+            $out[$y]->len = 0; }, AS_LIST($out[$y])[$out[$y]->len++] = clone_obj($in[$x]));
         drop_obj(cnt);
 
         return res;
@@ -660,10 +670,10 @@ obj_p aggr_ids(obj_p val, obj_p index)
     obj_p cnt, res;
 
     cnt = aggr_count(val, index);
-    if (is_error(cnt))
+    if (IS_ERROR(cnt))
         return cnt;
 
-    cnts = as_i64(cnt);
+    cnts = AS_I64(cnt);
     n = cnt->len;
     l = index_group_len(index);
 
@@ -673,32 +683,32 @@ obj_p aggr_ids(obj_p val, obj_p index)
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
     case TYPE_ENUM:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, i64, list, {
-            unused($in);
+            UNUSED($in);
             m = cnts[$y];
-            $out[$y] = vector_i64( m);
-            $out[$y]->len = 0; }, as_i64($out[$y])[$out[$y]->len++] = $x);
+            $out[$y] = I64( m);
+            $out[$y]->len = 0; }, AS_I64($out[$y])[$out[$y]->len++] = $x);
         drop_obj(cnt);
 
         return res;
     case TYPE_F64:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, f64, list, {
-            unused($in);
+            UNUSED($in);
             m = cnts[$y];
-            $out[$y] = vector_i64( m);
-            $out[$y]->len = 0; }, as_i64($out[$y])[$out[$y]->len++] = $x);
+            $out[$y] = I64( m);
+            $out[$y]->len = 0; }, AS_I64($out[$y])[$out[$y]->len++] = $x);
         drop_obj(cnt);
 
         return res;
     case TYPE_LIST:
-        res = list(n);
+        res = LIST(n);
         AGGR_ITER(index, l, 0, val, res, list, list, {
-            unused($in);
+            UNUSED($in);
             m = cnts[$y];
-            $out[$y] = vector_i64(m);
-            $out[$y]->len = 0; }, as_i64($out[$y])[$out[$y]->len++] = $x);
+            $out[$y] = I64(m);
+            $out[$y]->len = 0; }, AS_I64($out[$y])[$out[$y]->len++] = $x);
         drop_obj(cnt);
 
         return res;

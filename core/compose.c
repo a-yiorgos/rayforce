@@ -68,13 +68,14 @@ obj_p ray_til(obj_p x)
     i32_t i, l = (i32_t)x->i64;
     obj_p vec = NULL;
 
-    vec = vector_i64(l);
+    vec = I64(l);
 
-    if (is_error(vec))
+    if (IS_ERROR(vec))
         return vec;
 
     for (i = 0; i < l; i++)
-        as_i64(vec)[i] = i;
+        AS_I64(vec)
+    [i] = i;
 
     vec->attrs = ATTR_ASC | ATTR_DISTINCT;
 
@@ -92,10 +93,11 @@ obj_p ray_reverse(obj_p x)
     case TYPE_U8:
     case TYPE_B8:
         l = x->len;
-        res = string(l);
+        res = C8(l);
 
         for (i = l - 1; i >= 0; i--)
-            as_string(res)[l - i] = as_string(x)[i];
+            AS_C8(res)
+        [l - i] = AS_C8(x)[i];
 
         return res;
 
@@ -106,16 +108,18 @@ obj_p ray_reverse(obj_p x)
         res = vector(x->type, l);
 
         for (i = 0; i < l; i++)
-            as_i64(res)[i] = as_i64(x)[l - i - 1];
+            AS_I64(res)
+        [i] = AS_I64(x)[l - i - 1];
 
         return res;
 
     case TYPE_F64:
         l = x->len;
-        res = vector_f64(l);
+        res = F64(l);
 
         for (i = 0; i < l; i++)
-            as_f64(res)[i] = as_f64(x)[l - i - 1];
+            AS_F64(res)
+        [i] = AS_F64(x)[l - i - 1];
 
         return res;
 
@@ -124,7 +128,8 @@ obj_p ray_reverse(obj_p x)
         res = vector(TYPE_LIST, l);
 
         for (i = 0; i < l; i++)
-            as_list(res)[i] = clone_obj(as_list(x)[l - i - 1]);
+            AS_LIST(res)
+        [i] = clone_obj(AS_LIST(x)[l - i - 1]);
 
         return res;
 
@@ -135,7 +140,7 @@ obj_p ray_reverse(obj_p x)
 
 obj_p ray_dict(obj_p x, obj_p y)
 {
-    if (!is_vector(x) || !is_vector(y))
+    if (!IS_VECTOR(x) || !IS_VECTOR(y))
         return error_str(ERR_TYPE, "Keys and Values must be lists");
 
     if (ops_count(x) != ops_count(y))
@@ -158,8 +163,9 @@ obj_p ray_table(obj_p x, obj_p y)
         if (x->len != 1)
             return error_str(ERR_LENGTH, "table: keys and values must have the same length");
 
-        l = list(1);
-        as_list(l)[0] = clone_obj(y);
+        l = LIST(1);
+        AS_LIST(l)
+        [0] = clone_obj(y);
         y = l;
     }
 
@@ -173,7 +179,7 @@ obj_p ray_table(obj_p x, obj_p y)
 
     for (i = 0; i < len; i++)
     {
-        switch (as_list(y)[i]->type)
+        switch (AS_LIST(y)[i]->type)
         {
         case -TYPE_B8:
         case -TYPE_U8:
@@ -197,7 +203,7 @@ obj_p ray_table(obj_p x, obj_p y)
         case TYPE_SYMBOL:
         case TYPE_LIST:
         case TYPE_GUID:
-            j = as_list(y)[i]->len;
+            j = AS_LIST(y)[i]->len;
             if (cl != 0 && j != cl)
                 return error(ERR_LENGTH, "table: values must be of the same length");
 
@@ -205,14 +211,14 @@ obj_p ray_table(obj_p x, obj_p y)
             break;
         case TYPE_ENUM:
             synergy = B8_FALSE;
-            j = as_list(as_list(y)[i])[1]->len;
+            j = AS_LIST(AS_LIST(y)[i])[1]->len;
             if (cl != 0 && j != cl)
                 return error(ERR_LENGTH, "table: values must be of the same length");
 
             cl = j;
             break;
         default:
-            return error(ERR_TYPE, "table: unsupported type: '%s' in a values list", type_name(as_list(y)[i]->type));
+            return error(ERR_TYPE, "table: unsupported type: '%s' in a values list", type_name(AS_LIST(y)[i]->type));
         }
     }
 
@@ -231,7 +237,7 @@ obj_p ray_table(obj_p x, obj_p y)
 
     for (i = 0; i < len; i++)
     {
-        switch (as_list(y)[i]->type)
+        switch (AS_LIST(y)[i]->type)
         {
         case -TYPE_B8:
         case -TYPE_U8:
@@ -242,14 +248,17 @@ obj_p ray_table(obj_p x, obj_p y)
         case -TYPE_TIMESTAMP:
         case -TYPE_GUID:
             c = i64(cl);
-            as_list(lst)[i] = ray_take(c, as_list(y)[i]);
+            AS_LIST(lst)
+            [i] = ray_take(c, AS_LIST(y)[i]);
             drop_obj(c);
             break;
         case TYPE_ENUM:
-            as_list(lst)[i] = ray_value(as_list(y)[i]);
+            AS_LIST(lst)
+            [i] = ray_value(AS_LIST(y)[i]);
             break;
         default:
-            as_list(lst)[i] = clone_obj(as_list(y)[i]);
+            AS_LIST(lst)
+            [i] = clone_obj(AS_LIST(y)[i]);
         }
     }
 
@@ -268,8 +277,8 @@ obj_p ray_guid(obj_p x)
     {
     case -TYPE_I64:
         count = x->i64;
-        vec = vector_guid(count);
-        g = as_guid(vec);
+        vec = GUID(count);
+        g = AS_GUID(vec);
 
         for (i = 0; i < count; i++)
             guid_generate(g + i);
@@ -284,10 +293,11 @@ obj_p ray_guid(obj_p x)
 obj_p ray_list(obj_p *x, u64_t n)
 {
     u64_t i;
-    obj_p lst = list(n);
+    obj_p lst = LIST(n);
 
     for (i = 0; i < n; i++)
-        as_list(lst)[i] = clone_obj(x[i]);
+        AS_LIST(lst)
+    [i] = clone_obj(x[i]);
 
     return lst;
 }
@@ -298,7 +308,7 @@ obj_p ray_enlist(obj_p *x, u64_t n)
     obj_p lst;
 
     if (n == 0)
-        return list(0);
+        return LIST(0);
 
     lst = vector(x[0]->type, n);
 
@@ -317,7 +327,7 @@ obj_p ray_enum(obj_p x, obj_p y)
     case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
         s = ray_get(x);
 
-        if (is_error(s))
+        if (IS_ERROR(s))
             return s;
 
         if (!s || s->type != TYPE_SYMBOL)
@@ -326,10 +336,10 @@ obj_p ray_enum(obj_p x, obj_p y)
             throw(ERR_TYPE, "enum: expected vector symbol");
         }
 
-        v = index_find_i64(as_i64(s), s->len, as_i64(y), y->len);
+        v = index_find_i64(AS_I64(s), s->len, AS_I64(y), y->len);
         drop_obj(s);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
         {
             drop_obj(v);
             throw(ERR_TYPE, "enum: can not be fully indexed");
@@ -350,10 +360,11 @@ obj_p ray_rand(obj_p x, obj_p y)
     {
     case mtype2(-TYPE_I64, -TYPE_I64):
         count = x->i64;
-        vec = vector_i64(count);
+        vec = I64(count);
 
         for (i = 0; i < count; i++)
-            as_i64(vec)[i] = ops_rand_u64() % y->i64;
+            AS_I64(vec)
+        [i] = ops_rand_u64() % y->i64;
 
         return vec;
 
@@ -373,55 +384,67 @@ obj_p ray_concat(obj_p x, obj_p y)
     switch (mtype2(x->type, y->type))
     {
     case mtype2(-TYPE_B8, -TYPE_B8):
-        vec = vector_b8(2);
-        as_b8(vec)[0] = x->b8;
-        as_b8(vec)[1] = y->b8;
+        vec = B8(2);
+        AS_B8(vec)
+        [0] = x->b8;
+        AS_B8(vec)
+        [1] = y->b8;
         return vec;
 
     case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
     case mtype2(-TYPE_I64, -TYPE_I64):
     case mtype2(-TYPE_SYMBOL, -TYPE_SYMBOL):
         vec = vector(-x->type, 2);
-        as_i64(vec)[0] = x->i64;
-        as_i64(vec)[1] = y->i64;
+        AS_I64(vec)
+        [0] = x->i64;
+        AS_I64(vec)
+        [1] = y->i64;
         return vec;
 
     case mtype2(-TYPE_F64, -TYPE_F64):
-        vec = vector_f64(2);
-        as_f64(vec)[0] = x->f64;
-        as_f64(vec)[1] = y->f64;
+        vec = F64(2);
+        AS_F64(vec)
+        [0] = x->f64;
+        AS_F64(vec)
+        [1] = y->f64;
         return vec;
 
     case mtype2(-TYPE_GUID, -TYPE_GUID):
-        vec = vector_guid(2);
-        memcpy(&as_guid(vec)[0], as_guid(x), sizeof(guid_t));
-        memcpy(&as_guid(vec)[1], as_guid(y), sizeof(guid_t));
+        vec = GUID(2);
+        memcpy(&AS_GUID(vec)[0], AS_GUID(x), sizeof(guid_t));
+        memcpy(&AS_GUID(vec)[1], AS_GUID(y), sizeof(guid_t));
         return vec;
 
     case mtype2(-TYPE_C8, -TYPE_C8):
-        vec = string(2);
-        as_string(vec)[0] = x->c8;
-        as_string(vec)[1] = y->c8;
+        vec = C8(2);
+        AS_C8(vec)
+        [0] = x->c8;
+        AS_C8(vec)
+        [1] = y->c8;
         return vec;
 
     case mtype2(TYPE_B8, -TYPE_B8):
         xl = x->len;
-        vec = vector_b8(xl + 1);
+        vec = B8(xl + 1);
         for (i = 0; i < xl; i++)
-            as_b8(vec)[i] = as_b8(x)[i];
+            AS_B8(vec)
+        [i] = AS_B8(x)[i];
 
-        as_b8(vec)[xl] = y->b8;
+        AS_B8(vec)
+        [xl] = y->b8;
         return vec;
 
     case mtype2(TYPE_I64, -TYPE_I64):
     case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
     case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
         xl = x->len;
-        vec = vector_i64(xl + 1);
+        vec = I64(xl + 1);
         for (i = 0; i < xl; i++)
-            as_i64(vec)[i] = as_i64(x)[i];
+            AS_I64(vec)
+        [i] = AS_I64(x)[i];
 
-        as_i64(vec)[xl] = y->i64;
+        AS_I64(vec)
+        [xl] = y->i64;
         return vec;
 
     case mtype2(-TYPE_I64, TYPE_I64):
@@ -429,47 +452,53 @@ obj_p ray_concat(obj_p x, obj_p y)
     case mtype2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
         yl = y->len;
         vec = vector(x->type, yl + 1);
-        as_i64(vec)[0] = x->i64;
+        AS_I64(vec)
+        [0] = x->i64;
         for (i = 1; i <= yl; i++)
-            as_i64(vec)[i] = as_i64(y)[i - 1];
+            AS_I64(vec)
+        [i] = AS_I64(y)[i - 1];
 
         return vec;
 
     case mtype2(TYPE_F64, -TYPE_F64):
         xl = x->len;
-        vec = vector_f64(xl + 1);
+        vec = F64(xl + 1);
         for (i = 0; i < xl; i++)
-            as_f64(vec)[i] = as_f64(x)[i];
+            AS_F64(vec)
+        [i] = AS_F64(x)[i];
 
-        as_f64(vec)[xl] = y->f64;
+        AS_F64(vec)
+        [xl] = y->f64;
         return vec;
 
     case mtype2(TYPE_GUID, -TYPE_GUID):
         xl = x->len;
-        vec = vector_guid(xl + 1);
+        vec = GUID(xl + 1);
         for (i = 0; i < xl; i++)
-            memcpy(as_guid(vec)[i], as_guid(x)[i], sizeof(guid_t));
+            memcpy(AS_GUID(vec)[i], AS_GUID(x)[i], sizeof(guid_t));
 
-        memcpy(&as_guid(vec)[xl], as_guid(y), sizeof(guid_t));
+        memcpy(&AS_GUID(vec)[xl], AS_GUID(y), sizeof(guid_t));
         return vec;
 
     case mtype2(-TYPE_GUID, TYPE_GUID):
         yl = y->len + 1;
-        vec = vector_guid(yl);
-        memcpy(&as_guid(vec)[0], as_guid(x), sizeof(guid_t));
+        vec = GUID(yl);
+        memcpy(&AS_GUID(vec)[0], AS_GUID(x), sizeof(guid_t));
         for (i = 1; i < yl; i++)
-            memcpy(as_guid(vec)[i], as_guid(y)[i], sizeof(guid_t));
+            memcpy(AS_GUID(vec)[i], AS_GUID(y)[i], sizeof(guid_t));
 
         return vec;
 
     case mtype2(TYPE_B8, TYPE_B8):
         xl = x->len;
         yl = y->len;
-        vec = vector_b8(xl + yl);
+        vec = B8(xl + yl);
         for (i = 0; i < xl; i++)
-            as_b8(vec)[i] = as_b8(x)[i];
+            AS_B8(vec)
+        [i] = AS_B8(x)[i];
         for (i = 0; i < yl; i++)
-            as_b8(vec)[i + xl] = as_b8(y)[i];
+            AS_B8(vec)
+        [i + xl] = AS_B8(y)[i];
         return vec;
 
     case mtype2(TYPE_I64, TYPE_I64):
@@ -479,69 +508,81 @@ obj_p ray_concat(obj_p x, obj_p y)
         yl = y->len;
         vec = vector(x->type, xl + yl);
         for (i = 0; i < xl; i++)
-            as_i64(vec)[i] = as_i64(x)[i];
+            AS_I64(vec)
+        [i] = AS_I64(x)[i];
         for (i = 0; i < yl; i++)
-            as_i64(vec)[i + xl] = as_i64(y)[i];
+            AS_I64(vec)
+        [i + xl] = AS_I64(y)[i];
         return vec;
 
     case mtype2(TYPE_F64, TYPE_F64):
         xl = x->len;
         yl = y->len;
-        vec = vector_f64(xl + yl);
+        vec = F64(xl + yl);
         for (i = 0; i < xl; i++)
-            as_f64(vec)[i] = as_f64(x)[i];
+            AS_F64(vec)
+        [i] = AS_F64(x)[i];
         for (i = 0; i < yl; i++)
-            as_f64(vec)[i + xl] = as_f64(y)[i];
+            AS_F64(vec)
+        [i + xl] = AS_F64(y)[i];
         return vec;
 
     case mtype2(TYPE_GUID, TYPE_GUID):
         xl = x->len;
         yl = y->len;
-        vec = vector_guid(xl + yl);
+        vec = GUID(xl + yl);
         for (i = 0; i < xl; i++)
-            memcpy(as_guid(vec)[i], as_guid(x)[i], sizeof(guid_t));
+            memcpy(AS_GUID(vec)[i], AS_GUID(x)[i], sizeof(guid_t));
         for (i = 0; i < yl; i++)
-            memcpy(as_guid(vec)[i + xl], as_guid(y)[i], sizeof(guid_t));
+            memcpy(AS_GUID(vec)[i + xl], AS_GUID(y)[i], sizeof(guid_t));
         return vec;
 
     case mtype2(TYPE_C8, TYPE_C8):
         xl = ops_count(x);
         yl = ops_count(y);
-        vec = string(xl + yl);
+        vec = C8(xl + yl);
         for (i = 0; i < xl; i++)
-            as_string(vec)[i] = as_string(x)[i];
+            AS_C8(vec)
+        [i] = AS_C8(x)[i];
         for (i = 0; i < yl; i++)
-            as_string(vec)[i + xl] = as_string(y)[i];
+            AS_C8(vec)
+        [i + xl] = AS_C8(y)[i];
         return vec;
 
     case mtype2(TYPE_LIST, TYPE_LIST):
         xl = x->len;
         yl = y->len;
-        vec = list(xl + yl);
+        vec = LIST(xl + yl);
         for (i = 0; i < xl; i++)
-            as_list(vec)[i] = clone_obj(as_list(x)[i]);
+            AS_LIST(vec)
+        [i] = clone_obj(AS_LIST(x)[i]);
         for (i = 0; i < yl; i++)
-            as_list(vec)[i + xl] = clone_obj(as_list(y)[i]);
+            AS_LIST(vec)
+        [i + xl] = clone_obj(AS_LIST(y)[i]);
         return vec;
 
     default:
         if (x->type == TYPE_LIST)
         {
             xl = x->len;
-            vec = list(xl + 1);
+            vec = LIST(xl + 1);
             for (i = 0; i < xl; i++)
-                as_list(vec)[i] = clone_obj(as_list(x)[i]);
-            as_list(vec)[xl] = clone_obj(y);
+                AS_LIST(vec)
+            [i] = clone_obj(AS_LIST(x)[i]);
+            AS_LIST(vec)
+            [xl] = clone_obj(y);
 
             return vec;
         }
         if (y->type == TYPE_LIST)
         {
             yl = y->len;
-            vec = list(yl + 1);
-            as_list(vec)[0] = clone_obj(x);
+            vec = LIST(yl + 1);
+            AS_LIST(vec)
+            [0] = clone_obj(x);
             for (i = 0; i < yl; i++)
-                as_list(vec)[i + 1] = clone_obj(as_list(y)[i]);
+                AS_LIST(vec)
+            [i + 1] = clone_obj(AS_LIST(y)[i]);
 
             return vec;
         }
@@ -561,28 +602,28 @@ obj_p ray_distinct(obj_p x)
     case TYPE_U8:
     case TYPE_C8:
         l = ops_count(x);
-        res = index_distinct_i8((i8_t *)as_u8(x), l, x->type == TYPE_C8);
+        res = index_distinct_i8((i8_t *)AS_U8(x), l, x->type == TYPE_C8);
         res->type = x->type;
         return res;
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         l = x->len;
-        res = index_distinct_i64(as_i64(x), l);
+        res = index_distinct_i64(AS_I64(x), l);
         res->type = x->type;
         return res;
     case TYPE_ENUM:
         l = ops_count(x);
-        res = index_distinct_i64(as_i64(enum_val(x)), l);
+        res = index_distinct_i64(AS_I64(ENUM_VAL(x)), l);
         res = enumerate(ray_key(x), res);
         return res;
     case TYPE_LIST:
         l = ops_count(x);
-        res = index_distinct_obj(as_list(x), l);
+        res = index_distinct_obj(AS_LIST(x), l);
         return res;
     case TYPE_GUID:
         l = x->len;
-        res = index_distinct_guid(as_guid(x), l);
+        res = index_distinct_guid(AS_GUID(x), l);
         return res;
     default:
         throw(ERR_TYPE, "distinct: invalid type: '%s", type_name(x->type));

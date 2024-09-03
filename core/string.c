@@ -35,8 +35,8 @@ obj_p string_from_str(lit_p str, u64_t len)
 {
     obj_p s;
 
-    s = string(len);
-    strncpy(as_string(s), str, len);
+    s = C8(len);
+    strncpy(AS_C8(s), str, len);
 
     return s;
 }
@@ -47,18 +47,19 @@ obj_p cstring_from_str(lit_p str, u64_t len)
     obj_p s;
 
     if (len <= 0)
-        return string(0);
+        return C8(0);
 
     if (str[len - 1] == '\0')
     {
-        s = string(len);
-        strncpy(as_string(s), str, len);
+        s = C8(len);
+        strncpy(AS_C8(s), str, len);
     }
     else
     {
-        s = string(len + 1);
-        memcpy(as_string(s), str, len);
-        as_string(s)[len] = '\0';
+        s = C8(len + 1);
+        memcpy(AS_C8(s), str, len);
+        AS_C8(s)
+        [len] = '\0';
         return s;
     }
 
@@ -67,7 +68,7 @@ obj_p cstring_from_str(lit_p str, u64_t len)
 
 obj_p cstring_from_obj(obj_p obj)
 {
-    return cstring_from_str(as_string(obj), obj->len);
+    return cstring_from_str(AS_C8(obj), obj->len);
 }
 
 i64_t i64_from_str(lit_p str, u64_t len)
@@ -390,7 +391,7 @@ u64_t str_cpy(str_p dst, str_p src)
     return i;
 }
 
-obj_p vn_vstring(lit_p fmt, va_list args)
+obj_p vn_vC8(lit_p fmt, va_list args)
 {
     obj_p res = NULL_OBJ;
 
@@ -399,13 +400,13 @@ obj_p vn_vstring(lit_p fmt, va_list args)
     return res;
 }
 
-obj_p vn_string(lit_p fmt, ...)
+obj_p vn_c8(lit_p fmt, ...)
 {
     obj_p res;
     va_list args;
 
     va_start(args, fmt);
-    res = vn_vstring(fmt, args);
+    res = vn_vC8(fmt, args);
     va_end(args);
 
     return res;

@@ -29,7 +29,7 @@
 #include "heap.h"
 #include "format.h"
 
-#define as_error(obj) ((ray_error_p)(as_string(obj)))
+#define as_error(obj) ((ray_error_p)(AS_C8(obj)))
 
 /*
  * Create a new error object and return it

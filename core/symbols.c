@@ -217,7 +217,7 @@ u64_t symbols_count(symbols_p symbols)
 // TODO
 nil_t symbols_rebuild(symbols_p symbols)
 {
-    unused(symbols);
+    UNUSED(symbols);
     // u64_t i, size, new_size;
     // symbol_p bucket, *syms, *new_syms;
 
@@ -228,7 +228,7 @@ nil_t symbols_rebuild(symbols_p symbols)
 
     // if (new_syms == NULL)
     // {
-    //     debug("Memory allocation failed during symbols rebuild.");
+    //     DEBUG_PRINT("Memory allocation failed during symbols rebuild.");
     //     return;
     // }
 

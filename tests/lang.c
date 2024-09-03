@@ -21,29 +21,29 @@
  *   SOFTWARE.
  */
 
-#define TEST_ASSERT_EQ(lhs, rhs)                                                                                               \
-    {                                                                                                                          \
-        obj_p le = eval_str(lhs);                                                                                              \
-        obj_p lns = obj_fmt(le, B8_TRUE);                                                                                      \
-        if (is_error(le))                                                                                                      \
-        {                                                                                                                      \
-            obj_p fmt = str_fmt(-1, "Input error: %s\n -- at: %s:%d", as_string(lns), __FILE__, __LINE__);                     \
-            TEST_ASSERT(0, as_string(lns));                                                                                    \
-            drop_obj(lns);                                                                                                     \
-            drop_obj(fmt);                                                                                                     \
-        }                                                                                                                      \
-        else                                                                                                                   \
-        {                                                                                                                      \
-            obj_p re = eval_str(rhs);                                                                                          \
-            obj_p rns = obj_fmt(re, B8_TRUE);                                                                                  \
-            obj_p fmt = str_fmt(-1, "Expected %s, got %s\n -- at: %s:%d", as_string(rns), as_string(lns), __FILE__, __LINE__); \
-            TEST_ASSERT(str_cmp(as_string(lns), lns->len, as_string(rns), rns->len) == 0, as_string(fmt));                     \
-            drop_obj(fmt);                                                                                                     \
-            drop_obj(re);                                                                                                      \
-            drop_obj(le);                                                                                                      \
-            drop_obj(lns);                                                                                                     \
-            drop_obj(rns);                                                                                                     \
-        }                                                                                                                      \
+#define TEST_ASSERT_EQ(lhs, rhs)                                                                                       \
+    {                                                                                                                  \
+        obj_p le = eval_str(lhs);                                                                                      \
+        obj_p lns = obj_fmt(le, B8_TRUE);                                                                              \
+        if (IS_ERROR(le))                                                                                              \
+        {                                                                                                              \
+            obj_p fmt = str_fmt(-1, "Input error: %s\n -- at: %s:%d", AS_C8(lns), __FILE__, __LINE__);                 \
+            TEST_ASSERT(0, AS_C8(lns));                                                                                \
+            drop_obj(lns);                                                                                             \
+            drop_obj(fmt);                                                                                             \
+        }                                                                                                              \
+        else                                                                                                           \
+        {                                                                                                              \
+            obj_p re = eval_str(rhs);                                                                                  \
+            obj_p rns = obj_fmt(re, B8_TRUE);                                                                          \
+            obj_p fmt = str_fmt(-1, "Expected %s, got %s\n -- at: %s:%d", AS_C8(rns), AS_C8(lns), __FILE__, __LINE__); \
+            TEST_ASSERT(str_cmp(AS_C8(lns), lns->len, AS_C8(rns), rns->len) == 0, AS_C8(fmt));                         \
+            drop_obj(fmt);                                                                                             \
+            drop_obj(re);                                                                                              \
+            drop_obj(le);                                                                                              \
+            drop_obj(lns);                                                                                             \
+            drop_obj(rns);                                                                                             \
+        }                                                                                                              \
     }
 
 test_result_t test_lang_basic()

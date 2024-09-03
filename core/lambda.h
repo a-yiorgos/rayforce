@@ -35,7 +35,7 @@ typedef struct lambda_t
     obj_p nfo;  // nfo from cc phase
 } *lambda_p;
 
-#define as_lambda(o) ((lambda_p)(as_string(o)))
+#define as_lambda(o) ((lambda_p)(AS_C8(o)))
 
 obj_p lambda(obj_p args, obj_p body, obj_p nfo);
 obj_p lambda_call(u8_t attrs, obj_p f, obj_p *x, u64_t n);

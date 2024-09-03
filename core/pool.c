@@ -422,7 +422,7 @@ obj_p pool_run(pool_p pool)
         cond_wait(&pool->done, &pool->mutex);
 
     // collect results
-    res = list(tasks_count);
+    res = LIST(tasks_count);
 
     for (i = 0; i < tasks_count; i++)
     {

@@ -132,19 +132,22 @@ obj_p nullv(i8_t type, u64_t len)
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         for (i = 0; i < len; i++)
-            as_i64(vec)[i] = NULL_I64;
+            AS_I64(vec)
+        [i] = NULL_I64;
         break;
     case TYPE_F64:
         for (i = 0; i < len; i++)
-            as_f64(vec)[i] = NULL_F64;
+            AS_F64(vec)
+        [i] = NULL_F64;
         break;
     case TYPE_GUID:
         for (i = 0; i < len; i++)
-            memset(as_guid(vec)[i], 0, sizeof(guid_t));
+            memset(AS_GUID(vec)[i], 0, sizeof(guid_t));
         break;
     case TYPE_LIST:
         for (i = 0; i < len; i++)
-            as_list(vec)[i] = NULL_OBJ;
+            AS_LIST(vec)
+        [i] = NULL_OBJ;
         break;
     default:
         memset(vec->arr, 0, len * size_of_type(t));
@@ -205,9 +208,9 @@ obj_p guid(guid_t buf)
     guid->type = -TYPE_GUID;
 
     if (buf == NULL)
-        memset(*as_guid(guid), 0, sizeof(guid_t));
+        memset(*AS_GUID(guid), 0, sizeof(guid_t));
     else
-        memcpy(as_guid(guid)[0], buf, sizeof(guid_t));
+        memcpy(AS_GUID(guid)[0], buf, sizeof(guid_t));
 
     return guid;
 }
@@ -264,8 +267,8 @@ obj_p vn_symbol(u64_t len, ...)
     str_p s;
     va_list args;
 
-    res = vector_symbol(len);
-    syms = as_symbol(res);
+    res = SYMBOL(len);
+    syms = AS_SYMBOL(res);
 
     va_start(args, len);
 
@@ -279,16 +282,6 @@ obj_p vn_symbol(u64_t len, ...)
     va_end(args);
 
     return res;
-}
-
-obj_p string(u64_t len)
-{
-    return vector(TYPE_C8, len);
-}
-
-obj_p list(u64_t len)
-{
-    return vector(TYPE_LIST, len);
 }
 
 obj_p vn_list(u64_t len, ...)
@@ -307,7 +300,8 @@ obj_p vn_list(u64_t len, ...)
     va_start(args, len);
 
     for (i = 0; i < len; i++)
-        as_list(l)[i] = va_arg(args, obj_p);
+        AS_LIST(l)
+    [i] = va_arg(args, obj_p);
 
     va_end(args);
 
@@ -359,7 +353,7 @@ obj_p resize_obj(obj_p *obj, u64_t len)
     i64_t size, new_size;
     obj_p new_obj;
 
-    debug_assert(is_vector(*obj), "resize: invalid type: %d", (*obj)->type);
+    DEBUG_ASSERT(IS_VECTOR(*obj), "resize: invalid type: %d", (*obj)->type);
 
     if ((*obj)->len == len)
         return *obj;
@@ -422,12 +416,14 @@ obj_p push_obj(obj_p *obj, obj_p val)
     if ((*obj)->type != -t && (*obj)->type != TYPE_LIST)
     {
         l = (*obj)->len;
-        lst = list(l + 1);
+        lst = LIST(l + 1);
 
         for (i = 0; i < l; i++)
-            as_list(lst)[i] = at_idx(*obj, i);
+            AS_LIST(lst)
+        [i] = at_idx(*obj, i);
 
-        as_list(lst)[i] = val;
+        AS_LIST(lst)
+        [i] = val;
 
         drop_obj(*obj);
 
@@ -453,7 +449,7 @@ obj_p push_obj(obj_p *obj, obj_p val)
         drop_obj(val);
         return res;
     case mtype2(TYPE_GUID, -TYPE_GUID):
-        res = push_raw(obj, as_guid(val));
+        res = push_raw(obj, AS_GUID(val));
         drop_obj(val);
         return res;
     default:
@@ -480,25 +476,25 @@ obj_p append_list(obj_p *obj, obj_p vals)
         size1 = size_of(*obj) - sizeof(struct obj_t);
         size2 = size_of(vals) - sizeof(struct obj_t);
         res = resize_obj(obj, (*obj)->len + vals->len);
-        memcpy((*obj)->arr + size1, as_i64(vals), size2);
+        memcpy((*obj)->arr + size1, AS_I64(vals), size2);
         return res;
     case mtype2(TYPE_F64, TYPE_F64):
         size1 = size_of(*obj) - sizeof(struct obj_t);
         size2 = size_of(vals) - sizeof(struct obj_t);
         res = resize_obj(obj, (*obj)->len + vals->len);
-        memcpy((*obj)->arr + size1, as_f64(vals), size2);
+        memcpy((*obj)->arr + size1, AS_F64(vals), size2);
         return res;
     case mtype2(TYPE_C8, TYPE_C8):
         size1 = size_of(*obj) - sizeof(struct obj_t);
         size2 = size_of(vals) - sizeof(struct obj_t);
         res = resize_obj(obj, (*obj)->len + vals->len);
-        memcpy((*obj)->arr + size1, as_string(vals), size2);
+        memcpy((*obj)->arr + size1, AS_C8(vals), size2);
         return res;
     case mtype2(TYPE_GUID, TYPE_GUID):
         size1 = size_of(*obj) - sizeof(struct obj_t);
         size2 = size_of(vals) - sizeof(struct obj_t);
         res = resize_obj(obj, (*obj)->len + vals->len);
-        memcpy((*obj)->arr + size1, as_guid(vals), size2);
+        memcpy((*obj)->arr + size1, AS_GUID(vals), size2);
         return res;
     default:
         if ((*obj)->type == TYPE_LIST)
@@ -507,7 +503,8 @@ obj_p append_list(obj_p *obj, obj_p vals)
             c = ops_count(vals);
             res = resize_obj(obj, l + c);
             for (i = 0; i < c; i++)
-                as_list(res)[l + i] = at_idx(vals, i);
+                AS_LIST(res)
+            [l + i] = at_idx(vals, i);
 
             return res;
         }
@@ -535,7 +532,7 @@ obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val)
     u64_t l;
     obj_p ret;
 
-    if (!is_vector(*obj))
+    if (!IS_VECTOR(*obj))
         return *obj;
 
     if (!val)
@@ -545,12 +542,14 @@ obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val)
     if (((*obj)->type - (-val->type) != 0) && (*obj)->type != TYPE_LIST)
     {
         l = ops_count(*obj);
-        ret = list(l);
+        ret = LIST(l);
 
         for (i = 0; i < idx; i++)
-            as_list(ret)[i] = at_idx(*obj, i);
+            AS_LIST(ret)
+        [i] = at_idx(*obj, i);
 
-        as_list(ret)[idx] = val;
+        AS_LIST(ret)
+        [idx] = val;
 
         drop_obj(*obj);
 
@@ -611,58 +610,58 @@ obj_p at_idx(obj_p obj, i64_t idx)
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return i64(as_i64(obj)[idx]);
+            return i64(AS_I64(obj)[idx]);
         return i64(NULL_I64);
     case TYPE_SYMBOL:
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return symboli64(as_symbol(obj)[idx]);
+            return symboli64(AS_SYMBOL(obj)[idx]);
         return symboli64(NULL_I64);
     case TYPE_TIMESTAMP:
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return timestamp(as_timestamp(obj)[idx]);
+            return timestamp(AS_TIMESTAMP(obj)[idx]);
         return timestamp(NULL_I64);
     case TYPE_F64:
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return f64(as_f64(obj)[idx]);
+            return f64(AS_F64(obj)[idx]);
         return f64(NULL_F64);
     case TYPE_C8:
         l = ops_count(obj);
         if (idx < 0)
             idx = l + idx;
         if (idx >= 0 && idx < (i64_t)l)
-            return c8(as_string(obj)[idx]);
+            return c8(AS_C8(obj)[idx]);
         return c8('\0');
     case TYPE_LIST:
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return clone_obj(as_list(obj)[idx]);
+            return clone_obj(AS_LIST(obj)[idx]);
         return NULL_OBJ;
     case TYPE_GUID:
         if (idx < 0)
             idx = obj->len + idx + 1;
         if (idx >= 0 && idx < (i64_t)obj->len)
-            return guid(as_guid(obj)[idx]);
+            return guid(AS_GUID(obj)[idx]);
         return NULL_OBJ;
     case TYPE_ENUM:
         if (idx < 0)
             idx = obj->len + idx;
-        if (idx >= 0 && idx < (i64_t)enum_val(obj)->len)
+        if (idx >= 0 && idx < (i64_t)ENUM_VAL(obj)->len)
         {
             k = ray_key(obj);
-            if (is_error(k))
+            if (IS_ERROR(k))
                 return k;
             v = ray_get(k);
             drop_obj(k);
-            if (is_error(v))
+            if (IS_ERROR(v))
                 return v;
-            idx = as_i64(enum_val(obj))[idx];
+            idx = AS_I64(ENUM_VAL(obj))[idx];
             res = at_idx(v, idx);
             drop_obj(v);
             return res;
@@ -670,21 +669,21 @@ obj_p at_idx(obj_p obj, i64_t idx)
         return symboli64(NULL_I64);
 
     case TYPE_ANYMAP:
-        k = anymap_key(obj);
-        v = anymap_val(obj);
+        k = ANYMAP_KEY(obj);
+        v = ANYMAP_VAL(obj);
         if (idx < 0)
             idx = obj->len + idx;
         if (idx >= 0 && idx < (i64_t)v->len)
         {
-            buf = as_u8(k) + as_i64(v)[idx];
+            buf = AS_U8(k) + AS_I64(v)[idx];
             return load_obj(&buf, k->len);
         }
 
         return NULL_OBJ;
 
     case TYPE_TABLE:
-        n = as_list(obj)[0]->len;
-        v = list(n);
+        n = AS_LIST(obj)[0]->len;
+        v = LIST(n);
         l = ops_count(obj);
         if (idx < 0)
             idx = l + idx;
@@ -692,8 +691,8 @@ obj_p at_idx(obj_p obj, i64_t idx)
         {
             for (i = 0; i < n; i++)
             {
-                k = at_idx(as_list(as_list(obj)[1])[i], idx);
-                if (is_error(k))
+                k = at_idx(AS_LIST(AS_LIST(obj)[1])[i], idx);
+                if (IS_ERROR(k))
                 {
                     v->len = i;
                     drop_obj(v);
@@ -701,16 +700,16 @@ obj_p at_idx(obj_p obj, i64_t idx)
                 }
                 ins_obj(&v, i, k);
             }
-            return dict(clone_obj(as_list(obj)[0]), v);
+            return dict(clone_obj(AS_LIST(obj)[0]), v);
         }
 
         for (i = 0; i < n; i++)
         {
-            k = null(as_list(as_list(obj)[1])[i]->type);
+            k = null(AS_LIST(AS_LIST(obj)[1])[i]->type);
             ins_obj(&v, i, k);
         }
 
-        return dict(clone_obj(as_list(obj)[0]), v);
+        return dict(clone_obj(AS_LIST(obj)[0]), v);
 
     default:
         return clone_obj(obj);
@@ -730,16 +729,16 @@ obj_p at_ids(obj_p obj, i64_t ids[], u64_t len)
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         res = vector(obj->type, len);
-        iinp = as_i64(obj);
-        iout = as_i64(res);
+        iinp = AS_I64(obj);
+        iout = AS_I64(res);
         for (i = 0; i < len; i++)
             iout[i] = iinp[ids[i]];
 
         return res;
     case TYPE_F64:
-        res = vector_f64(len);
-        finp = as_f64(obj);
-        fout = as_f64(res);
+        res = F64(len);
+        finp = AS_F64(obj);
+        fout = AS_F64(res);
         for (i = 0; i < len; i++)
             fout[i] = finp[ids[i]];
 
@@ -747,46 +746,48 @@ obj_p at_ids(obj_p obj, i64_t ids[], u64_t len)
     case TYPE_GUID:
         res = vector(TYPE_GUID, len);
         for (i = 0; i < len; i++)
-            memcpy(as_guid(res)[i], as_guid(obj)[ids[i]], sizeof(guid_t));
+            memcpy(AS_GUID(res)[i], AS_GUID(obj)[ids[i]], sizeof(guid_t));
 
         return res;
     case TYPE_LIST:
-        res = list(len);
+        res = LIST(len);
         for (i = 0; i < len; i++)
-            as_list(res)[i] = clone_obj(as_list(obj)[ids[i]]);
+            AS_LIST(res)
+        [i] = clone_obj(AS_LIST(obj)[ids[i]]);
 
         return res;
     case TYPE_ENUM:
         k = ray_key(obj);
-        if (is_error(k))
+        if (IS_ERROR(k))
             return k;
 
         v = ray_get(k);
         drop_obj(k);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
             return v;
 
         if (v->type != TYPE_SYMBOL)
             return error(ERR_TYPE, "enum: '%s' is not a 'Symbol'", type_name(v->type));
 
-        res = vector_symbol(len);
+        res = SYMBOL(len);
         for (i = 0; i < len; i++)
-            as_i64(res)[i] = as_i64(v)[as_i64(enum_val(obj))[ids[i]]];
+            AS_I64(res)
+        [i] = AS_I64(v)[AS_I64(ENUM_VAL(obj))[ids[i]]];
 
         drop_obj(v);
         return res;
     case TYPE_TABLE:
-        xl = as_list(obj)[0]->len;
-        cols = list(xl);
+        xl = AS_LIST(obj)[0]->len;
+        cols = LIST(xl);
         for (i = 0; i < xl; i++)
         {
-            k = at_ids(as_list(as_list(obj)[1])[i], ids, len);
+            k = at_ids(AS_LIST(AS_LIST(obj)[1])[i], ids, len);
 
-            // if (is_atom(c))
+            // if (IS_ATOM(c))
             //     c = ray_enlist(&c, 1);
 
-            if (is_error(k))
+            if (IS_ERROR(k))
             {
                 cols->len = i;
                 drop_obj(cols);
@@ -796,7 +797,7 @@ obj_p at_ids(obj_p obj, i64_t ids[], u64_t len)
             ins_obj(&cols, i, k);
         }
 
-        return table(clone_obj(as_list(obj)[0]), cols);
+        return table(clone_obj(AS_LIST(obj)[0]), cols);
     default:
         res = vector(TYPE_LIST, len);
         for (i = 0; i < len; i++)
@@ -825,10 +826,10 @@ obj_p at_obj(obj_p obj, obj_p idx)
     case mtype2(TYPE_TABLE, -TYPE_I64):
         return at_idx(obj, idx->i64);
     case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
-        j = find_raw(as_list(obj)[0], &idx->i64);
-        if (j == as_list(obj)[0]->len)
-            return null(as_list(obj)[1]->type);
-        return at_idx(as_list(obj)[1], j);
+        j = find_raw(AS_LIST(obj)[0], &idx->i64);
+        if (j == AS_LIST(obj)[0]->len)
+            return null(AS_LIST(obj)[1]->type);
+        return at_idx(AS_LIST(obj)[1], j);
     case mtype2(TYPE_I64, TYPE_I64):
     case mtype2(TYPE_SYMBOL, TYPE_I64):
     case mtype2(TYPE_TIMESTAMP, TYPE_I64):
@@ -837,34 +838,35 @@ obj_p at_obj(obj_p obj, obj_p idx)
     case mtype2(TYPE_LIST, TYPE_I64):
     case mtype2(TYPE_ENUM, TYPE_I64):
     case mtype2(TYPE_TABLE, TYPE_I64):
-        ids = as_i64(idx);
+        ids = AS_I64(idx);
         n = idx->len;
         l = ops_count(obj);
         for (i = 0; i < n; i++)
             if (ids[i] < 0 || ids[i] >= (i64_t)l)
                 throw(ERR_TYPE, "at_obj: '%lld' is out of range '0..%lld'", ids[i], l - 1);
-        return at_ids(obj, as_i64(idx), idx->len);
+        return at_ids(obj, AS_I64(idx), idx->len);
     case mtype2(TYPE_TABLE, TYPE_SYMBOL):
         l = ops_count(idx);
-        v = list(l);
+        v = LIST(l);
 
         for (i = 0; i < l; i++)
         {
-            j = find_raw(as_list(obj)[0], &as_symbol(idx)[i]);
-            if (j == as_list(obj)[0]->len)
-                as_list(v)[i] = null(0);
-            else
-                as_list(v)[i] = at_idx(as_list(obj)[1], j);
+            j = find_raw(AS_LIST(obj)[0], &AS_SYMBOL(idx)[i]);
+            if (j == AS_LIST(obj)[0]->len)
+                AS_LIST(v)
+            [i] = null(0);
+            else AS_LIST(v)
+                [i] = at_idx(AS_LIST(obj)[1], j);
         }
         return v;
     default:
         if (obj->type == TYPE_DICT)
         {
-            i = find_obj(as_list(obj)[0], idx);
-            if (i == as_list(obj)[0]->len)
-                return null(as_list(obj)[1]->type);
+            i = find_obj(AS_LIST(obj)[0], idx);
+            if (i == AS_LIST(obj)[0]->len)
+                return null(AS_LIST(obj)[1]->type);
 
-            return at_idx(as_list(obj)[1], i);
+            return at_idx(AS_LIST(obj)[1], i);
         }
 
         throw(ERR_TYPE, "at_obj: unable to index: '%s by '%s", type_name(obj->type), type_name(idx->type));
@@ -889,26 +891,30 @@ obj_p set_idx(obj_p *obj, i64_t idx, obj_p val)
     case mtype2(TYPE_I64, -TYPE_I64):
     case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
     case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
-        as_i64(*obj)[idx] = val->i64;
+        AS_I64(*obj)
+        [idx] = val->i64;
         drop_obj(val);
         return *obj;
     case mtype2(TYPE_F64, -TYPE_F64):
-        as_f64(*obj)[idx] = val->f64;
+        AS_F64(*obj)
+        [idx] = val->f64;
         drop_obj(val);
         return *obj;
     case mtype2(TYPE_C8, -TYPE_C8):
-        as_string(*obj)[idx] = val->c8;
+        AS_C8(*obj)
+        [idx] = val->c8;
         drop_obj(val);
         return *obj;
     case mtype2(TYPE_GUID, -TYPE_GUID):
-        memcpy(as_guid(*obj)[idx], as_guid(val), sizeof(guid_t));
+        memcpy(AS_GUID(*obj)[idx], AS_GUID(val), sizeof(guid_t));
         drop_obj(val);
         return *obj;
     default:
         if ((*obj)->type == TYPE_LIST)
         {
-            drop_obj(as_list(*obj)[idx]);
-            as_list(*obj)[idx] = val;
+            drop_obj(AS_LIST(*obj)[idx]);
+            AS_LIST(*obj)
+            [idx] = val;
             return *obj;
         }
 
@@ -926,71 +932,80 @@ obj_p set_ids(obj_p *obj, i64_t ids[], u64_t len, obj_p vals)
     case mtype2(TYPE_SYMBOL, -TYPE_I64):
     case mtype2(TYPE_TIMESTAMP, -TYPE_I64):
         for (i = 0; i < len; i++)
-            as_i64(*obj)[ids[i]] = vals->i64;
+            AS_I64(*obj)
+        [ids[i]] = vals->i64;
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_F64, -TYPE_F64):
         for (i = 0; i < len; i++)
-            as_f64(*obj)[ids[i]] = vals->f64;
+            AS_F64(*obj)
+        [ids[i]] = vals->f64;
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_C8, -TYPE_C8):
         for (i = 0; i < len; i++)
-            as_string(*obj)[ids[i]] = vals->c8;
+            AS_C8(*obj)
+        [ids[i]] = vals->c8;
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_GUID, -TYPE_GUID):
         for (i = 0; i < len; i++)
-            memcpy(as_guid(*obj)[ids[i]], as_guid(vals), sizeof(guid_t));
+            memcpy(AS_GUID(*obj)[ids[i]], AS_GUID(vals), sizeof(guid_t));
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_I64, TYPE_I64):
     case mtype2(TYPE_SYMBOL, TYPE_I64):
     case mtype2(TYPE_TIMESTAMP, TYPE_I64):
         for (i = 0; i < len; i++)
-            as_i64(*obj)[ids[i]] = as_i64(vals)[i];
+            AS_I64(*obj)
+        [ids[i]] = AS_I64(vals)[i];
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_F64, TYPE_F64):
         for (i = 0; i < len; i++)
-            as_f64(*obj)[ids[i]] = as_f64(vals)[i];
+            AS_F64(*obj)
+        [ids[i]] = AS_F64(vals)[i];
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_C8, TYPE_C8):
         for (i = 0; i < len; i++)
-            as_string(*obj)[ids[i]] = as_string(vals)[i];
+            AS_C8(*obj)
+        [ids[i]] = AS_C8(vals)[i];
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_GUID, TYPE_GUID):
         for (i = 0; i < len; i++)
-            memcpy(as_guid(*obj)[ids[i]], as_guid(vals)[i], sizeof(guid_t));
+            memcpy(AS_GUID(*obj)[ids[i]], AS_GUID(vals)[i], sizeof(guid_t));
         drop_obj(vals);
         return *obj;
     case mtype2(TYPE_LIST, TYPE_C8):
         for (i = 0; i < len; i++)
         {
-            drop_obj(as_list(*obj)[ids[i]]);
-            as_list(*obj)[ids[i]] = clone_obj(vals);
+            drop_obj(AS_LIST(*obj)[ids[i]]);
+            AS_LIST(*obj)
+            [ids[i]] = clone_obj(vals);
         }
         drop_obj(vals);
         return *obj;
     default:
         if ((*obj)->type == TYPE_LIST)
         {
-            if (is_vector(vals) && len != (*obj)->len)
+            if (IS_VECTOR(vals) && len != (*obj)->len)
             {
                 for (i = 0; i < len; i++)
                 {
-                    drop_obj(as_list(*obj)[ids[i]]);
-                    as_list(*obj)[ids[i]] = clone_obj(vals);
+                    drop_obj(AS_LIST(*obj)[ids[i]]);
+                    AS_LIST(*obj)
+                    [ids[i]] = clone_obj(vals);
                 }
             }
             else
             {
                 for (i = 0; i < len; i++)
                 {
-                    drop_obj(as_list(*obj)[ids[i]]);
-                    as_list(*obj)[ids[i]] = at_idx(vals, i);
+                    drop_obj(AS_LIST(*obj)[ids[i]]);
+                    AS_LIST(*obj)
+                    [ids[i]] = at_idx(vals, i);
                 }
             }
 
@@ -1015,7 +1030,8 @@ obj_p __expand(obj_p obj, u64_t len)
     case -TYPE_C8:
         res = vector(obj->type, len);
         for (i = 0; i < len; i++)
-            as_u8(res)[i] = obj->u8;
+            AS_U8(res)
+        [i] = obj->u8;
 
         drop_obj(obj);
 
@@ -1025,15 +1041,17 @@ obj_p __expand(obj_p obj, u64_t len)
     case -TYPE_TIMESTAMP:
         res = vector(obj->type, len);
         for (i = 0; i < len; i++)
-            as_i64(res)[i] = obj->i64;
+            AS_I64(res)
+        [i] = obj->i64;
 
         drop_obj(obj);
 
         return res;
     case -TYPE_F64:
-        res = vector_f64(len);
+        res = F64(len);
         for (i = 0; i < len; i++)
-            as_f64(res)[i] = obj->f64;
+            AS_F64(res)
+        [i] = obj->f64;
 
         drop_obj(obj);
 
@@ -1041,7 +1059,7 @@ obj_p __expand(obj_p obj, u64_t len)
     case -TYPE_GUID:
         res = vector(TYPE_GUID, len);
         for (i = 0; i < len; i++)
-            memcpy(as_guid(res)[i], *as_guid(obj), sizeof(guid_t));
+            memcpy(AS_GUID(res)[i], *AS_GUID(obj), sizeof(guid_t));
 
         drop_obj(obj);
 
@@ -1086,12 +1104,12 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
     case mtype2(TYPE_C8, TYPE_I64):
     case mtype2(TYPE_GUID, TYPE_I64):
     case mtype2(TYPE_LIST, TYPE_I64):
-        if (is_vector(val) && idx->len != val->len)
+        if (IS_VECTOR(val) && idx->len != val->len)
         {
             drop_obj(val);
             throw(ERR_LENGTH, "set_obj: idx and vals length mismatch: '%lld' != '%lld'", idx->len, val->len);
         }
-        ids = as_i64(idx);
+        ids = AS_I64(idx);
         n = idx->len;
         l = ops_count(*obj);
         for (i = 0; i < n; i++)
@@ -1105,23 +1123,23 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
         return set_ids(obj, ids, n, val);
     case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
         val = __expand(val, ops_count(*obj));
-        if (is_error(val))
+        if (IS_ERROR(val))
             return val;
-        i = find_obj(as_list(*obj)[0], idx);
-        if (i == as_list(*obj)[0]->len)
+        i = find_obj(AS_LIST(*obj)[0], idx);
+        if (i == AS_LIST(*obj)[0]->len)
         {
-            res = push_obj(&as_list(*obj)[0], clone_obj(idx));
-            if (is_error(res))
+            res = push_obj(&AS_LIST(*obj)[0], clone_obj(idx));
+            if (IS_ERROR(res))
                 return res;
 
-            res = push_obj(&as_list(*obj)[1], val);
-            if (is_error(res))
+            res = push_obj(&AS_LIST(*obj)[1], val);
+            if (IS_ERROR(res))
                 panic("set_obj: inconsistent update");
 
             return *obj;
         }
 
-        set_idx(&as_list(*obj)[1], i, val);
+        set_idx(&AS_LIST(*obj)[1], i, val);
 
         return *obj;
     case mtype2(TYPE_TABLE, TYPE_SYMBOL):
@@ -1139,12 +1157,12 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
         }
 
         n = ops_count(*obj);
-        v = list(l);
+        v = LIST(l);
         for (i = 0; i < l; i++)
         {
-            k = __expand(clone_obj(as_list(val)[i]), n);
+            k = __expand(clone_obj(AS_LIST(val)[i]), n);
 
-            if (is_error(k))
+            if (IS_ERROR(k))
             {
                 v->len = i;
                 drop_obj(v);
@@ -1152,7 +1170,8 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
                 return k;
             }
 
-            as_list(v)[i] = k;
+            AS_LIST(v)
+            [i] = k;
         }
 
         drop_obj(val);
@@ -1160,15 +1179,15 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
 
         for (i = 0; i < l; i++)
         {
-            id = find_raw(as_list(*obj)[0], &as_symbol(idx)[i]);
-            if (id == (i64_t)as_list(*obj)[0]->len)
+            id = find_raw(AS_LIST(*obj)[0], &AS_SYMBOL(idx)[i]);
+            if (id == (i64_t)AS_LIST(*obj)[0]->len)
             {
-                push_raw(&as_list(*obj)[0], &as_symbol(idx)[i]);
-                push_obj(&as_list(*obj)[1], clone_obj(as_list(val)[i]));
+                push_raw(&AS_LIST(*obj)[0], &AS_SYMBOL(idx)[i]);
+                push_obj(&AS_LIST(*obj)[1], clone_obj(AS_LIST(val)[i]));
             }
             else
             {
-                set_idx(&as_list(*obj)[1], id, clone_obj(as_list(val)[i]));
+                set_idx(&AS_LIST(*obj)[1], id, clone_obj(AS_LIST(val)[i]));
             }
         }
 
@@ -1178,14 +1197,14 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
     default:
         if ((*obj)->type == TYPE_DICT)
         {
-            i = find_obj(as_list(*obj)[0], idx);
-            if (i == as_list(*obj)[0]->len)
+            i = find_obj(AS_LIST(*obj)[0], idx);
+            if (i == AS_LIST(*obj)[0]->len)
             {
-                res = push_obj(&as_list(*obj)[0], clone_obj(idx));
+                res = push_obj(&AS_LIST(*obj)[0], clone_obj(idx));
                 if (res->type == TYPE_ERROR)
                     return res;
 
-                res = push_obj(&as_list(*obj)[1], val);
+                res = push_obj(&AS_LIST(*obj)[1], val);
 
                 if (res->type == TYPE_ERROR)
                     panic("set_obj: inconsistent update");
@@ -1193,7 +1212,7 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val)
                 return *obj;
             }
 
-            set_idx(&as_list(*obj)[1], i, val);
+            set_idx(&AS_LIST(*obj)[1], i, val);
 
             return *obj;
         }
@@ -1210,17 +1229,17 @@ obj_p pop_obj(obj_p *obj)
     switch ((*obj)->type)
     {
     case TYPE_I64:
-        return i64(as_i64(*obj)[--(*obj)->len]);
+        return i64(AS_I64(*obj)[--(*obj)->len]);
     case TYPE_SYMBOL:
-        return symboli64(as_symbol(*obj)[--(*obj)->len]);
+        return symboli64(AS_SYMBOL(*obj)[--(*obj)->len]);
     case TYPE_TIMESTAMP:
-        return timestamp(as_timestamp(*obj)[--(*obj)->len]);
+        return timestamp(AS_TIMESTAMP(*obj)[--(*obj)->len]);
     case TYPE_F64:
-        return f64(as_f64(*obj)[--(*obj)->len]);
+        return f64(AS_F64(*obj)[--(*obj)->len]);
     case TYPE_C8:
-        return c8(as_string(*obj)[--(*obj)->len]);
+        return c8(AS_C8(*obj)[--(*obj)->len]);
     case TYPE_LIST:
-        return as_list(*obj)[--(*obj)->len];
+        return AS_LIST(*obj)[--(*obj)->len];
 
     default:
         panic("pop_obj: invalid type: %d", (*obj)->type);
@@ -1229,14 +1248,14 @@ obj_p pop_obj(obj_p *obj)
 
 obj_p remove_idx(obj_p *obj, i64_t idx)
 {
-    unused(idx);
+    UNUSED(idx);
 
     return *obj;
 }
 
 obj_p remove_obj(obj_p *obj, obj_p idx)
 {
-    unused(idx);
+    UNUSED(idx);
 
     return *obj;
 }
@@ -1287,7 +1306,7 @@ i32_t cmp_obj(obj_p a, obj_p b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            d = as_i64(a)[i] - as_i64(b)[i];
+            d = AS_I64(a)[i] - AS_I64(b)[i];
             if (d != 0)
                 return d;
         }
@@ -1299,7 +1318,7 @@ i32_t cmp_obj(obj_p a, obj_p b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            d = as_f64(a)[i] - as_f64(b)[i];
+            d = AS_F64(a)[i] - AS_F64(b)[i];
             if (d != 0)
                 return d;
         }
@@ -1312,7 +1331,7 @@ i32_t cmp_obj(obj_p a, obj_p b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            d = as_string(a)[i] - as_string(b)[i];
+            d = AS_C8(a)[i] - AS_C8(b)[i];
             if (d != 0)
                 return d;
         }
@@ -1326,7 +1345,7 @@ i32_t cmp_obj(obj_p a, obj_p b)
         l = a->len;
         for (i = 0; i < l; i++)
         {
-            d = cmp_obj(as_list(a)[i], as_list(b)[i]);
+            d = cmp_obj(AS_LIST(a)[i], AS_LIST(b)[i]);
             if (d != 0)
                 return d;
         }
@@ -1342,7 +1361,7 @@ i64_t find_raw(obj_p obj, raw_p val)
 {
     i64_t i, l;
 
-    if (!is_vector(obj))
+    if (!IS_VECTOR(obj))
         return 1;
 
     switch (obj->type)
@@ -1352,25 +1371,25 @@ i64_t find_raw(obj_p obj, raw_p val)
     case TYPE_TIMESTAMP:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (as_i64(obj)[i] == *(i64_t *)val)
+            if (AS_I64(obj)[i] == *(i64_t *)val)
                 return i;
         return l;
     case TYPE_F64:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (as_f64(obj)[i] == *(f64_t *)val)
+            if (AS_F64(obj)[i] == *(f64_t *)val)
                 return i;
         return l;
     case TYPE_C8:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (as_string(obj)[i] == *(c8_t *)val)
+            if (AS_C8(obj)[i] == *(c8_t *)val)
                 return i;
         return l;
     case TYPE_LIST:
         l = obj->len;
         for (i = 0; i < l; i++)
-            if (cmp_obj(as_list(obj)[i], *(obj_p *)val) == 0)
+            if (cmp_obj(AS_LIST(obj)[i], *(obj_p *)val) == 0)
                 return i;
         return l;
     default:
@@ -1380,7 +1399,7 @@ i64_t find_raw(obj_p obj, raw_p val)
 
 i64_t find_obj(obj_p obj, obj_p val)
 {
-    if (!is_vector(obj))
+    if (!IS_VECTOR(obj))
         return NULL_I64;
 
     switch (obj->type)
@@ -1427,41 +1446,44 @@ obj_p cast_obj(i8_t type, obj_p obj)
         return timestamp(obj->i64);
     case mtype2(-TYPE_SYMBOL, -TYPE_I64):
         v = str_fmt(-1, "%lld", obj->i64);
-        res = symbol(as_string(v), strlen(as_string(v)));
+        res = symbol(AS_C8(v), strlen(AS_C8(v)));
         drop_obj(v);
         return res;
     case mtype2(-TYPE_SYMBOL, -TYPE_F64):
         v = str_fmt(-1, "%f", obj->f64);
-        res = symbol(as_string(v), strlen(as_string(v)));
+        res = symbol(AS_C8(v), strlen(AS_C8(v)));
         drop_obj(v);
         return res;
     case mtype2(-TYPE_SYMBOL, TYPE_C8):
-        return symbol(as_string(obj), obj->len);
+        return symbol(AS_C8(obj), obj->len);
     case mtype2(-TYPE_I64, TYPE_C8):
-        return i64(strtol(as_string(obj), NULL, 10));
+        return i64(strtol(AS_C8(obj), NULL, 10));
     case mtype2(-TYPE_F64, TYPE_C8):
-        return f64(strtod(as_string(obj), NULL));
+        return f64(strtod(AS_C8(obj), NULL));
     case mtype2(TYPE_TABLE, TYPE_DICT):
-        return table(clone_obj(as_list(obj)[0]), clone_obj(as_list(obj)[1]));
+        return table(clone_obj(AS_LIST(obj)[0]), clone_obj(AS_LIST(obj)[1]));
     case mtype2(TYPE_DICT, TYPE_TABLE):
-        return dict(clone_obj(as_list(obj)[0]), clone_obj(as_list(obj)[1]));
+        return dict(clone_obj(AS_LIST(obj)[0]), clone_obj(AS_LIST(obj)[1]));
     case mtype2(TYPE_F64, TYPE_I64):
         l = obj->len;
-        res = vector_f64(l);
+        res = F64(l);
         for (i = 0; i < l; i++)
-            as_f64(res)[i] = (f64_t)as_i64(obj)[i];
+            AS_F64(res)
+        [i] = (f64_t)AS_I64(obj)[i];
         return res;
     case mtype2(TYPE_I64, TYPE_F64):
         l = obj->len;
-        res = vector_i64(l);
+        res = I64(l);
         for (i = 0; i < l; i++)
-            as_i64(res)[i] = (i64_t)as_f64(obj)[i];
+            AS_I64(res)
+        [i] = (i64_t)AS_F64(obj)[i];
         return res;
     case mtype2(TYPE_B8, TYPE_I64):
         l = obj->len;
-        res = vector_b8(l);
+        res = B8(l);
         for (i = 0; i < l; i++)
-            as_b8(res)[i] = (b8_t)as_i64(obj)[i];
+            AS_B8(res)
+        [i] = (b8_t)AS_I64(obj)[i];
         return res;
     case mtype2(-TYPE_GUID, TYPE_C8):
         res = guid(NULL);
@@ -1469,30 +1491,32 @@ obj_p cast_obj(i8_t type, obj_p obj)
         if (obj->len != 36)
             break;
 
-        i = sscanf(as_string(obj),
+        i = sscanf(AS_C8(obj),
                    "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
-                   &as_guid(res)[0][0], &as_guid(res)[0][1], &as_guid(res)[0][2], &as_guid(res)[0][3],
-                   &as_guid(res)[0][4], &as_guid(res)[0][5],
-                   &as_guid(res)[0][6], &as_guid(res)[0][7],
-                   &as_guid(res)[0][8], &as_guid(res)[0][9],
-                   &as_guid(res)[0][10], &as_guid(res)[0][11], &as_guid(res)[0][12],
-                   &as_guid(res)[0][13], &as_guid(res)[0][14], &as_guid(res)[0][15]);
+                   &AS_GUID(res)[0][0], &AS_GUID(res)[0][1], &AS_GUID(res)[0][2], &AS_GUID(res)[0][3],
+                   &AS_GUID(res)[0][4], &AS_GUID(res)[0][5],
+                   &AS_GUID(res)[0][6], &AS_GUID(res)[0][7],
+                   &AS_GUID(res)[0][8], &AS_GUID(res)[0][9],
+                   &AS_GUID(res)[0][10], &AS_GUID(res)[0][11], &AS_GUID(res)[0][12],
+                   &AS_GUID(res)[0][13], &AS_GUID(res)[0][14], &AS_GUID(res)[0][15]);
 
         if (i != sizeof(guid_t))
-            memset(as_guid(res)[0], 0, sizeof(guid_t));
+            memset(AS_GUID(res)[0], 0, sizeof(guid_t));
 
         return res;
     case mtype2(TYPE_I64, TYPE_TIMESTAMP):
         l = obj->len;
-        res = vector_i64(l);
+        res = I64(l);
         for (i = 0; i < l; i++)
-            as_i64(res)[i] = as_timestamp(obj)[i];
+            AS_I64(res)
+        [i] = AS_TIMESTAMP(obj)[i];
         return res;
     case mtype2(TYPE_TIMESTAMP, TYPE_I64):
         l = obj->len;
-        res = vector_timestamp(l);
+        res = TIMESTAMP(l);
         for (i = 0; i < l; i++)
-            as_timestamp(res)[i] = as_i64(obj)[i];
+            AS_TIMESTAMP(res)
+        [i] = AS_I64(obj)[i];
         return res;
     default:
         if (type == TYPE_C8)
@@ -1504,8 +1528,8 @@ obj_p cast_obj(i8_t type, obj_p obj)
             if (l == 0)
                 return vector(type, 0);
 
-            v = cast_obj(-type, as_list(obj)[0]);
-            if (is_error(v))
+            v = cast_obj(-type, AS_LIST(obj)[0]);
+            if (IS_ERROR(v))
                 return v;
 
             res = vector(type, l);
@@ -1513,8 +1537,8 @@ obj_p cast_obj(i8_t type, obj_p obj)
 
             for (i = 1; i < l; i++)
             {
-                v = cast_obj(-type, as_list(obj)[i]);
-                if (is_error(v))
+                v = cast_obj(-type, AS_LIST(obj)[i]);
+                if (IS_ERROR(v))
                 {
                     res->len = i;
                     drop_obj(res);
@@ -1537,7 +1561,7 @@ obj_p cast_obj(i8_t type, obj_p obj)
 
 obj_p __attribute__((hot)) clone_obj(obj_p obj)
 {
-    debug_assert(is_valid(obj), "invalid object type: %d", obj->type);
+    DEBUG_ASSERT(is_valid(obj), "invalid object type: %d", obj->type);
 
     if (!__RC_SYNC)
         (obj)->rc += 1;
@@ -1549,7 +1573,7 @@ obj_p __attribute__((hot)) clone_obj(obj_p obj)
 
 nil_t __attribute__((hot)) drop_obj(obj_p obj)
 {
-    debug_assert(is_valid(obj), "invalid object type: %d", obj->type);
+    DEBUG_ASSERT(is_valid(obj), "invalid object type: %d", obj->type);
 
     u32_t rc;
     u64_t i, l;
@@ -1573,7 +1597,7 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj)
     case TYPE_GROUPMAP:
         l = obj->len;
         for (i = 0; i < l; i++)
-            drop_obj(as_list(obj)[i]);
+            drop_obj(AS_LIST(obj)[i]);
 
         if (is_external_simple(obj))
             mmap_free(obj, size_of(obj));
@@ -1585,19 +1609,19 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj)
             mmap_free((str_p)obj - RAY_PAGE_SIZE, size_of(obj) + RAY_PAGE_SIZE);
         else
         {
-            drop_obj(as_list(obj)[0]);
-            drop_obj(as_list(obj)[1]);
+            drop_obj(AS_LIST(obj)[0]);
+            drop_obj(AS_LIST(obj)[1]);
             heap_free(obj);
         }
         return;
     case TYPE_ANYMAP:
-        mmap_free(anymap_key(obj), size_of(obj));
+        mmap_free(ANYMAP_KEY(obj), size_of(obj));
         mmap_free((str_p)obj - RAY_PAGE_SIZE, size_of(obj) + RAY_PAGE_SIZE);
         return;
     case TYPE_TABLE:
     case TYPE_DICT:
-        drop_obj(as_list(obj)[0]);
-        drop_obj(as_list(obj)[1]);
+        drop_obj(AS_LIST(obj)[0]);
+        drop_obj(AS_LIST(obj)[1]);
         heap_free(obj);
         return;
     case TYPE_LAMBDA:
@@ -1654,18 +1678,19 @@ obj_p copy_obj(obj_p obj)
         return res;
     case TYPE_LIST:
         l = obj->len;
-        res = list(l);
+        res = LIST(l);
         res->rc = 1;
         for (i = 0; i < l; i++)
-            as_list(res)[i] = clone_obj(as_list(obj)[i]);
+            AS_LIST(res)
+        [i] = clone_obj(AS_LIST(obj)[i]);
         return res;
     case TYPE_ENUM:
     case TYPE_ANYMAP:
         return ray_value(obj);
     case TYPE_TABLE:
-        return table(copy_obj(as_list(obj)[0]), copy_obj(as_list(obj)[1]));
+        return table(copy_obj(AS_LIST(obj)[0]), copy_obj(AS_LIST(obj)[1]));
     case TYPE_DICT:
-        return dict(copy_obj(as_list(obj)[0]), copy_obj(as_list(obj)[1]));
+        return dict(copy_obj(AS_LIST(obj)[0]), copy_obj(AS_LIST(obj)[1]));
     default:
         throw(ERR_NOT_IMPLEMENTED, "cow: not implemented for type: '%s", type_name(obj->type));
     }

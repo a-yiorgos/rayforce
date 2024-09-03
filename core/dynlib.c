@@ -114,5 +114,5 @@ obj_p ray_loadfn(obj_p *args, u64_t n)
     if (args[2]->type != -TYPE_I64)
         throw(ERR_TYPE, "Expected 'i64 arguments, got %s", type_name(args[2]->type));
 
-    return dynlib_loadfn(as_string(args[0]), as_string(args[1]), args[2]->i64);
+    return dynlib_loadfn(AS_C8(args[0]), AS_C8(args[1]), args[2]->i64);
 }

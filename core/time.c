@@ -148,7 +148,7 @@ nil_t timeit_print(nil_t)
         return;
 
     fmt = timeit_fmt();
-    printf("%s%.*s%s", GRAY, (i32_t)fmt->len, as_string(fmt), RESET);
+    printf("%s%.*s%s", GRAY, (i32_t)fmt->len, AS_C8(fmt), RESET);
     drop_obj(fmt);
 }
 
@@ -159,7 +159,7 @@ obj_p ray_timeit(obj_p x)
     ray_clock_get_time(&start);
 
     x = eval(x);
-    if (is_error(x))
+    if (IS_ERROR(x))
         return x;
     drop_obj(x);
 
@@ -321,7 +321,7 @@ i64_t timer_next_timeout(timers_p timers)
         stack_push(i64(now));
         res = call(timer->clb, 1);
 
-        if (is_error(res))
+        if (IS_ERROR(res))
             io_write(1, MSG_TYPE_RESP, res);
 
         drop_obj(res);

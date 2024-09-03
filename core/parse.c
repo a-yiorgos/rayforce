@@ -71,9 +71,9 @@ obj_p parse_error(parser_t *parser, i64_t id, obj_p msg)
         as_error(err)->locs = vn_list(1,
                                       vn_list(4,
                                               i64(span.id),                       // span
-                                              clone_obj(as_list(parser->nfo)[0]), // file
+                                              clone_obj(AS_LIST(parser->nfo)[0]), // file
                                               NULL_OBJ,                           // function
-                                              clone_obj(as_list(parser->nfo)[1])  // source
+                                              clone_obj(AS_LIST(parser->nfo)[1])  // source
                                               ));
     }
 
@@ -515,7 +515,7 @@ obj_p parse_char(parser_t *parser)
     return res;
 }
 
-obj_p parse_string(parser_t *parser)
+obj_p parse_C8(parser_t *parser)
 {
     span_t span = span_start(parser);
     str_p pos = parser->current + 1; // skip '"'
@@ -523,7 +523,7 @@ obj_p parse_string(parser_t *parser)
     obj_p str, err;
     c8_t lf = '\n', cr = '\r', tb = '\t';
 
-    str = string(0);
+    str = C8(0);
 
     while (!at_eof(*pos) && *pos != '\n')
     {
@@ -640,7 +640,7 @@ obj_p parse_symbol(parser_t *parser)
 
 obj_p parse_vector(parser_t *parser)
 {
-    obj_p tok, vec = vector_i64(0), err;
+    obj_p tok, vec = I64(0), err;
     u64_t i;
     f64_t v;
     span_t span = span_start(parser);
@@ -652,7 +652,7 @@ obj_p parse_vector(parser_t *parser)
 
     while (!is_at(tok, ']'))
     {
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(vec);
             return tok;
@@ -721,7 +721,8 @@ obj_p parse_vector(parser_t *parser)
             {
                 vec->type = TYPE_F64;
                 for (i = 0; i < vec->len; i++)
-                    as_f64(vec)[i] = (f64_t)as_i64(vec)[i];
+                    AS_F64(vec)
+                [i] = (f64_t)AS_I64(vec)[i];
 
                 push_raw(&vec, &tok->f64);
             }
@@ -789,7 +790,7 @@ obj_p parse_vector(parser_t *parser)
     return vec;
 }
 
-obj_p parse_list(parser_t *parser)
+obj_p parse_LIST(parser_t *parser)
 {
     obj_p lst = NULL_OBJ, tok, args, body, err;
     span_t span = span_start(parser);
@@ -803,7 +804,7 @@ obj_p parse_list(parser_t *parser)
         drop_obj(tok);
 
         args = parser_advance(parser);
-        if (is_error(args))
+        if (IS_ERROR(args))
             return args;
 
         if (args->type != TYPE_SYMBOL)
@@ -820,7 +821,7 @@ obj_p parse_list(parser_t *parser)
         }
 
         body = parse_do(parser);
-        if (is_error(body))
+        if (IS_ERROR(body))
         {
             drop_obj(args);
             return body;
@@ -852,7 +853,7 @@ obj_p parse_list(parser_t *parser)
 
     while (!is_at(tok, ')'))
     {
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(lst);
             return tok;
@@ -895,7 +896,7 @@ obj_p parse_list(parser_t *parser)
 
 obj_p parse_dict(parser_t *parser)
 {
-    obj_p tok, keys = NULL_OBJ, vals = list(0), d, err;
+    obj_p tok, keys = NULL_OBJ, vals = LIST(0), d, err;
     span_t span = span_start(parser);
 
     shift(parser, 1); // skip '{'
@@ -905,7 +906,7 @@ obj_p parse_dict(parser_t *parser)
 
     while (!is_at(tok, '}'))
     {
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(keys);
             drop_obj(vals);
@@ -931,7 +932,7 @@ obj_p parse_dict(parser_t *parser)
         span_extend(parser, &span);
         tok = parser_advance(parser);
 
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(keys);
             drop_obj(vals);
@@ -953,7 +954,7 @@ obj_p parse_dict(parser_t *parser)
         drop_obj(tok);
         tok = parser_advance(parser);
 
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(keys);
             drop_obj(vals);
@@ -1048,7 +1049,7 @@ obj_p parser_advance(parser_t *parser)
         return parse_vector(parser);
 
     if ((*parser->current) == '(')
-        return parse_list(parser);
+        return parse_LIST(parser);
 
     if ((*parser->current) == '{')
         return parse_dict(parser);
@@ -1073,7 +1074,7 @@ obj_p parser_advance(parser_t *parser)
         return parse_char(parser);
 
     if ((*parser->current) == '"')
-        return parse_string(parser);
+        return parse_C8(parser);
 
     if (is_alpha(*parser->current) || is_op(*parser->current))
         return parse_symbol(parser);
@@ -1101,7 +1102,7 @@ obj_p parse_do(parser_t *parser)
     {
         tok = parser_advance(parser);
 
-        if (is_error(tok))
+        if (IS_ERROR(tok))
         {
             drop_obj(car);
             drop_obj(lst);
@@ -1151,7 +1152,7 @@ obj_p parse(lit_p input, obj_p nfo)
 
     res = parse_do(&parser);
 
-    if (is_error(res))
+    if (IS_ERROR(res))
         return res;
 
     if (!at_eof(*parser.current))

@@ -76,7 +76,7 @@ nil_t heap_destroy(nil_t)
             next = block->next;
             if (i != block->pool_order)
             {
-                debug("%s-- HEAP[%lld]: leak order: %lld block: %p%s", RED, __HEAP->id, i, block, RESET);
+                DEBUG_PRINT("%s-- HEAP[%lld]: leak order: %lld block: %p%s", RED, __HEAP->id, i, block, RESET);
                 return;
             }
 
@@ -105,8 +105,8 @@ nil_t heap_free(raw_p ptr) { free(ptr); }
 raw_p heap_realloc(raw_p ptr, u64_t size) { return realloc(ptr, size); }
 nil_t heap_unmap(raw_p ptr, u64_t size) { mmap_free(ptr, size); }
 i64_t heap_gc(nil_t) { return 0; }
-nil_t heap_borrow(heap_p heap) { unused(heap); }
-nil_t heap_merge(heap_p heap) { unused(heap); }
+nil_t heap_borrow(heap_p heap) { UNUSED(heap); }
+nil_t heap_merge(heap_p heap) { UNUSED(heap); }
 memstat_t heap_memstat(nil_t) { return (memstat_t){0}; }
 
 #else

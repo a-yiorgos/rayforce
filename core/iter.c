@@ -77,7 +77,7 @@ obj_p ray_map(obj_p *x, u64_t n)
     obj_p f, v, *b, res;
 
     if (n < 2)
-        return list(0);
+        return LIST(0);
 
     f = x[0];
     x++;
@@ -107,12 +107,12 @@ obj_p ray_map(obj_p *x, u64_t n)
         for (j = 0; j < n; j++)
         {
             b = x + j;
-            v = (is_vector(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, 0) : clone_obj(*b);
+            v = (IS_VECTOR(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, 0) : clone_obj(*b);
             stack_push(v);
         }
 
         v = call(f, n);
-        if (is_error(v))
+        if (IS_ERROR(v))
             return v;
 
         res = v->type < 0 ? vector(v->type, l) : vector(TYPE_LIST, l);
@@ -124,12 +124,12 @@ obj_p ray_map(obj_p *x, u64_t n)
             for (j = 0; j < n; j++)
             {
                 b = x + j;
-                v = (is_vector(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, i) : clone_obj(*b);
+                v = (IS_VECTOR(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, i) : clone_obj(*b);
                 stack_push(v);
             }
 
             v = call(f, n);
-            if (is_error(v))
+            if (IS_ERROR(v))
             {
                 res->len = i;
                 drop_obj(res);
@@ -151,7 +151,7 @@ obj_p ray_fold(obj_p *x, u64_t n)
     obj_p f, v, *b, x1, x2;
 
     if (n < 2)
-        return list(0);
+        return LIST(0);
 
     f = x[0];
     x++;
@@ -191,7 +191,7 @@ obj_p ray_fold(obj_p *x, u64_t n)
             drop_obj(x1);
             drop_obj(x2);
 
-            if (is_error(v))
+            if (IS_ERROR(v))
                 return v;
         }
 
@@ -231,7 +231,7 @@ obj_p ray_fold(obj_p *x, u64_t n)
 
             v = call(f, n);
 
-            if (is_error(v))
+            if (IS_ERROR(v))
                 return v;
         }
 

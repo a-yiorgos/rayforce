@@ -55,7 +55,8 @@ obj_p ht_oa_create(u64_t size, i8_t vals)
         v = NULL_OBJ;
 
     for (i = 0; i < adjusted_size; i++)
-        as_i64(k)[i] = NULL_I64;
+        AS_I64(k)
+    [i] = NULL_I64;
 
     return dict(k, v);
 }
@@ -67,21 +68,21 @@ nil_t ht_oa_rehash(obj_p *obj, hash_f hash, raw_p seed)
     i64_t *orig_keys, *new_keys, *orig_vals = NULL, *new_vals = NULL;
     obj_p new_obj;
 
-    size = as_list(*obj)[0]->len;
-    orig_keys = as_i64(as_list(*obj)[0]);
+    size = AS_LIST(*obj)[0]->len;
+    orig_keys = AS_I64(AS_LIST(*obj)[0]);
 
-    type = is_null(as_list(*obj)[1]) ? -1 : as_list(*obj)[1]->type;
+    type = is_null(AS_LIST(*obj)[1]) ? -1 : AS_LIST(*obj)[1]->type;
 
     if (type > -1)
-        orig_vals = as_i64(as_list(*obj)[1]);
+        orig_vals = AS_I64(AS_LIST(*obj)[1]);
 
     new_obj = ht_oa_create(size * 2, type);
 
-    new_size = as_list(new_obj)[0]->len;
-    new_keys = as_i64(as_list(new_obj)[0]);
+    new_size = AS_LIST(new_obj)[0]->len;
+    new_keys = AS_I64(AS_LIST(new_obj)[0]);
 
     if (type > -1)
-        new_vals = as_i64(as_list(new_obj)[1]);
+        new_vals = AS_I64(AS_LIST(new_obj)[1]);
 
     for (i = 0; i < size; i++)
     {
@@ -120,8 +121,8 @@ i64_t ht_oa_tab_next(obj_p *obj, i64_t key)
 
     for (;;)
     {
-        size = as_list(*obj)[0]->len;
-        keys = as_i64(as_list(*obj)[0]);
+        size = AS_LIST(*obj)[0]->len;
+        keys = AS_I64(AS_LIST(*obj)[0]);
 
         start = (u64_t)key % size;
 
@@ -144,8 +145,8 @@ i64_t ht_oa_tab_next_with(obj_p *obj, i64_t key, hash_f hash, cmp_f cmp, raw_p s
 
     for (;;)
     {
-        size = as_list(*obj)[0]->len;
-        keys = as_i64(as_list(*obj)[0]);
+        size = AS_LIST(*obj)[0]->len;
+        keys = AS_I64(AS_LIST(*obj)[0]);
 
         start = hash(key, seed) % size;
 
@@ -168,9 +169,9 @@ i64_t ht_oa_tab_insert(obj_p *obj, i64_t key, i64_t val)
 
     for (;;)
     {
-        size = as_list(*obj)[0]->len;
-        keys = as_i64(as_list(*obj)[0]);
-        vals = as_i64(as_list(*obj)[1]);
+        size = AS_LIST(*obj)[0]->len;
+        keys = AS_I64(AS_LIST(*obj)[0]);
+        vals = AS_I64(AS_LIST(*obj)[1]);
 
         start = (u64_t)key % size;
 
@@ -200,9 +201,9 @@ i64_t ht_oa_tab_insert_with(obj_p *obj, i64_t key, i64_t val, hash_f hash, cmp_f
 
     for (;;)
     {
-        size = as_list(*obj)[0]->len;
-        keys = as_i64(as_list(*obj)[0]);
-        vals = as_i64(as_list(*obj)[1]);
+        size = AS_LIST(*obj)[0]->len;
+        keys = AS_I64(AS_LIST(*obj)[0]);
+        vals = AS_I64(AS_LIST(*obj)[1]);
 
         start = hash(key, seed) % size;
 
@@ -231,8 +232,8 @@ i64_t ht_oa_tab_get(obj_p obj, i64_t key)
     u64_t i, idx, size, start;
     i64_t *keys;
 
-    size = as_list(obj)[0]->len;
-    keys = as_i64(as_list(obj)[0]);
+    size = AS_LIST(obj)[0]->len;
+    keys = AS_I64(AS_LIST(obj)[0]);
 
     start = (u64_t)key % size;
 
@@ -254,8 +255,8 @@ i64_t ht_oa_tab_get_with(obj_p obj, i64_t key, hash_f hash, cmp_f cmp, raw_p see
     u64_t i, idx, size, start;
     i64_t *keys;
 
-    size = as_list(obj)[0]->len;
-    keys = as_i64(as_list(obj)[0]);
+    size = AS_LIST(obj)[0]->len;
+    keys = AS_I64(AS_LIST(obj)[0]);
 
     start = hash(key, seed) % size;
 
@@ -285,15 +286,15 @@ u64_t hash_index_obj(obj_p obj)
     case -TYPE_F64:
         return (u64_t)obj->f64;
     case -TYPE_GUID:
-        return hash_index_u64(*(u64_t *)as_guid(obj), *((u64_t *)as_guid(obj) + 1));
+        return hash_index_u64(*(u64_t *)AS_GUID(obj), *((u64_t *)AS_GUID(obj) + 1));
     case TYPE_C8:
-        return str_hash(as_string(obj), obj->len);
+        return str_hash(AS_C8(obj), obj->len);
     case TYPE_I64:
     case TYPE_SYMBOL:
     case TYPE_TIMESTAMP:
         len = obj->len;
         for (i = 0, hash = 0xcbf29ce484222325ull; i < len; i++)
-            hash = hash_index_u64((u64_t)as_i64(obj)[i], hash);
+            hash = hash_index_u64((u64_t)AS_I64(obj)[i], hash);
         return hash;
     default:
         panic("hash: unsupported type: %d", obj->type);
@@ -552,13 +553,13 @@ i64_t ht_bk_get(ht_bk_p ht, i64_t key)
 
 u64_t hash_kmh(i64_t key, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     return (key * 6364136223846793005ull) >> 32;
 }
 
 u64_t hash_fnv1a(i64_t key, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     u64_t hash = 14695981039346656037ull;
     i32_t i;
 
@@ -574,7 +575,7 @@ u64_t hash_fnv1a(i64_t key, raw_p seed)
 
 u64_t hash_murmur3(i64_t key, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     u64_t hash = key;
 
     // Use a 64-bit mix function
@@ -589,7 +590,7 @@ u64_t hash_murmur3(i64_t key, raw_p seed)
 
 u64_t hash_guid(i64_t a, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     guid_t *g = (guid_t *)a;
     u64_t upper_part, lower_part;
 
@@ -603,31 +604,31 @@ u64_t hash_guid(i64_t a, raw_p seed)
 
 u64_t hash_i64(i64_t a, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     return (u64_t)a;
 }
 
 u64_t hash_obj(i64_t a, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     return hash_index_obj((obj_p)a);
 }
 
 i64_t hash_cmp_i64(i64_t a, i64_t b, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     return (a < b) ? -1 : ((a > b) ? 1 : 0);
 }
 
 i64_t hash_cmp_obj(i64_t a, i64_t b, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     return cmp_obj((obj_p)a, (obj_p)b);
 }
 
 i64_t hash_cmp_guid(i64_t a, i64_t b, raw_p seed)
 {
-    unused(seed);
+    UNUSED(seed);
     guid_t *g1 = (guid_t *)a, *g2 = (guid_t *)b;
     return memcmp(*g1, *g2, sizeof(guid_t));
 }

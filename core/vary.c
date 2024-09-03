@@ -52,12 +52,12 @@ obj_p vary_call_atomic(vary_f f, obj_p *x, u64_t n)
 
     v = f(x + n, n);
 
-    if (is_error(v))
+    if (IS_ERROR(v))
     {
         res = v;
     }
 
-    res = v->type < 0 ? vector(v->type, l) : list(l);
+    res = v->type < 0 ? vector(v->type, l) : LIST(l);
 
     ins_obj(&res, 0, v);
 
@@ -72,7 +72,7 @@ obj_p vary_call_atomic(vary_f f, obj_p *x, u64_t n)
         for (j = 0; j < n; j++)
             drop_obj(stack_pop());
 
-        if (is_error(v))
+        if (IS_ERROR(v))
         {
             res->len = i;
             drop_obj(res);
@@ -102,7 +102,7 @@ obj_p ray_do(obj_p *x, u64_t n)
     {
         drop_obj(res);
         res = eval(x[i]);
-        if (is_error(res))
+        if (IS_ERROR(res))
             return res;
     }
 
@@ -111,8 +111,8 @@ obj_p ray_do(obj_p *x, u64_t n)
 
 obj_p ray_gc(obj_p *x, u64_t n)
 {
-    unused(x);
-    unused(n);
+    UNUSED(x);
+    UNUSED(n);
     return i64(heap_gc());
 }
 
@@ -128,7 +128,7 @@ obj_p ray_print(obj_p *x, u64_t n)
     if (s == NULL_OBJ)
         return error_str(ERR_TYPE, "malformed format string");
 
-    printf("%.*s", (i32_t)s->len, as_string(s));
+    printf("%.*s", (i32_t)s->len, AS_C8(s));
     drop_obj(s);
 
     return NULL_OBJ;
@@ -141,7 +141,7 @@ obj_p ray_println(obj_p *x, u64_t n)
     if (s == NULL_OBJ)
         return error_str(ERR_TYPE, "malformed format string");
 
-    printf("%.*s\n", (i32_t)s->len, as_string(s));
+    printf("%.*s\n", (i32_t)s->len, AS_C8(s));
     drop_obj(s);
 
     return NULL_OBJ;
@@ -149,8 +149,8 @@ obj_p ray_println(obj_p *x, u64_t n)
 
 obj_p ray_args(obj_p *x, u64_t n)
 {
-    unused(x);
-    unused(n);
+    UNUSED(x);
+    UNUSED(n);
     return clone_obj(runtime_get()->args);
 }
 

@@ -40,7 +40,7 @@ nil_t usage(nil_t)
 obj_p parse_cmdline(i32_t argc, str_p argv[])
 {
     i32_t opt;
-    obj_p keys = vector_symbol(0), vals = list(0), str;
+    obj_p keys = SYMBOL(0), vals = LIST(0), str;
     b8_t file_handled = B8_FALSE; // flag to indicate if the file has been handled
 
     for (opt = 1; opt < argc; opt++)
@@ -131,7 +131,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
     __RUNTIME->symbols = symbols;
     __RUNTIME->env = env_create();
     __RUNTIME->addr = (sock_addr_t){{0}, 0};
-    __RUNTIME->fds = dict(vector_i64(0), vector_i64(0));
+    __RUNTIME->fds = dict(I64(0), I64(0));
     __RUNTIME->args = NULL_OBJ;
     __RUNTIME->pool = NULL;
 
@@ -145,7 +145,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
         arg = runtime_get_arg("cores");
         if (!is_null(arg))
         {
-            n = atoi(as_string(arg));
+            n = atoi(AS_C8(arg));
             if (n > 1)
                 __RUNTIME->pool = pool_create(n - 1); // -1 for the main thread
 
@@ -162,7 +162,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
         arg = runtime_get_arg("port");
         if (!is_null(arg))
         {
-            __RUNTIME->addr.port = atoi(as_string(arg));
+            __RUNTIME->addr.port = atoi(AS_C8(arg));
             drop_obj(arg);
         }
 
@@ -178,7 +178,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
             if (res)
             {
                 fmt = obj_fmt(res, B8_TRUE);
-                printf("%.*s\n", (i32_t)fmt->len, as_string(fmt));
+                printf("%.*s\n", (i32_t)fmt->len, AS_C8(fmt));
                 drop_obj(fmt);
                 drop_obj(res);
             }
@@ -188,7 +188,7 @@ i32_t runtime_create(i32_t argc, str_p argv[])
         arg = runtime_get_arg("timeit");
         if (!is_null(arg))
         {
-            n = atoi(as_string(arg));
+            n = atoi(AS_C8(arg));
             drop_obj(arg);
             timeit_activate(n);
         }
@@ -231,8 +231,8 @@ nil_t runtime_destroy(nil_t)
 
 obj_p runtime_get_arg(lit_p key)
 {
-    i64_t i = find_sym(as_list(__RUNTIME->args)[0], key);
-    if (i < (i64_t)as_list(__RUNTIME->args)[0]->len)
-        return at_idx(as_list(__RUNTIME->args)[1], i);
+    i64_t i = find_sym(AS_LIST(__RUNTIME->args)[0], key);
+    if (i < (i64_t)AS_LIST(__RUNTIME->args)[0]->len)
+        return at_idx(AS_LIST(__RUNTIME->args)[1], i);
     return NULL_OBJ;
 }

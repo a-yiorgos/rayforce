@@ -64,7 +64,7 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
         if (l == 0)
             return NULL_OBJ;
 
-        v = as_list(x);
+        v = AS_LIST(x);
         n = pool_split_by(pool, l, 0);
 
         if (n > 1)
@@ -75,17 +75,17 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
                 pool_add_task(pool, unary_call_atomic, 2, f, v[i]);
 
             parts = pool_run(pool);
-            unwrap_list(parts);
+            UNWRAP_LIST(parts);
 
             return parts;
         }
 
         item = unary_call_atomic(f, v[0]);
 
-        if (is_error(item))
+        if (IS_ERROR(item))
             return item;
 
-        res = item->type < 0 ? vector(item->type, l) : list(l);
+        res = item->type < 0 ? vector(item->type, l) : LIST(l);
 
         ins_obj(&res, 0, item);
 
@@ -93,7 +93,7 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
         {
             item = unary_call_atomic(f, v[i]);
 
-            if (is_error(item))
+            if (IS_ERROR(item))
             {
                 res->len = i;
                 drop_obj(res);
@@ -114,7 +114,7 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
         item = unary_call_atomic(f, a);
         drop_obj(a);
 
-        if (is_error(item))
+        if (IS_ERROR(item))
             return item;
 
         res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
@@ -127,7 +127,7 @@ obj_p unary_call_atomic(unary_f f, obj_p x)
             item = unary_call_atomic(f, a);
             drop_obj(a);
 
-            if (is_error(item))
+            if (IS_ERROR(item))
             {
                 res->len = i;
                 drop_obj(res);
@@ -171,7 +171,7 @@ obj_p ray_get(obj_p x)
             throw(ERR_LENGTH, "get: empty string path");
 
         // get splayed table
-        if (x->len > 1 && as_string(x)[x->len - 1] == '/')
+        if (x->len > 1 && AS_C8(x)[x->len - 1] == '/')
         {
             // first try to read columns schema
             s = cstring_from_str(".d", 2);
@@ -180,7 +180,7 @@ obj_p ray_get(obj_p x)
             drop_obj(s);
             drop_obj(col);
 
-            if (is_error(keys))
+            if (IS_ERROR(keys))
                 return keys;
 
             if (keys->type != TYPE_SYMBOL)
@@ -190,7 +190,7 @@ obj_p ray_get(obj_p x)
             }
 
             l = keys->len;
-            vals = list(l);
+            vals = LIST(l);
 
             for (i = 0; i < l; i++)
             {
@@ -203,7 +203,7 @@ obj_p ray_get(obj_p x)
                 drop_obj(s);
                 drop_obj(col);
 
-                if (is_error(val))
+                if (IS_ERROR(val))
                 {
                     vals->len = i;
                     drop_obj(vals);
@@ -212,7 +212,8 @@ obj_p ray_get(obj_p x)
                     return val;
                 }
 
-                as_list(vals)[i] = val;
+                AS_LIST(vals)
+                [i] = val;
             }
 
             // read symbol data (if any) if sym is not present in current env
@@ -225,7 +226,7 @@ obj_p ray_get(obj_p x)
                 drop_obj(s);
                 drop_obj(col);
 
-                if (!is_error(v))
+                if (!IS_ERROR(v))
                 {
                     s = symbol("sym", 3);
                     drop_obj(ray_set(s, v));
@@ -241,11 +242,11 @@ obj_p ray_get(obj_p x)
         else
         {
             path = cstring_from_obj(x);
-            fd = fs_fopen(as_string(path), ATTR_RDWR);
+            fd = fs_fopen(AS_C8(path), ATTR_RDWR);
 
             if (fd == -1)
             {
-                res = sys_error(ERROR_TYPE_SYS, as_string(path));
+                res = sys_error(ERROR_TYPE_SYS, AS_C8(path));
                 drop_obj(path);
                 return res;
             }
@@ -254,7 +255,7 @@ obj_p ray_get(obj_p x)
 
             if (size < sizeof(struct obj_t))
             {
-                res = error(ERR_LENGTH, "get: file '%s': invalid size: %d", as_string(path), size);
+                res = error(ERR_LENGTH, "get: file '%s': invalid size: %d", AS_C8(path), size);
                 drop_obj(path);
                 fs_fclose(fd);
                 return res;
@@ -330,27 +331,27 @@ obj_p ray_bins(obj_p x)
     // case TYPE_B8:
     // case TYPE_U8:
     // case TYPE_C8:
-    //     bins = index_group_i8((i8_t *)as_u8(x), NULL, x->len);
+    //     bins = index_group_i8((i8_t *)AS_U8(x), NULL, x->len);
     //     break;
     // case TYPE_I64:
     // case TYPE_SYMBOL:
     // case TYPE_TIMESTAMP:
-    //     bins = index_group_i64(as_i64(x), NULL, x->len);
+    //     bins = index_group_i64(AS_I64(x), NULL, x->len);
     //     break;
     // case TYPE_F64:
-    //     bins = index_group_i64((i64_t *)as_f64(x), NULL, x->len);
+    //     bins = index_group_i64((i64_t *)AS_F64(x), NULL, x->len);
     //     break;
     // case TYPE_LIST:
-    //     bins = index_group_obj(as_list(x), NULL, x->len);
+    //     bins = index_group_obj(AS_LIST(x), NULL, x->len);
     //     break;
     // case TYPE_GUID:
-    //     bins = index_group_guid(as_guid(x), NULL, x->len);
+    //     bins = index_group_guid(AS_GUID(x), NULL, x->len);
     //     break;
     default:
         throw(ERR_TYPE, "bins: unsupported type: '%s", type_name(x->type));
     }
 
-    res = clone_obj(as_list(bins)[1]);
+    res = clone_obj(AS_LIST(bins)[1]);
     drop_obj(bins);
 
     return res;

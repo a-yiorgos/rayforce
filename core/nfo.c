@@ -39,9 +39,10 @@ nil_t nfo_insert(obj_p nfo, i64_t index, span_t span)
     if (nfo == NULL_OBJ)
         return;
 
-    i = ht_oa_tab_next(&as_list(nfo)[2], index);
-    as_i64(as_list(as_list(nfo)[2])[0])[i] = index;
-    memcpy(&as_i64(as_list(as_list(nfo)[2])[1])[i], &span, sizeof(span_t));
+    i = ht_oa_tab_next(&AS_LIST(nfo)[2], index);
+    AS_I64(AS_LIST(AS_LIST(nfo)[2])[0])
+    [i] = index;
+    memcpy(&AS_I64(AS_LIST(AS_LIST(nfo)[2])[1])[i], &span, sizeof(span_t));
 }
 
 span_t nfo_get(obj_p nfo, i64_t index)
@@ -52,11 +53,11 @@ span_t nfo_get(obj_p nfo, i64_t index)
     if (nfo == NULL_OBJ)
         return span;
 
-    i = ht_oa_tab_next(&as_list(nfo)[2], index);
-    if (as_i64(as_list(as_list(nfo)[2])[0])[i] == NULL_I64)
+    i = ht_oa_tab_next(&AS_LIST(nfo)[2], index);
+    if (AS_I64(AS_LIST(AS_LIST(nfo)[2])[0])[i] == NULL_I64)
         return span;
 
-    memcpy(&span, &as_i64(as_list(as_list(nfo)[2])[1])[i], sizeof(span_t));
+    memcpy(&span, &AS_I64(AS_LIST(AS_LIST(nfo)[2])[1])[i], sizeof(span_t));
 
     return span;
 }

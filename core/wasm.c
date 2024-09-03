@@ -47,7 +47,7 @@
 
 // Declare rayforce_ready callback on js side
 EM_JS(nil_t, js_rayforce_ready, (str_p text), {
-    Module.rayforce_ready(UTF8ToString(text));
+    Module.rayforce_ready(UTF8ToC8(text));
 });
 
 poll_p poll_init(i64_t port)
@@ -65,37 +65,37 @@ nil_t poll_destroy(poll_p poll)
 
 i64_t poll_run(poll_p poll)
 {
-    unused(poll);
+    UNUSED(poll);
     return 0;
 }
 
 i64_t poll_register(poll_p poll, i64_t fd, u8_t version)
 {
-    unused(poll);
-    unused(fd);
-    unused(version);
+    UNUSED(poll);
+    UNUSED(fd);
+    UNUSED(version);
     return 0;
 }
 
 nil_t poll_deregister(poll_p poll, i64_t id)
 {
-    unused(poll);
-    unused(id);
+    UNUSED(poll);
+    UNUSED(id);
 }
 
 obj_p ipc_send_sync(poll_p poll, i64_t id, obj_p msg)
 {
-    unused(poll);
-    unused(id);
-    unused(msg);
+    UNUSED(poll);
+    UNUSED(id);
+    UNUSED(msg);
     return NULL_OBJ;
 }
 
 obj_p ipc_send_async(poll_p poll, i64_t id, obj_p msg)
 {
-    unused(poll);
-    unused(id);
-    unused(msg);
+    UNUSED(poll);
+    UNUSED(id);
+    UNUSED(msg);
     return NULL_OBJ;
 }
 
@@ -129,7 +129,7 @@ nil_t list_examples(obj_p *dst)
 
 EMSCRIPTEN_KEEPALIVE str_p strof_obj(obj_p obj)
 {
-    return as_string(obj);
+    return AS_C8(obj);
 }
 
 EMSCRIPTEN_KEEPALIVE i32_t main(i32_t argc, str_p argv[])
@@ -146,7 +146,7 @@ EMSCRIPTEN_KEEPALIVE i32_t main(i32_t argc, str_p argv[])
     atexit(runtime_destroy);
     runtime_create(0, NULL);
     code = runtime_run();
-    js_rayforce_ready(as_string(fmt));
+    js_rayforce_ready(AS_C8(fmt));
     drop_obj(fmt);
 
     return code;

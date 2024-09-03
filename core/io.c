@@ -47,8 +47,8 @@ obj_p ray_hopen(obj_p x)
     if (x->type != TYPE_C8)
         throw(ERR_TYPE, "hopen: expected char");
 
-    if (sock_addr_from_str(as_string(x), &addr) == -1)
-        throw(ERR_IO, "hopen: invalid address: %s", as_string(x));
+    if (sock_addr_from_str(AS_C8(x), &addr) == -1)
+        throw(ERR_IO, "hopen: invalid address: %s", AS_C8(x));
 
     fd = sock_open(&addr);
 
@@ -91,26 +91,26 @@ obj_p ray_read(obj_p x)
     {
     case TYPE_C8:
         s = cstring_from_obj(x);
-        fd = fs_fopen(as_string(s), ATTR_RDONLY);
+        fd = fs_fopen(AS_C8(s), ATTR_RDONLY);
 
         // error handling if file does not exist
         if (fd == -1)
         {
-            res = sys_error(ERROR_TYPE_SYS, as_string(s));
+            res = sys_error(ERROR_TYPE_SYS, AS_C8(s));
             drop_obj(s);
             return res;
         }
 
         size = fs_fsize(fd);
-        res = string(size + 1);
-        buf = as_string(res);
+        res = C8(size + 1);
+        buf = AS_C8(res);
         c = fs_fread(fd, buf, size);
         fs_fclose(fd);
 
         if (c != size)
         {
             drop_obj(res);
-            res = sys_error(ERROR_TYPE_SYS, as_string(s));
+            res = sys_error(ERROR_TYPE_SYS, AS_C8(s));
             drop_obj(s);
             return res;
         }
@@ -140,12 +140,12 @@ obj_p io_write(i64_t fd, u8_t msg_type, obj_p obj)
             return eval_obj(obj);
     case 1:
         fmt = obj_fmt(obj, B8_TRUE);
-        fprintf(stdout, "%.*s\n", (i32_t)fmt->len, as_string(fmt));
+        fprintf(stdout, "%.*s\n", (i32_t)fmt->len, AS_C8(fmt));
         drop_obj(fmt);
         return NULL_OBJ;
     case 2:
         fmt = obj_fmt(obj, B8_TRUE);
-        fprintf(stderr, "%.*s\n", (i32_t)fmt->len, as_string(fmt));
+        fprintf(stderr, "%.*s\n", (i32_t)fmt->len, AS_C8(fmt));
         drop_obj(fmt);
         return NULL_OBJ;
     default:
@@ -188,41 +188,50 @@ obj_p parse_csv_field(i8_t type, str_p start, str_p end, i64_t row, obj_p out)
     case TYPE_U8:
         if (start == NULL || end == NULL)
         {
-            as_u8(out)[row] = 0;
+            AS_U8(out)
+            [row] = 0;
             break;
         }
-        as_u8(out)[row] = (u8_t)i64_from_str(start, end - start);
+        AS_U8(out)
+        [row] = (u8_t)i64_from_str(start, end - start);
         break;
     case TYPE_I64:
-        as_i64(out)[row] = i64_from_str(start, end - start);
+        AS_I64(out)
+        [row] = i64_from_str(start, end - start);
         break;
     case TYPE_TIMESTAMP:
         if (start == NULL || end == NULL)
         {
-            as_timestamp(out)[row] = NULL_I64;
+            AS_TIMESTAMP(out)
+            [row] = NULL_I64;
             break;
         }
-        as_timestamp(out)[row] = timestamp_into_i64(timestamp_from_str(start));
+        AS_TIMESTAMP(out)
+        [row] = timestamp_into_i64(timestamp_from_str(start));
         break;
     case TYPE_F64:
-        as_f64(out)[row] = f64_from_str(start, end - start);
+        AS_F64(out)
+        [row] = f64_from_str(start, end - start);
         break;
     case TYPE_SYMBOL:
         if (start == NULL || end == NULL)
         {
-            as_symbol(out)[row] = 0;
+            AS_SYMBOL(out)
+            [row] = 0;
             break;
         }
         n = end - start;
         if ((n > 0) && (*(end - 1) == '\r'))
             n--;
-        as_symbol(out)[row] = symbols_intern(start, n);
+        AS_SYMBOL(out)
+        [row] = symbols_intern(start, n);
         break;
     case TYPE_C8:
         n = end - start;
         if ((n > 0) && (*(end - 1) == '\r'))
             n--;
-        as_list(out)[row] = string_from_str(start, n);
+        AS_LIST(out)
+        [row] = string_from_str(start, n);
         break;
     default:
         throw(ERR_TYPE, "csv: unsupported type: '%s", type_name(type));
@@ -241,7 +250,7 @@ obj_p parse_csv_line(i8_t types[], i64_t cnt, str_p start, str_p end, i64_t row,
     {
         if (pos == NULL || end == NULL)
         {
-            res = parse_csv_field(types[i], NULL, NULL, row, as_list(cols)[i]);
+            res = parse_csv_field(types[i], NULL, NULL, row, AS_LIST(cols)[i]);
 
             if (!is_null(res))
                 return res;
@@ -261,7 +270,7 @@ obj_p parse_csv_line(i8_t types[], i64_t cnt, str_p start, str_p end, i64_t row,
             if (pos == NULL)
                 throw(ERR_LENGTH, "csv: line: %lld invalid input: %s", row + 1, prev);
 
-            res = parse_csv_field(types[i], prev, pos, row, as_list(cols)[i]);
+            res = parse_csv_field(types[i], prev, pos, row, AS_LIST(cols)[i]);
             pos += 2; // skip quote and comma
 
             if (!is_null(res))
@@ -272,7 +281,7 @@ obj_p parse_csv_line(i8_t types[], i64_t cnt, str_p start, str_p end, i64_t row,
 
         if (len == 0)
         {
-            res = parse_csv_field(types[i], NULL, NULL, row, as_list(cols)[i]);
+            res = parse_csv_field(types[i], NULL, NULL, row, AS_LIST(cols)[i]);
 
             if (!is_null(res))
                 return res;
@@ -288,7 +297,7 @@ obj_p parse_csv_line(i8_t types[], i64_t cnt, str_p start, str_p end, i64_t row,
             pos = end;
         }
 
-        res = parse_csv_field(types[i], prev, pos, row, as_list(cols)[i]);
+        res = parse_csv_field(types[i], prev, pos, row, AS_LIST(cols)[i]);
 
         if (!is_null(res))
             return res;
@@ -380,7 +389,7 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
 
     res = pool_run(pool);
 
-    if (is_error(res))
+    if (IS_ERROR(res))
         return res;
 
     drop_obj(res);
@@ -417,14 +426,14 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
 
         // check that all symbols are valid typenames and convert them to types
         l = x[0]->len;
-        types = vector_u8(l);
+        types = U8(l);
         for (i = 0; i < l; i++)
         {
-            type = env_get_type_by_type_name(&runtime_get()->env, as_symbol(x[0])[i]);
+            type = env_get_type_by_type_name(&runtime_get()->env, AS_SYMBOL(x[0])[i]);
             if (type == TYPE_ERROR)
             {
                 drop_obj(types);
-                throw(ERR_TYPE, "csv: invalid type: '%s", str_from_symbol(as_symbol(x[0])[i]));
+                throw(ERR_TYPE, "csv: invalid type: '%s", str_from_symbol(AS_SYMBOL(x[0])[i]));
             }
 
             if (type < 0)
@@ -434,12 +443,12 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
         }
 
         path = cstring_from_obj(x[1]);
-        fd = fs_fopen(as_string(path), ATTR_RDONLY);
+        fd = fs_fopen(AS_C8(path), ATTR_RDONLY);
 
         if (fd == -1)
         {
             drop_obj(types);
-            res = sys_error(ERROR_TYPE_SYS, as_string(path));
+            res = sys_error(ERROR_TYPE_SYS, AS_C8(path));
             drop_obj(path);
             return res;
         }
@@ -450,7 +459,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
         {
             drop_obj(types);
             fs_fclose(fd);
-            res = error(ERR_LENGTH, "get: file '%s': invalid size: %d", as_string(path), size);
+            res = error(ERR_LENGTH, "get: file '%s': invalid size: %d", AS_C8(path), size);
             drop_obj(path);
             return res;
         }
@@ -478,7 +487,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
             drop_obj(types);
             fs_fclose(fd);
             mmap_free(buf, size);
-            res = error(ERR_LENGTH, "csv: file '%s': invalid size: %d", as_string(path), size);
+            res = error(ERR_LENGTH, "csv: file '%s': invalid size: %d", AS_C8(path), size);
             drop_obj(path);
             return res;
         }
@@ -492,7 +501,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
         len = pos - buf;
         line = pos + 1;
 
-        names = vector_symbol(l);
+        names = SYMBOL(l);
         pos = buf;
 
         for (i = 0; i < l; i++)
@@ -507,7 +516,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
                     drop_obj(names);
                     fs_fclose(fd);
                     mmap_free(buf, size);
-                    throw(ERR_LENGTH, "csv: file '%s': invalid header (number of fields is less then csv contains)", as_string(x[1]));
+                    throw(ERR_LENGTH, "csv: file '%s': invalid header (number of fields is less then csv contains)", AS_C8(x[1]));
                 }
 
                 pos = prev + len;
@@ -516,7 +525,8 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
                     pos--;
             }
 
-            as_symbol(names)[i] = symbols_intern(prev, pos - prev);
+            AS_SYMBOL(names)
+            [i] = symbols_intern(prev, pos - prev);
             pos++;
             len -= (pos - prev);
         }
@@ -527,7 +537,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
             drop_obj(names);
             fs_fclose(fd);
             mmap_free(buf, size);
-            res = error(ERR_LENGTH, "csv: file '%s': invalid header (number of fields is less then csv contains)", as_string(path));
+            res = error(ERR_LENGTH, "csv: file '%s': invalid header (number of fields is less then csv contains)", AS_C8(path));
             drop_obj(path);
             return res;
         }
@@ -536,17 +546,18 @@ obj_p ray_read_csv(obj_p *x, i64_t n)
         lines--;
 
         // allocate columns
-        cols = list(l);
+        cols = LIST(l);
         for (i = 0; i < l; i++)
         {
-            if (as_string(types)[i] == TYPE_C8)
-                as_list(cols)[i] = list(lines);
-            else
-                as_list(cols)[i] = vector(as_string(types)[i], lines);
+            if (AS_C8(types)[i] == TYPE_C8)
+                AS_LIST(cols)
+            [i] = LIST(lines);
+            else AS_LIST(cols)
+                [i] = vector(AS_C8(types)[i], lines);
         }
 
         // parse lines
-        res = parse_csv_lines((i8_t *)as_u8(types), l, line, size, lines, cols, sep);
+        res = parse_csv_lines((i8_t *)AS_U8(types), l, line, size, lines, cols, sep);
 
         drop_obj(types);
         fs_fclose(fd);
@@ -590,7 +601,7 @@ obj_p ray_load(obj_p x)
         throw(ERR_TYPE, "load: expected string");
 
     file = ray_read(x);
-    if (is_error(file))
+    if (IS_ERROR(file))
         return file;
 
     res = ray_eval_str(file, x);

@@ -104,11 +104,11 @@ obj_p ray_lj(obj_p *x, u64_t n)
     ll = ops_count(x[1]);
 
     k1 = ray_at(x[1], x[0]);
-    if (is_error(k1))
+    if (IS_ERROR(k1))
         return k1;
 
     k2 = ray_at(x[2], x[0]);
-    if (is_error(k2))
+    if (IS_ERROR(k2))
     {
         drop_obj(k1);
         return k2;
@@ -117,14 +117,14 @@ obj_p ray_lj(obj_p *x, u64_t n)
     idx = index_join_obj(k1, k2, x[0]->len);
     drop_obj(k2);
 
-    if (is_error(idx))
+    if (IS_ERROR(idx))
     {
         drop_obj(k1);
         return idx;
     }
 
-    un = ray_union(as_list(x[1])[0], as_list(x[2])[0]);
-    if (is_error(un))
+    un = ray_union(AS_LIST(x[1])[0], AS_LIST(x[2])[0]);
+    if (IS_ERROR(un))
     {
         drop_obj(k1);
         return un;
@@ -134,7 +134,7 @@ obj_p ray_lj(obj_p *x, u64_t n)
     cols = ray_except(un, x[0]);
     drop_obj(un);
 
-    if (is_error(cols))
+    if (IS_ERROR(cols))
     {
         drop_obj(k1);
         drop_obj(idx);
@@ -152,7 +152,7 @@ obj_p ray_lj(obj_p *x, u64_t n)
     }
 
     // resulting columns
-    vals = list(l);
+    vals = LIST(l);
 
     // process each column
     for (i = 0; i < l; i++)
@@ -160,26 +160,26 @@ obj_p ray_lj(obj_p *x, u64_t n)
         c1 = NULL_OBJ;
         c2 = NULL_OBJ;
 
-        for (j = 0; j < (i64_t)as_list(x[1])[0]->len; j++)
+        for (j = 0; j < (i64_t)AS_LIST(x[1])[0]->len; j++)
         {
-            if (as_symbol(as_list(x[1])[0])[j] == as_symbol(cols)[i])
+            if (AS_SYMBOL(AS_LIST(x[1])[0])[j] == AS_SYMBOL(cols)[i])
             {
-                c1 = as_list(as_list(x[1])[1])[j];
+                c1 = AS_LIST(AS_LIST(x[1])[1])[j];
                 break;
             }
         }
 
-        for (j = 0; j < (i64_t)as_list(x[2])[0]->len; j++)
+        for (j = 0; j < (i64_t)AS_LIST(x[2])[0]->len; j++)
         {
-            if (as_symbol(as_list(x[2])[0])[j] == as_symbol(cols)[i])
+            if (AS_SYMBOL(AS_LIST(x[2])[0])[j] == AS_SYMBOL(cols)[i])
             {
-                c2 = as_list(as_list(x[2])[1])[j];
+                c2 = AS_LIST(AS_LIST(x[2])[1])[j];
                 break;
             }
         }
 
-        col = select_column(c1, c2, as_i64(idx), ll);
-        if (is_error(col))
+        col = select_column(c1, c2, AS_I64(idx), ll);
+        if (IS_ERROR(col))
         {
             drop_obj(k1);
             drop_obj(cols);
@@ -188,7 +188,8 @@ obj_p ray_lj(obj_p *x, u64_t n)
             return col;
         }
 
-        as_list(vals)[i] = col;
+        AS_LIST(vals)
+        [i] = col;
     }
 
     // cleanup and assemble result table
@@ -201,9 +202,11 @@ obj_p ray_lj(obj_p *x, u64_t n)
     {
         l = rescols->len;
         resvals = vector(TYPE_LIST, l);
-        as_list(resvals)[0] = k1;
+        AS_LIST(resvals)
+        [0] = k1;
         for (i = 1; i < l; i++)
-            as_list(resvals)[i] = clone_obj(as_list(vals)[i - 1]);
+            AS_LIST(resvals)
+        [i] = clone_obj(AS_LIST(vals)[i - 1]);
         drop_obj(vals);
     }
     else
@@ -238,11 +241,11 @@ obj_p ray_ij(obj_p *x, u64_t n)
         return clone_obj(x[1]);
 
     k1 = ray_at(x[1], x[0]);
-    if (is_error(k1))
+    if (IS_ERROR(k1))
         return k1;
 
     k2 = ray_at(x[2], x[0]);
-    if (is_error(k2))
+    if (IS_ERROR(k2))
     {
         drop_obj(k1);
         return k2;
@@ -252,24 +255,25 @@ obj_p ray_ij(obj_p *x, u64_t n)
     drop_obj(k1);
     drop_obj(k2);
 
-    if (is_error(idx))
+    if (IS_ERROR(idx))
         return idx;
 
     // Compact the index (skip all nulls)
     l = idx->len;
     for (i = 0, ll = 0; i < l; i++)
-        if (as_i64(idx)[i] != NULL_I64)
-            as_i64(idx)[ll++] = as_i64(idx)[i];
+        if (AS_I64(idx)[i] != NULL_I64)
+            AS_I64(idx)
+    [ll++] = AS_I64(idx)[i];
 
-    un = ray_union(as_list(x[1])[0], as_list(x[2])[0]);
-    if (is_error(un))
+    un = ray_union(AS_LIST(x[1])[0], AS_LIST(x[2])[0]);
+    if (IS_ERROR(un))
         return un;
 
     // exclude columns that we are joining on
     cols = ray_except(un, x[0]);
     drop_obj(un);
 
-    if (is_error(cols))
+    if (IS_ERROR(cols))
     {
         drop_obj(idx);
         return cols;
@@ -289,7 +293,7 @@ obj_p ray_ij(obj_p *x, u64_t n)
     l = cols->len;
 
     // resulting columns
-    vals = list(l);
+    vals = LIST(l);
 
     // process each column
     for (i = 0; i < l; i++)
@@ -297,26 +301,26 @@ obj_p ray_ij(obj_p *x, u64_t n)
         c1 = NULL_OBJ;
         c2 = NULL_OBJ;
 
-        for (j = 0; j < (i64_t)as_list(x[1])[0]->len; j++)
+        for (j = 0; j < (i64_t)AS_LIST(x[1])[0]->len; j++)
         {
-            if (as_symbol(as_list(x[1])[0])[j] == as_symbol(cols)[i])
+            if (AS_SYMBOL(AS_LIST(x[1])[0])[j] == AS_SYMBOL(cols)[i])
             {
-                c1 = as_list(as_list(x[1])[1])[j];
+                c1 = AS_LIST(AS_LIST(x[1])[1])[j];
                 break;
             }
         }
 
-        for (j = 0; j < (i64_t)as_list(x[2])[0]->len; j++)
+        for (j = 0; j < (i64_t)AS_LIST(x[2])[0]->len; j++)
         {
-            if (as_symbol(as_list(x[2])[0])[j] == as_symbol(cols)[i])
+            if (AS_SYMBOL(AS_LIST(x[2])[0])[j] == AS_SYMBOL(cols)[i])
             {
-                c2 = as_list(as_list(x[2])[1])[j];
+                c2 = AS_LIST(AS_LIST(x[2])[1])[j];
                 break;
             }
         }
 
-        col = get_column(c1, c2, as_i64(idx), ll);
-        if (is_error(col))
+        col = get_column(c1, c2, AS_I64(idx), ll);
+        if (IS_ERROR(col))
         {
             drop_obj(cols);
             drop_obj(idx);
@@ -324,7 +328,8 @@ obj_p ray_ij(obj_p *x, u64_t n)
             return col;
         }
 
-        as_list(vals)[i] = col;
+        AS_LIST(vals)
+        [i] = col;
     }
 
     // cleanup and assemble result table

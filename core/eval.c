@@ -53,9 +53,9 @@ nil_t error_add_loc(obj_p err, i64_t id, ctx_p ctx)
     span = nfo_get(nfo, id);
     loc = vn_list(4,
                   i64(span.id),                            // span
-                  clone_obj(as_list(nfo)[0]),              // filename
+                  clone_obj(AS_LIST(nfo)[0]),              // filename
                   clone_obj(as_lambda(ctx->lambda)->name), // function name
-                  clone_obj(as_list(nfo)[1])               // source
+                  clone_obj(AS_LIST(nfo)[1])               // source
     );
 
     if (as_error(err)->locs == NULL_OBJ)
@@ -99,7 +99,7 @@ interpreter_p interpreter_create(u64_t id)
 nil_t interpreter_destroy(nil_t)
 {
     // cleanup stack (if any)
-    debug_assert(__INTERPRETER->sp == 0, "stack is not empty");
+    DEBUG_ASSERT(__INTERPRETER->sp == 0, "stack is not empty");
 
     heap_unmap(__INTERPRETER->stack, EVAL_STACK_SIZE);
     heap_unmap(__INTERPRETER->ctxstack[0].lambda, sizeof(struct obj_t) + sizeof(struct lambda_t));
@@ -181,7 +181,7 @@ __attribute__((hot)) obj_p eval(obj_p obj)
         if (obj->len == 0)
             return NULL_OBJ;
 
-        args = as_list(obj);
+        args = AS_LIST(obj);
         car = args[0];
         len = obj->len - 1;
         args++;
@@ -198,18 +198,18 @@ __attribute__((hot)) obj_p eval(obj_p obj)
             {
                 x = eval(args[0]);
 
-                if (is_error(x))
+                if (IS_ERROR(x))
                     return x;
 
                 if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP)
                 {
-                    y = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                    y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                     drop_obj(x);
                     x = y;
                 }
                 else if (x->type == TYPE_FILTERMAP)
                 {
-                    y = filter_collect(as_list(x)[0], as_list(x)[1]);
+                    y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                     drop_obj(x);
                     x = y;
                 }
@@ -228,24 +228,24 @@ __attribute__((hot)) obj_p eval(obj_p obj)
             else
             {
                 x = eval(args[0]);
-                if (is_error(x))
+                if (IS_ERROR(x))
                     return x;
 
                 if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP)
                 {
-                    y = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                    y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                     drop_obj(x);
                     x = y;
                 }
                 else if (x->type == TYPE_FILTERMAP)
                 {
-                    y = filter_collect(as_list(x)[0], as_list(x)[1]);
+                    y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                     drop_obj(x);
                     x = y;
                 }
 
                 y = eval(args[1]);
-                if (is_error(y))
+                if (IS_ERROR(y))
                 {
                     drop_obj(x);
                     return y;
@@ -253,13 +253,13 @@ __attribute__((hot)) obj_p eval(obj_p obj)
 
                 if (!(car->attrs & FN_AGGR) && y->type == TYPE_GROUPMAP)
                 {
-                    z = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                    z = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                     drop_obj(y);
                     y = z;
                 }
                 else if (y->type == TYPE_FILTERMAP)
                 {
-                    z = filter_collect(as_list(y)[0], as_list(y)[1]);
+                    z = filter_collect(AS_LIST(y)[0], AS_LIST(y)[1]);
                     drop_obj(y);
                     y = z;
                 }
@@ -282,19 +282,19 @@ __attribute__((hot)) obj_p eval(obj_p obj)
                 for (i = 0; i < len; i++)
                 {
                     x = eval(args[i]);
-                    if (is_error(x))
+                    if (IS_ERROR(x))
                         return x;
 
                     if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP)
                     {
                         attrs = FN_GROUP_MAP;
-                        y = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                        y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                         drop_obj(x);
                         x = y;
                     }
                     else if (x->type == TYPE_FILTERMAP)
                     {
-                        y = filter_collect(as_list(x)[0], as_list(x)[1]);
+                        y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                         drop_obj(x);
                         x = y;
                     }
@@ -322,13 +322,13 @@ __attribute__((hot)) obj_p eval(obj_p obj)
             for (i = 0; i < len; i++)
             {
                 x = eval(args[i]);
-                if (is_error(x))
+                if (IS_ERROR(x))
                     return x;
 
                 // if (x->type == TYPE_GROUPMAP)
                 // {
                 //     attrs = FN_GROUP_MAP;
-                //     y = aggr_collect(as_list(x)[0], as_list(x)[1]);
+                //     y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                 //     drop_obj(x);
                 //     x = y;
                 // }
@@ -384,7 +384,8 @@ obj_p amend(obj_p sym, obj_p val)
     else
     {
         *env = dict(vector(TYPE_SYMBOL, 1), vn_list(1, clone_obj(val)));
-        as_symbol(as_list(*env)[0])[0] = sym->i64;
+        AS_SYMBOL(AS_LIST(*env)[0])
+        [0] = sym->i64;
     }
 
     return val;
@@ -406,30 +407,34 @@ obj_p mount_env(obj_p obj)
 
     if (*env != NULL_OBJ)
     {
-        l1 = as_list(*env)[0]->len;
-        l2 = as_list(obj)[0]->len;
+        l1 = AS_LIST(*env)[0]->len;
+        l2 = AS_LIST(obj)[0]->len;
         l = l1 + l2;
-        keys = vector_symbol(l);
-        vals = list(l);
+        keys = SYMBOL(l);
+        vals = LIST(l);
 
         for (i = 0; i < l1; i++)
         {
-            as_symbol(keys)[i] = as_symbol(as_list(*env)[0])[i];
-            as_list(vals)[i] = clone_obj(as_list(as_list(*env)[1])[i]);
+            AS_SYMBOL(keys)
+            [i] = AS_SYMBOL(AS_LIST(*env)[0])[i];
+            AS_LIST(vals)
+            [i] = clone_obj(AS_LIST(AS_LIST(*env)[1])[i]);
         }
 
         for (i = 0; i < l2; i++)
         {
-            as_symbol(keys)[i + l1] = as_symbol(as_list(obj)[0])[i];
-            as_list(vals)[i + l1] = clone_obj(as_list(as_list(obj)[1])[i]);
+            AS_SYMBOL(keys)
+            [i + l1] = AS_SYMBOL(AS_LIST(obj)[0])[i];
+            AS_LIST(vals)
+            [i + l1] = clone_obj(AS_LIST(AS_LIST(obj)[1])[i]);
         }
 
         drop_obj(*env);
     }
     else
     {
-        keys = clone_obj(as_list(obj)[0]);
-        vals = clone_obj(as_list(obj)[1]);
+        keys = clone_obj(AS_LIST(obj)[0]);
+        vals = clone_obj(AS_LIST(obj)[1]);
     }
 
     *env = dict(keys, vals);
@@ -458,14 +463,14 @@ obj_p unmount_env(u64_t n)
     }
     else
     {
-        l = as_list(*env)[0]->len;
-        resize_obj(&as_list(*env)[0], l - n);
+        l = AS_LIST(*env)[0]->len;
+        resize_obj(&AS_LIST(*env)[0], l - n);
 
         // free values
         for (i = l; i > l - n; i--)
-            drop_obj(as_list(as_list(*env)[1])[i - 1]);
+            drop_obj(AS_LIST(AS_LIST(*env)[1])[i - 1]);
 
-        resize_obj(&as_list(*env)[1], l - n);
+        resize_obj(&AS_LIST(*env)[1], l - n);
     }
 
     return NULL_OBJ;
@@ -508,14 +513,14 @@ obj_p ray_raise(obj_p obj)
 
 obj_p ray_parse_str(i64_t fd, obj_p str, obj_p file)
 {
-    unused(fd);
+    UNUSED(fd);
     obj_p info, res;
 
     if (str->type != TYPE_C8)
         throw(ERR_TYPE, "parse: expected string, got %s", type_name(str->type));
 
     info = nfo(clone_obj(file), clone_obj(str));
-    res = parse(as_string(str), info);
+    res = parse(AS_C8(str), info);
     drop_obj(info);
 
     return res;
@@ -551,10 +556,10 @@ obj_p ray_eval_str(obj_p str, obj_p file)
 
     timeit_reset();
     timeit_span_start("top-level");
-    parsed = parse(as_string(str), info);
+    parsed = parse(AS_C8(str), info);
     timeit_tick("parse");
 
-    if (is_error(parsed))
+    if (IS_ERROR(parsed))
     {
         drop_obj(info);
         return parsed;
@@ -614,7 +619,7 @@ obj_p try_obj(obj_p obj, obj_p ctch)
     while (__INTERPRETER->sp > sp)
         drop_obj(stack_pop());
 
-    if (is_error(res) || sig)
+    if (IS_ERROR(res) || sig)
     {
         if (ctch)
         {
@@ -625,7 +630,7 @@ obj_p try_obj(obj_p obj, obj_p ctch)
                     drop_obj(res);
                     throw(ERR_LENGTH, "catch: expected 1 argument, got %llu", as_lambda(ctch)->args->len);
                 }
-                if (is_error(res))
+                if (IS_ERROR(res))
                 {
                     stack_push(clone_obj(as_error(res)->msg));
                     drop_obj(res);
@@ -695,18 +700,18 @@ obj_p *resolve(i64_t sym)
 
     if (env != NULL_OBJ)
     {
-        n = as_list(env)[0]->len;
+        n = AS_LIST(env)[0]->len;
 
         // search in a reverse order
         for (i = n; i > 0; i--)
         {
-            if (as_symbol(as_list(env)[0])[i - 1] == sym)
-                return &as_list(as_list(env)[1])[i - 1];
+            if (AS_SYMBOL(AS_LIST(env)[0])[i - 1] == sym)
+                return &AS_LIST(AS_LIST(env)[1])[i - 1];
         }
     }
 
     // search args
-    args = as_symbol(as_lambda(lambda)->args);
+    args = AS_SYMBOL(as_lambda(lambda)->args);
     for (i = 0; i < l; i++)
     {
         if (args[i] == sym)
@@ -714,9 +719,9 @@ obj_p *resolve(i64_t sym)
     }
 
     // search globals
-    i = find_raw(as_list(runtime_get()->env.variables)[0], &sym);
-    if (i == as_list(runtime_get()->env.variables)[0]->len)
+    i = find_raw(AS_LIST(runtime_get()->env.variables)[0], &sym);
+    if (i == AS_LIST(runtime_get()->env.variables)[0]->len)
         return NULL;
 
-    return &as_list(as_list(runtime_get()->env.variables)[1])[i];
+    return &AS_LIST(AS_LIST(runtime_get()->env.variables)[1])[i];
 }

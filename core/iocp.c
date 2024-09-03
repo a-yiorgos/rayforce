@@ -115,7 +115,7 @@ nil_t exit_werror()
 
     err = sys_error(ERROR_TYPE_SOCK, "poll_init");
     fmt = obj_fmt(err, B8_TRUE);
-    printf("%s\n", as_string(fmt));
+    printf("%s\n", AS_C8(fmt));
     drop_obj(fmt);
     drop_obj(err);
     fflush(stdout);
@@ -316,7 +316,7 @@ i64_t poll_register(poll_p poll, i64_t fd, u8_t version)
 
 poll_result_t _recv(poll_p poll, selector_p selector)
 {
-    unused(poll);
+    UNUSED(poll);
 
     i64_t sz, size;
     u8_t handshake[2] = {RAYFORCE_VERSION, 0x00};
@@ -440,7 +440,7 @@ poll_result_t _recv_initiate(poll_p poll, selector_p selector)
 
 poll_result_t _send(poll_p poll, selector_p selector)
 {
-    unused(poll);
+    UNUSED(poll);
 
     obj_p obj;
     nil_t *v;
@@ -507,7 +507,7 @@ nil_t process_request(poll_p poll, selector_p selector)
 
     res = read_obj(selector);
 
-    if (is_error(res) || is_null(res))
+    if (IS_ERROR(res) || is_null(res))
         v = res;
     if (res->type == TYPE_C8)
     {
@@ -575,14 +575,14 @@ i64_t poll_run(poll_p poll)
                     str = term_read(poll->term);
                     if (str != NULL)
                     {
-                        if (is_error(str))
+                        if (IS_ERROR(str))
                             io_write(STDOUT_FILENO, MSG_TYPE_RESP, str);
                         else if (str != NULL_OBJ)
                         {
                             res = ray_eval_str(str, poll->replfile);
                             drop_obj(str);
                             io_write(STDOUT_FILENO, MSG_TYPE_RESP, res);
-                            error = is_error(res);
+                            error = IS_ERROR(res);
                             drop_obj(res);
                             if (!error)
                                 timeit_print();
@@ -675,7 +675,7 @@ i64_t poll_run(poll_p poll)
         {
             res = sys_error(ERROR_TYPE_SOCK, "poll_init");
             fmt = obj_fmt(res, B8_TRUE);
-            printf("%s\n", as_string(fmt));
+            printf("%s\n", AS_C8(fmt));
             drop_obj(fmt);
             drop_obj(res);
         }

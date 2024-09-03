@@ -36,9 +36,9 @@ obj_p ray_cond(obj_p *x, u64_t n)
     {
     case 2:
         res = eval(x[0]);
-        if (is_error(res))
+        if (IS_ERROR(res))
             return res;
-        if (ops_as_b8(res))
+        if (ops_AS_B8(res))
         {
             drop_obj(res);
             return eval(x[1]);
@@ -47,9 +47,9 @@ obj_p ray_cond(obj_p *x, u64_t n)
         return NULL_OBJ;
     case 3:
         res = eval(x[0]);
-        if (is_error(res))
+        if (IS_ERROR(res))
             return res;
-        if (ops_as_b8(res))
+        if (ops_AS_B8(res))
         {
             drop_obj(res);
             return eval(x[1]);

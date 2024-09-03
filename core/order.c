@@ -70,7 +70,8 @@ obj_p ray_asc(obj_p x)
         idx = ray_sort_asc(x);
         l = x->len;
         for (i = 0; i < l; i++)
-            as_i64(idx)[i] = as_i64(x)[as_i64(idx)[i]];
+            AS_I64(idx)
+        [i] = AS_I64(x)[AS_I64(idx)[i]];
 
         idx->attrs |= ATTR_ASC;
 
@@ -80,7 +81,8 @@ obj_p ray_asc(obj_p x)
         idx = ray_sort_asc(x);
         l = x->len;
         for (i = 0; i < l; i++)
-            as_f64(idx)[i] = as_f64(x)[as_i64(idx)[i]];
+            AS_F64(idx)
+        [i] = AS_F64(x)[AS_I64(idx)[i]];
 
         idx->attrs |= ATTR_ASC;
 
@@ -102,7 +104,8 @@ obj_p ray_desc(obj_p x)
         idx = ray_sort_desc(x);
         l = x->len;
         for (i = 0; i < l; i++)
-            as_i64(idx)[i] = as_i64(x)[as_i64(idx)[i]];
+            AS_I64(idx)
+        [i] = AS_I64(x)[AS_I64(idx)[i]];
 
         idx->attrs |= ATTR_DESC;
 
@@ -112,7 +115,8 @@ obj_p ray_desc(obj_p x)
         idx = ray_sort_desc(x);
         l = x->len;
         for (i = 0; i < l; i++)
-            as_f64(idx)[i] = as_f64(x)[as_i64(idx)[i]];
+            AS_F64(idx)
+        [i] = AS_F64(x)[AS_I64(idx)[i]];
 
         idx->attrs |= ATTR_DESC;
 
@@ -132,13 +136,13 @@ obj_p ray_xasc(obj_p x, obj_p y)
     case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
         col = at_obj(x, y);
 
-        if (is_error(col))
+        if (IS_ERROR(col))
             return col;
 
         idx = ray_iasc(col);
         drop_obj(col);
 
-        if (is_error(idx))
+        if (IS_ERROR(idx))
             return idx;
 
         res = ray_take(x, idx);
@@ -160,13 +164,13 @@ obj_p ray_xdesc(obj_p x, obj_p y)
     case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
         col = at_obj(x, y);
 
-        if (is_error(col))
+        if (IS_ERROR(col))
             return col;
 
         idx = ray_idesc(col);
         drop_obj(col);
 
-        if (is_error(idx))
+        if (IS_ERROR(idx))
             return idx;
 
         res = ray_take(x, idx);
@@ -192,9 +196,10 @@ obj_p ray_not(obj_p x)
 
     case TYPE_B8:
         l = x->len;
-        res = vector_b8(l);
+        res = B8(l);
         for (i = 0; i < l; i++)
-            as_b8(res)[i] = !as_b8(x)[i];
+            AS_B8(res)
+        [i] = !AS_B8(x)[i];
 
         return res;
 
@@ -218,15 +223,17 @@ obj_p ray_neg(obj_p x)
         return f64(-x->f64);
     case TYPE_I64:
         l = x->len;
-        res = vector_i64(l);
+        res = I64(l);
         for (i = 0; i < l; i++)
-            as_i64(res)[i] = -as_i64(x)[i];
+            AS_I64(res)
+        [i] = -AS_I64(x)[i];
         return res;
     case TYPE_F64:
         l = x->len;
-        res = vector_f64(l);
+        res = F64(l);
         for (i = 0; i < l; i++)
-            as_f64(res)[i] = -as_f64(x)[i];
+            AS_F64(res)
+        [i] = -AS_F64(x)[i];
         return res;
 
     default:

@@ -95,7 +95,7 @@ typedef enum
     ERROR_TYPE_SOCK
 } os_ray_error_type_t;
 
-b8_t ops_as_b8(obj_p x);
+b8_t ops_AS_B8(obj_p x);
 b8_t ops_is_nan(f64_t x);
 b8_t ops_is_prime(u64_t x);
 u64_t ops_next_prime(u64_t x);

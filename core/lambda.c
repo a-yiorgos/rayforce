@@ -80,7 +80,7 @@ obj_p lambda_map(obj_p f, obj_p *x, u64_t n)
             pool_add_task(pool, lambda_map_partial, 4, f, x, n, j);
 
         res = pool_run(pool);
-        unwrap_list(res);
+        UNWRAP_LIST(res);
 
         goto cleanup;
     }
@@ -90,13 +90,13 @@ obj_p lambda_map(obj_p f, obj_p *x, u64_t n)
 
     v = call(f, n);
 
-    if (is_error(v))
+    if (IS_ERROR(v))
     {
         res = v;
         goto cleanup;
     }
 
-    res = v->type < 0 ? vector(v->type, l) : list(l);
+    res = v->type < 0 ? vector(v->type, l) : LIST(l);
 
     ins_obj(&res, 0, v);
 
@@ -107,7 +107,7 @@ obj_p lambda_map(obj_p f, obj_p *x, u64_t n)
 
         v = call(f, n);
 
-        if (is_error(v))
+        if (IS_ERROR(v))
         {
             res->len = i;
             drop_obj(res);
@@ -128,7 +128,7 @@ cleanup:
 
 obj_p lambda_call(u8_t attrs, obj_p f, obj_p *x, u64_t n)
 {
-    unused(attrs);
-    unused(x);
+    UNUSED(attrs);
+    UNUSED(x);
     return call(f, n);
 }

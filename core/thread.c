@@ -60,7 +60,7 @@ cond_t cond_create()
 nil_t cond_destroy(cond_t *cond)
 {
     // Windows does not require destruction of condition variables
-    unused(cond);
+    UNUSED(cond);
 }
 
 i32_t cond_wait(cond_t *cond, mutex_t *mutex)
@@ -245,8 +245,8 @@ i32_t thread_pin(ray_thread_t thread, u64_t core)
 
 i32_t thread_pin(ray_thread_t thread, u64_t core)
 {
-    unused(thread);
-    unused(core);
+    UNUSED(thread);
+    UNUSED(core);
     // thread_port_t mach_thread;
     // thread_affinity_policy_data_t policy;
     // kern_return_t kr;
@@ -257,7 +257,7 @@ i32_t thread_pin(ray_thread_t thread, u64_t core)
 
     // if (kr != KERN_SUCCESS)
     // {
-    //     fprintf(stderr, "Error setting thread policy: %s\n", mach_error_string(kr));
+    //     fprintf(stderr, "Error setting thread policy: %s\n", mach_error_C8(kr));
     //     return -1;
     // }
 

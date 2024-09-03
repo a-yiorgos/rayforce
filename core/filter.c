@@ -34,15 +34,16 @@ obj_p filter_map(obj_p val, obj_p index)
     switch (val->type)
     {
     case TYPE_TABLE:
-        l = as_list(val)[1]->len;
-        res = list(l);
+        l = AS_LIST(val)[1]->len;
+        res = LIST(l);
         for (i = 0; i < l; i++)
         {
-            v = as_list(as_list(val)[1])[i];
-            as_list(res)[i] = filter_map(v, index);
+            v = AS_LIST(AS_LIST(val)[1])[i];
+            AS_LIST(res)
+            [i] = filter_map(v, index);
         }
 
-        return table(clone_obj(as_list(val)[0]), res);
+        return table(clone_obj(AS_LIST(val)[0]), res);
 
     default:
         res = vn_list(2, clone_obj(val), clone_obj(index));
@@ -53,5 +54,5 @@ obj_p filter_map(obj_p val, obj_p index)
 
 obj_p filter_collect(obj_p val, obj_p index)
 {
-    return at_ids(val, as_i64(index), index->len);
+    return at_ids(val, AS_I64(index), index->len);
 }

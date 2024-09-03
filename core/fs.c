@@ -37,7 +37,7 @@ i64_t fs_fopen(lit_p path, i64_t attrs)
     str_p tmp_path, p, slash;
 
     s = cstring_from_str(path, strlen(path));
-    tmp_path = as_string(s);
+    tmp_path = AS_C8(s);
     p = tmp_path;
 
     while ((slash = strchr(p + 1, '/')) != NULL)
@@ -118,7 +118,7 @@ obj_p fs_read_dir(lit_p path)
 {
     WIN32_FIND_DATA findFileData;
     HANDLE hFind;
-    obj_p lst = list(0);
+    obj_p lst = LIST(0);
     char searchPath[MAX_PATH];
 
     // Append \* to the path for Windows API
@@ -142,20 +142,20 @@ obj_p fs_read_dir(lit_p path)
 
 // clang-format off
 EM_JS(nil_t, fs_dcreate_js, (lit_p path), {
-    FS.mkdir(UTF8ToString(path));
+    FS.mkdir(UTF8ToC8(path));
 });
 
 EM_JS(i64_t, fs_dopen_js, (lit_p path), {
     try
     {
-        FS.mkdir(UTF8ToString(path));
+        FS.mkdir(UTF8ToC8(path));
     }
     catch (e)
     {
         if (e.code !== 'EEXIST')
             throw e; // Ignore 'EEXIST' and throw other errors
     }
-    return Module._opendir(UTF8ToString(path));
+    return Module._opendir(UTF8ToC8(path));
 });
 // clang-format on
 
@@ -231,7 +231,7 @@ i64_t fs_fopen(lit_p path, i64_t attrs)
     str_p tmp_path, p, slash;
 
     s = cstring_from_str(path, strlen(path));
-    tmp_path = as_string(s);
+    tmp_path = AS_C8(s);
     p = tmp_path;
 
     while ((slash = strchr(p + 1, '/')) != NULL)
@@ -338,7 +338,7 @@ obj_p fs_read_dir(lit_p path)
 {
     DIR *dir;
     struct dirent *ent;
-    obj_p lst = list(0);
+    obj_p lst = LIST(0);
 
     if ((dir = opendir(path)) != NULL)
     {

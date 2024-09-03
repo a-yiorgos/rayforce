@@ -199,8 +199,8 @@ nil_t counting_sort_asc(i64_t array[], i64_t indices[], i64_t len, i64_t min, i6
     obj_p mask;
 
     range = max - min + 1;
-    mask = vector_i64(range);
-    m = as_i64(mask);
+    mask = I64(range);
+    m = AS_I64(mask);
 
     memset(m, 0, range * sizeof(i64_t));
 
@@ -237,8 +237,8 @@ nil_t counting_sort_desc(i64_t array[], i64_t indices[], i64_t len, i64_t min, i
     obj_p mask;
 
     range = max - min + 1;
-    mask = vector_i64(range);
-    m = as_i64(mask);
+    mask = I64(range);
+    m = AS_I64(mask);
 
     memset(m, 0, range * sizeof(i64_t));
 
@@ -272,8 +272,8 @@ nil_t counting_sort_desc(i64_t array[], i64_t indices[], i64_t len, i64_t min, i
 obj_p ray_sort_asc(obj_p vec)
 {
     i64_t i, len = vec->len, out_of_order = 0, inrange = 0, min, max;
-    obj_p indices = vector_i64(len);
-    i64_t *iv = as_i64(vec), *ov = as_i64(indices);
+    obj_p indices = I64(len);
+    i64_t *iv = AS_I64(vec), *ov = AS_I64(indices);
 
     if (vec->attrs & ATTR_ASC)
     {
@@ -353,8 +353,8 @@ obj_p ray_sort_asc(obj_p vec)
 obj_p ray_sort_desc(obj_p vec)
 {
     i64_t i, len = vec->len, out_of_order = 0, inrange = 0, min, max;
-    obj_p indices = vector_i64(len);
-    i64_t *iv = as_i64(vec), *ov = as_i64(indices);
+    obj_p indices = I64(len);
+    i64_t *iv = AS_I64(vec), *ov = AS_I64(indices);
 
     if (vec->attrs & ATTR_DESC)
     {

@@ -130,7 +130,6 @@ extern u8_t version(nil_t); // get version as u8_t (major - 5 bits, minor - 3 bi
 extern obj_p null(i8_t type);                 // create null atom of type
 extern obj_p nullv(i8_t type, u64_t len);     // create null list of type and length
 extern obj_p atom(i8_t type);                 // create atom of type
-extern obj_p list(u64_t len);                 // create list
 extern obj_p vn_list(u64_t len, ...);         // create list from values
 extern obj_p vector(i8_t type, u64_t len);    // create vector of type
 extern obj_p vn_symbol(u64_t len, ...);       // create vector symbols from strings
@@ -143,18 +142,19 @@ extern obj_p symbol(lit_p ptr, u64_t len);    // symbol
 extern obj_p symboli64(i64_t id);             // symbol from i64
 extern obj_p timestamp(i64_t val);            // timestamp
 extern obj_p guid(guid_t buf);                // GUID
-extern obj_p string(u64_t len);               // string 
-extern obj_p vn_string(lit_p fmt, ...);       // string from format
+extern obj_p vn_c8(lit_p fmt, ...);           // string from format
 extern obj_p enumerate(obj_p sym, obj_p vec); // enum
 extern obj_p anymap(obj_p sym, obj_p vec);    // anymap
 
-#define vector_b8(len)        (vector(TYPE_B8,        len)) // bool vector
-#define vector_u8(len)        (vector(TYPE_U8,        len)) // byte vector
-#define vector_i64(len)       (vector(TYPE_I64,       len)) // i64 vector
-#define vector_f64(len)       (vector(TYPE_F64,       len)) // f64 vector
-#define vector_symbol(len)    (vector(TYPE_SYMBOL,    len)) // symbol vector
-#define vector_timestamp(len) (vector(TYPE_TIMESTAMP, len)) // char vector
-#define vector_guid(len)      (vector(TYPE_GUID,      len)) // GUID vector
+#define B8(len)        (vector(TYPE_B8,        len)) // bool vector
+#define U8(len)        (vector(TYPE_U8,        len)) // byte vector
+#define C8(len)        (vector(TYPE_C8,        len)) // string
+#define I64(len)       (vector(TYPE_I64,       len)) // i64 vector
+#define F64(len)       (vector(TYPE_F64,       len)) // f64 vector
+#define SYMBOL(len)    (vector(TYPE_SYMBOL,    len)) // symbol vector
+#define TIMESTAMP(len) (vector(TYPE_TIMESTAMP, len)) // char vector
+#define GUID(len)      (vector(TYPE_GUID,      len)) // GUID vector
+#define LIST(len)      (vector(TYPE_LIST,      len)) // list
          
 extern obj_p table(obj_p keys, obj_p vals); // table
 extern obj_p dict(obj_p keys,  obj_p vals); // dict
@@ -173,22 +173,22 @@ extern nil_t drop_obj(obj_p obj); // Free an object
 extern nil_t drop_raw(raw_p ptr); // Free a raw pointer
 
 // Accessors
-#define as_string(obj)    ((str_p)__builtin_assume_aligned((obj + 1), sizeof(struct obj_t)))
-#define as_b8(obj)        ((b8_t *)(as_string(obj)))
-#define as_u8(obj)        ((u8_t *)(as_string(obj)))
-#define as_i64(obj)       ((i64_t *)(as_string(obj)))
-#define as_f64(obj)       ((f64_t *)(as_string(obj)))
-#define as_symbol(obj)    ((i64_t *)(as_string(obj)))
-#define as_timestamp(obj) ((i64_t *)(as_string(obj)))
-#define as_guid(obj)      ((guid_t *)(as_string(obj)))
-#define as_list(obj)      ((obj_p *)(as_string(obj)))
+#define AS_C8(obj)        ((str_p)__builtin_assume_aligned((obj + 1), sizeof(struct obj_t)))
+#define AS_B8(obj)        ((b8_t *)(AS_C8(obj)))
+#define AS_U8(obj)        ((u8_t *)(AS_C8(obj)))
+#define AS_I64(obj)       ((i64_t *)(AS_C8(obj)))
+#define AS_F64(obj)       ((f64_t *)(AS_C8(obj)))
+#define AS_SYMBOL(obj)    ((i64_t *)(AS_C8(obj)))
+#define AS_TIMESTAMP(obj) ((i64_t *)(AS_C8(obj)))
+#define AS_GUID(obj)      ((guid_t *)(AS_C8(obj)))
+#define AS_LIST(obj)      ((obj_p *)(AS_C8(obj)))
 
 // Checkers
 extern b8_t is_null(obj_p obj);
 extern str_p type_name(i8_t tp);
-#define is_error(obj)  ((obj)->type == TYPE_ERROR)
-#define is_atom(obj)   ((obj)->type < 0)
-#define is_vector(obj) ((obj)->type >= 0 && (obj)->type <= TYPE_C8)
+#define IS_ERROR(obj)  ((obj)->type == TYPE_ERROR)
+#define IS_ATOM(obj)   ((obj)->type < 0)
+#define IS_VECTOR(obj) ((obj)->type >= 0 && (obj)->type <= TYPE_C8)
 
 // Push a value to the end of a list
 extern obj_p push_raw(obj_p *obj, raw_p val); // push raw value into a list
@@ -213,7 +213,7 @@ extern obj_p at_obj(obj_p obj, obj_p idx);              // read from obj indexed
 extern obj_p at_sym(obj_p obj, lit_p str, u64_t len);   // read value indexed by symbol created from str
 
 // Format
-extern str_p str_from_symbol(i64_t id);                   // return interned string by interned id
+extern str_p str_from_symbol(i64_t id);                 // return interned string by interned id
 
 // Initialize obj with zeroed memory
 extern nil_t zero_obj(obj_p obj);

@@ -39,7 +39,7 @@ raw_p mmap_alloc(u64_t size)
 
 raw_p mmap_file(i64_t fd, u64_t size, i32_t shared)
 {
-    unused(shared);
+    UNUSED(shared);
     HANDLE hMapping;
     raw_p ptr;
 
@@ -67,7 +67,7 @@ raw_p mmap_file(i64_t fd, u64_t size, i32_t shared)
 
 i64_t mmap_free(raw_p addr, u64_t size)
 {
-    unused(size);
+    UNUSED(size);
     return VirtualFree(addr, 0, MEM_RELEASE);
 }
 

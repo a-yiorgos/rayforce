@@ -37,10 +37,10 @@
 #define _IMPL_CASSERT_LINE(predicate, line, file) \
     typedef char _IMPL_PASTE(assertion_failed_##file##_, line)[2 * !!(predicate) - 1];
 
-#define unused(x) (nil_t)(x)
+#define UNUSED(x) (nil_t)(x)
 
-#define likely(x) __builtin_expect((x), 1)
-#define unlikely(x) __builtin_expect((x), 0)
+#define LIKELY(x) __builtin_expect((x), 1)
+#define UNLIKELY(x) __builtin_expect((x), 0)
 
 #ifdef DEBUG
 
@@ -51,7 +51,7 @@
 
 nil_t dump_stack(nil_t);
 
-#define debug(fmt, ...)                      \
+#define DEBUG_PRINT(fmt, ...)                \
     do                                       \
     {                                        \
         fprintf(stderr, fmt, ##__VA_ARGS__); \
@@ -59,7 +59,7 @@ nil_t dump_stack(nil_t);
         fflush(stderr);                      \
     } while (0)
 
-#define debug_assert(x, fmt, ...)                      \
+#define DEBUG_ASSERT(x, fmt, ...)                      \
     {                                                  \
         if (!(x))                                      \
         {                                              \
@@ -76,51 +76,51 @@ nil_t dump_stack(nil_t);
 #pragma clang diagnostic pop
 #endif
 
-#define debug_obj(o)                                  \
-    {                                                 \
-        obj_p _f = obj_fmt((o), B8_TRUE);             \
-        debug("%.*s", (i32_t)_f->len, as_string(_f)); \
-        drop_obj(_f);                                 \
+#define DEBUG_OBJ(o)                                    \
+    {                                                   \
+        obj_p _f = obj_fmt((o), B8_TRUE);               \
+        DEBUG_PRINT("%.*s", (i32_t)_f->len, AS_C8(_f)); \
+        drop_obj(_f);                                   \
     }
 
 #else
-#define debug(fmt, ...) (nil_t)0
-#define debug_assert(x, fmt, ...) (nil_t)0
-#define debug_obj(o) (nil_t)0
+#define DEBUG_PRINT(fmt, ...) (nil_t)0
+#define DEBUG_ASSERT(x, fmt, ...) (nil_t)0
+#define DEBUG_OBJ(o) (nil_t)0
 #endif
 
-#define printbits_n(x, n)                                                \
+#define PRINTBITS_N(x, n)                                                \
     {                                                                    \
         for (u64_t __i = n; __i; __i--, putchar('0' | ((x >> __i) & 1))) \
             ;                                                            \
         printf("\n");                                                    \
     }
-#define printbits_32(x) printbits_n(x, 32)
-#define printbits_64(x) printbits_n(x, 64)
+#define PRINTBITS_32(x) PRINTBITS_N(x, 32)
+#define PRINTBITS_64(x) PRINTBITS_N(x, 64)
 
-#define timeit(x)                                                           \
+#define TIMEIT(x)                                                           \
     {                                                                       \
         i64_t timer = clock();                                              \
         x;                                                                  \
         printf("%f\n", ((f64_t)(clock() - timer)) / CLOCKS_PER_SEC * 1000); \
     }
 
-#define enum_key(x) (x->mmod == MMOD_INTERNAL ? str_from_symbol(as_list(x)[0]->i64) : as_string((obj_p)((str_p)x - RAY_PAGE_SIZE)))
-#define enum_val(x) (x->mmod == MMOD_INTERNAL ? as_list(x)[1] : x)
+#define ENUM_KEY(x) (x->mmod == MMOD_INTERNAL ? str_from_symbol(AS_LIST(x)[0]->i64) : AS_C8((obj_p)((str_p)x - RAY_PAGE_SIZE)))
+#define ENUM_VAL(x) (x->mmod == MMOD_INTERNAL ? AS_LIST(x)[1] : x)
 
-#define anymap_key(x) (((obj_p)((str_p)x - RAY_PAGE_SIZE))->obj)
-#define anymap_val(x) (x)
+#define ANYMAP_KEY(x) (((obj_p)((str_p)x - RAY_PAGE_SIZE))->obj)
+#define ANYMAP_VAL(x) (x)
 
-#define unwrap_list(x)                            \
+#define UNWRAP_LIST(x)                            \
     {                                             \
         u64_t _i, _l;                             \
         obj_p _res;                               \
         _l = (x)->len;                            \
         for (_i = 0; _i < _l; _i++)               \
         {                                         \
-            if (is_error(as_list(x)[_i]))         \
+            if (IS_ERROR(AS_LIST(x)[_i]))         \
             {                                     \
-                _res = clone_obj(as_list(x)[_i]); \
+                _res = clone_obj(AS_LIST(x)[_i]); \
                 drop_obj(x);                      \
                 return _res;                      \
             }                                     \

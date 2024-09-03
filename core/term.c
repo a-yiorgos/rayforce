@@ -502,11 +502,11 @@ i64_t term_getc(term_p term)
 
 nil_t term_prompt(term_p term)
 {
-    unused(term);
+    UNUSED(term);
     obj_p prompt = NULL_OBJ;
 
     prompt_fmt_into(&prompt);
-    printf("%.*s", (i32_t)prompt->len, as_string(prompt));
+    printf("%.*s", (i32_t)prompt->len, AS_C8(prompt));
     fflush(stdout);
     drop_obj(prompt);
 }
@@ -639,7 +639,7 @@ nil_t term_redraw(term_p term)
     cursor_move_start();
     line_clear();
 
-    printf("%.*s", (i32_t)out->len, as_string(out));
+    printf("%.*s", (i32_t)out->len, AS_C8(out));
 
     n = term->buf_len - term->buf_pos;
     if (n > 0)
@@ -891,8 +891,8 @@ b8_t term_autocomplete_path(term_p term, u64_t start)
 
     for (i = term->autocp_idx.index; i < l; i++)
     {
-        file = as_string(as_list(files)[i]);
-        m = as_list(files)[i]->len;
+        file = AS_C8(AS_LIST(files)[i]);
+        m = AS_LIST(files)[i]->len;
 
         if (m > 0 && prefix_len <= m && strncmp(prefix, file, prefix_len) == 0)
         {
@@ -1213,7 +1213,7 @@ nil_t term_update_progress_bar(term_p term, u64_t parts)
 
 nil_t term_finalize_progress_bar(term_p term)
 {
-    unused(term);
+    UNUSED(term);
     i32_t i;
 
     // Move cursor to the beginning of the line

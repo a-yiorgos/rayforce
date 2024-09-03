@@ -41,9 +41,10 @@ obj_p ray_and(obj_p x, obj_p y)
 
     case mtype2(TYPE_B8, TYPE_B8):
         l = x->len;
-        res = vector_b8(x->len);
+        res = B8(x->len);
         for (i = 0; i < l; i++)
-            as_b8(res)[i] = as_b8(x)[i] & as_b8(y)[i];
+            AS_B8(res)
+        [i] = AS_B8(x)[i] & AS_B8(y)[i];
 
         return res;
 
@@ -65,9 +66,10 @@ obj_p ray_or(obj_p x, obj_p y)
 
     case mtype2(TYPE_B8, TYPE_B8):
         l = x->len;
-        res = vector_b8(x->len);
+        res = B8(x->len);
         for (i = 0; i < l; i++)
-            as_b8(res)[i] = as_b8(x)[i] | as_b8(y)[i];
+            AS_B8(res)
+        [i] = AS_B8(x)[i] | AS_B8(y)[i];
 
         return res;
 
@@ -84,13 +86,13 @@ obj_p ray_like(obj_p x, obj_p y)
     switch (mtype2(x->type, y->type))
     {
     case mtype2(TYPE_C8, TYPE_C8):
-        return (b8(str_match(as_string(x), x->len, as_string(y), y->len)));
+        return (b8(str_match(AS_C8(x), x->len, AS_C8(y), y->len)));
     case mtype2(TYPE_LIST, TYPE_C8):
         l = x->len;
-        res = vector_b8(l);
+        res = B8(l);
         for (i = 0; i < l; i++)
         {
-            e = as_list(x)[i];
+            e = AS_LIST(x)[i];
             if (!e || e->type != TYPE_C8)
             {
                 res->len = i;
@@ -98,14 +100,15 @@ obj_p ray_like(obj_p x, obj_p y)
                 throw(ERR_TYPE, "like: unsupported types: '%s, %s", type_name(e->type), type_name(y->type));
             }
 
-            as_b8(res)[i] = str_match(as_string(e), e->len, as_string(y), y->len);
+            AS_B8(res)
+            [i] = str_match(AS_C8(e), e->len, AS_C8(y), y->len);
         }
 
         return res;
 
     case mtype2(TYPE_ANYMAP, TYPE_C8):
         l = x->len;
-        res = vector_b8(l);
+        res = B8(l);
         for (i = 0; i < l; i++)
         {
             e = at_idx(x, i);
@@ -117,7 +120,8 @@ obj_p ray_like(obj_p x, obj_p y)
                 throw(ERR_TYPE, "like: unsupported types: '%s, '%s", type_name(e->type), type_name(y->type));
             }
 
-            as_b8(res)[i] = str_match(as_string(e), e->len, as_string(y), y->len);
+            AS_B8(res)
+            [i] = str_match(AS_C8(e), e->len, AS_C8(y), y->len);
             drop_obj(e);
         }
 

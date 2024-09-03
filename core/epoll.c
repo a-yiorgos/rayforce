@@ -52,10 +52,10 @@ nil_t sigint_handler(i32_t signo)
     u64_t val = 1;
     i32_t res;
 
-    unused(signo);
+    UNUSED(signo);
     // Write to the eventfd to wake up the epoll loop.
     res = write(__EVENT_FD, &val, sizeof(val));
-    unused(res);
+    UNUSED(res);
 }
 
 poll_p poll_init(i64_t port)
@@ -208,7 +208,7 @@ nil_t poll_deregister(poll_p poll, i64_t id)
 
 poll_result_t _recv(poll_p poll, selector_p selector)
 {
-    unused(poll);
+    UNUSED(poll);
 
     i64_t sz, size;
     header_t *header;
@@ -370,7 +370,7 @@ nil_t process_request(poll_p poll, selector_p selector)
 
     res = read_obj(selector);
 
-    if (is_error(res) || is_null(res))
+    if (IS_ERROR(res) || is_null(res))
         v = res;
     else if (res->type == TYPE_C8)
     {
@@ -430,14 +430,14 @@ i64_t poll_run(poll_p poll)
                 str = term_read(poll->term);
                 if (str != NULL)
                 {
-                    if (is_error(str))
+                    if (IS_ERROR(str))
                         io_write(STDOUT_FILENO, MSG_TYPE_RESP, str);
                     else if (str != NULL_OBJ)
                     {
                         res = ray_eval_str(str, poll->replfile);
                         drop_obj(str);
                         io_write(STDOUT_FILENO, MSG_TYPE_RESP, res);
-                        error = is_error(res);
+                        error = IS_ERROR(res);
                         drop_obj(res);
                         if (!error)
                             timeit_print();
