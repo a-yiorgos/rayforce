@@ -72,7 +72,7 @@ u8_t days_in_month(u16_t year, u8_t month) {
 
 date_t date_from_days(i64_t v) {
     v += years_by_days(EPOCH - 1);
-    i64_t years = roundf64(((f64_t)v / 365.2425));
+    i64_t years = ROUNDF64(((f64_t)v / 365.2425));
 
     if (years_by_days(years) > v)
         years -= 1;

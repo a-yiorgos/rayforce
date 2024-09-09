@@ -84,7 +84,7 @@ inline __attribute__((always_inline)) u64_t hash_index_u64(u64_t h, u64_t k) {
 
     a = (h ^ k) * s;
     a ^= (a >> 47);
-    b = (roti64(k, 31) ^ a) * s;
+    b = (ROTI64(k, 31) ^ a) * s;
     b ^= (b >> 47);
     b *= s;
 

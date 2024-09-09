@@ -47,8 +47,8 @@
   :t  - Turns on|off measurement of expressions: [0|1].\n\
   :q  - Exits the application: [exit code]."
 
-#define is_cmd(t, c) ((t)->buf_len >= (i32_t)strlen(c) && strncmp((t)->buf, c, strlen(c)) == 0)
-#define is_esc(t, e) ((t)->input_len == (i32_t)strlen(e) && strncmp((t)->input, e, strlen(e)) == 0)
+#define IS_CMD(t, c) ((t)->buf_len >= (i32_t)strlen(c) && strncmp((t)->buf, c, strlen(c)) == 0)
+#define IS_ESC(t, e) ((t)->input_len == (i32_t)strlen(e) && strncmp((t)->input, e, strlen(e)) == 0)
 #define PROGRESS_BAR_WIDTH 40
 
 nil_t cursor_move_start() { printf("\r"); }
@@ -860,13 +860,13 @@ obj_p term_handle_return(term_p term) {
 
     term->buf[term->buf_len] = '\0';
 
-    if (is_cmd(term, ":q")) {
+    if (IS_CMD(term, ":q")) {
         exit_code = (term->buf_len > 2) ? i64_from_str(term->buf + 2, term->buf_len - 3) : 0;
         poll_exit(runtime_get()->poll, exit_code);
         return NULL;
     }
 
-    if (is_cmd(term, ":u")) {
+    if (IS_CMD(term, ":u")) {
         onoff = (term->buf_len > 2 && term->buf[3] == '1') ? B8_TRUE : B8_FALSE;
         format_use_unicode(onoff);
         printf("\n%s. Format use unicode: %s.%s", YELLOW, onoff ? "on" : "off", RESET);
@@ -874,7 +874,7 @@ obj_p term_handle_return(term_p term) {
         return NULL_OBJ;
     }
 
-    if (is_cmd(term, ":t")) {
+    if (IS_CMD(term, ":t")) {
         onoff = (term->buf_len > 2 && term->buf[3] == '1') ? B8_TRUE : B8_FALSE;
         timeit_activate(onoff);
         printf("\n%s. Timeit is %s.%s", YELLOW, onoff ? "on" : "off", RESET);
@@ -882,7 +882,7 @@ obj_p term_handle_return(term_p term) {
         return NULL_OBJ;
     }
 
-    if (is_cmd(term, ":?")) {
+    if (IS_CMD(term, ":?")) {
         printf("\n%s. Commands list:%s\n%s%s%s", YELLOW, RESET, GRAY, COMMANDS_LIST, RESET);
         return NULL_OBJ;
     }
@@ -897,7 +897,7 @@ obj_p term_handle_escape(term_p term) {
     u64_t l;
 
     // Up arrow esc
-    if (is_esc(term, "\x1b[A")) {
+    if (IS_ESC(term, "\x1b[A")) {
         hist_save_current(term->hist, term->buf, term->buf_len);
         l = hist_prev(term->hist, term->buf);
         if (l > 0) {
@@ -909,7 +909,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // Down arrow esc
-    if (is_esc(term, "\x1b[B")) {
+    if (IS_ESC(term, "\x1b[B")) {
         l = hist_next(term->hist, term->buf);
         if (l > 0) {
             term->buf_len = l;
@@ -924,7 +924,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // Right arrow esc
-    if (is_esc(term, "\x1b[C")) {
+    if (IS_ESC(term, "\x1b[C")) {
         if (term->buf_pos < term->buf_len) {
             term->buf_pos++;
             cursor_move_right(1);
@@ -934,7 +934,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // Left arrow esc
-    if (is_esc(term, "\x1b[D")) {
+    if (IS_ESC(term, "\x1b[D")) {
         if (term->buf_pos > 0) {
             term->buf_pos--;
             cursor_move_left(1);
@@ -944,7 +944,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // Home esc
-    if (is_esc(term, "\x1b[H")) {
+    if (IS_ESC(term, "\x1b[H")) {
         if (term->buf_pos > 0) {
             cursor_move_left(term->buf_pos);
             term->buf_pos = 0;
@@ -954,7 +954,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // End esc
-    if (is_esc(term, "\x1b[F")) {
+    if (IS_ESC(term, "\x1b[F")) {
         if (term->buf_len > 0) {
             cursor_move_right(term->buf_len - term->buf_pos);
             term->buf_pos = term->buf_len;
@@ -964,7 +964,7 @@ obj_p term_handle_escape(term_p term) {
     }
 
     // Delete esc
-    if (is_esc(term, "\x1b[3~")) {
+    if (IS_ESC(term, "\x1b[3~")) {
         if (term->buf_pos < term->buf_len) {
             memmove(term->buf + term->buf_pos, term->buf + term->buf_pos + 1, term->buf_len - term->buf_pos);
             term->buf_len--;

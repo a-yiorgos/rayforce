@@ -294,8 +294,8 @@ obj_p ray_enlist(obj_p *x, u64_t n) {
 obj_p ray_enum(obj_p x, obj_p y) {
     obj_p s, v;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_SYMBOL, TYPE_SYMBOL):
             s = ray_get(x);
 
             if (IS_ERROR(s))
@@ -324,8 +324,8 @@ obj_p ray_rand(obj_p x, obj_p y) {
     i64_t i, count;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, -TYPE_I64):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
             count = x->i64;
             vec = I64(count);
 
@@ -346,40 +346,40 @@ obj_p ray_concat(obj_p x, obj_p y) {
     if (!x || !y)
         return vn_list(2, clone_obj(x), clone_obj(y));
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_B8, -TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_B8, -TYPE_B8):
             vec = B8(2);
             AS_B8(vec)[0] = x->b8;
             AS_B8(vec)[1] = y->b8;
             return vec;
 
-        case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_SYMBOL, -TYPE_SYMBOL):
             vec = vector(-x->type, 2);
             AS_I64(vec)[0] = x->i64;
             AS_I64(vec)[1] = y->i64;
             return vec;
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             vec = F64(2);
             AS_F64(vec)[0] = x->f64;
             AS_F64(vec)[1] = y->f64;
             return vec;
 
-        case mtype2(-TYPE_GUID, -TYPE_GUID):
+        case MTYPE2(-TYPE_GUID, -TYPE_GUID):
             vec = GUID(2);
             memcpy(&AS_GUID(vec)[0], AS_GUID(x), sizeof(guid_t));
             memcpy(&AS_GUID(vec)[1], AS_GUID(y), sizeof(guid_t));
             return vec;
 
-        case mtype2(-TYPE_C8, -TYPE_C8):
+        case MTYPE2(-TYPE_C8, -TYPE_C8):
             vec = C8(2);
             AS_C8(vec)[0] = x->c8;
             AS_C8(vec)[1] = y->c8;
             return vec;
 
-        case mtype2(TYPE_B8, -TYPE_B8):
+        case MTYPE2(TYPE_B8, -TYPE_B8):
             xl = x->len;
             vec = B8(xl + 1);
             for (i = 0; i < xl; i++)
@@ -388,9 +388,9 @@ obj_p ray_concat(obj_p x, obj_p y) {
             AS_B8(vec)[xl] = y->b8;
             return vec;
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             xl = x->len;
             vec = I64(xl + 1);
             for (i = 0; i < xl; i++)
@@ -399,9 +399,9 @@ obj_p ray_concat(obj_p x, obj_p y) {
             AS_I64(vec)[xl] = y->i64;
             return vec;
 
-        case mtype2(-TYPE_I64, TYPE_I64):
-        case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, TYPE_I64):
+        case MTYPE2(-TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             yl = y->len;
             vec = vector(x->type, yl + 1);
             AS_I64(vec)[0] = x->i64;
@@ -410,7 +410,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             xl = x->len;
             vec = F64(xl + 1);
             for (i = 0; i < xl; i++)
@@ -419,7 +419,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
             AS_F64(vec)[xl] = y->f64;
             return vec;
 
-        case mtype2(TYPE_GUID, -TYPE_GUID):
+        case MTYPE2(TYPE_GUID, -TYPE_GUID):
             xl = x->len;
             vec = GUID(xl + 1);
             for (i = 0; i < xl; i++)
@@ -428,7 +428,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
             memcpy(&AS_GUID(vec)[xl], AS_GUID(y), sizeof(guid_t));
             return vec;
 
-        case mtype2(-TYPE_GUID, TYPE_GUID):
+        case MTYPE2(-TYPE_GUID, TYPE_GUID):
             yl = y->len + 1;
             vec = GUID(yl);
             memcpy(&AS_GUID(vec)[0], AS_GUID(x), sizeof(guid_t));
@@ -437,7 +437,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_B8, TYPE_B8):
+        case MTYPE2(TYPE_B8, TYPE_B8):
             xl = x->len;
             yl = y->len;
             vec = B8(xl + yl);
@@ -447,9 +447,9 @@ obj_p ray_concat(obj_p x, obj_p y) {
                 AS_B8(vec)[i + xl] = AS_B8(y)[i];
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             xl = x->len;
             yl = y->len;
             vec = vector(x->type, xl + yl);
@@ -459,7 +459,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
                 AS_I64(vec)[i + xl] = AS_I64(y)[i];
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             xl = x->len;
             yl = y->len;
             vec = F64(xl + yl);
@@ -469,7 +469,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
                 AS_F64(vec)[i + xl] = AS_F64(y)[i];
             return vec;
 
-        case mtype2(TYPE_GUID, TYPE_GUID):
+        case MTYPE2(TYPE_GUID, TYPE_GUID):
             xl = x->len;
             yl = y->len;
             vec = GUID(xl + yl);
@@ -479,7 +479,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
                 memcpy(AS_GUID(vec)[i + xl], AS_GUID(y)[i], sizeof(guid_t));
             return vec;
 
-        case mtype2(TYPE_C8, TYPE_C8):
+        case MTYPE2(TYPE_C8, TYPE_C8):
             xl = ops_count(x);
             yl = ops_count(y);
             vec = C8(xl + yl);
@@ -489,7 +489,7 @@ obj_p ray_concat(obj_p x, obj_p y) {
                 AS_C8(vec)[i + xl] = AS_C8(y)[i];
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             xl = x->len;
             yl = y->len;
             vec = LIST(xl + yl);

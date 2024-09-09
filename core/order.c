@@ -122,8 +122,8 @@ obj_p ray_desc(obj_p x) {
 obj_p ray_xasc(obj_p x, obj_p y) {
     obj_p idx, col, res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_TABLE, -TYPE_SYMBOL):
             col = at_obj(x, y);
 
             if (IS_ERROR(col))
@@ -148,8 +148,8 @@ obj_p ray_xasc(obj_p x, obj_p y) {
 obj_p ray_xdesc(obj_p x, obj_p y) {
     obj_p idx, col, res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_TABLE, -TYPE_SYMBOL):
             col = at_obj(x, y);
 
             if (IS_ERROR(col))

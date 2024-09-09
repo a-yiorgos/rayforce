@@ -27,8 +27,8 @@
 #include "util.h"
 #include "ops.h"
 
-#define is_digit(c) ((c) >= '0' && (c) <= '9')
-#define is_space(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r')
+#define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
+#define IS_SPACE(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r')
 
 // Creates new obj_p string from a C string.
 obj_p string_from_str(lit_p str, u64_t len) {
@@ -70,7 +70,7 @@ i64_t i64_from_str(lit_p str, u64_t len) {
         return NULL_I64;
 
     // Skip leading whitespace
-    while (is_space(*str))
+    while (IS_SPACE(*str))
         str++;
 
     // Handle optional sign
@@ -80,7 +80,7 @@ i64_t i64_from_str(lit_p str, u64_t len) {
     }
 
     // Parse the digits
-    while (is_digit(*str)) {
+    while (IS_DIGIT(*str)) {
         result = result * 10 + (*str - '0');
         str++;
     }
@@ -97,7 +97,7 @@ f64_t f64_from_str(const char *str, u64_t len) {
         return NULL_F64;
 
     // Skip leading whitespace
-    while (len > 0 && is_space(*str)) {
+    while (len > 0 && IS_SPACE(*str)) {
         str++;
         len--;
     }
@@ -113,7 +113,7 @@ f64_t f64_from_str(const char *str, u64_t len) {
     }
 
     // Parse the integer part
-    while (len > 0 && is_digit(*str)) {
+    while (len > 0 && IS_DIGIT(*str)) {
         result = result * 10.0 + (*str - '0');
         str++;
         len--;
@@ -124,7 +124,7 @@ f64_t f64_from_str(const char *str, u64_t len) {
     if (len > 0 && *str == '.') {
         str++;
         len--;
-        while (len > 0 && is_digit(*str)) {
+        while (len > 0 && IS_DIGIT(*str)) {
             result += (*str - '0') * fraction;
             fraction *= 0.1;
             str++;
@@ -149,7 +149,7 @@ f64_t f64_from_str(const char *str, u64_t len) {
             len--;
         }
 
-        while (len > 0 && is_digit(*str)) {
+        while (len > 0 && IS_DIGIT(*str)) {
             exp = exp * 10 + (*str - '0');
             str++;
             len--;

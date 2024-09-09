@@ -73,16 +73,16 @@ obj_p ray_eq_partial(u64_t len, u64_t offset, obj_p lhs, obj_p rhs, obj_p res) {
 
     out = AS_B8(res) + offset;
 
-    switch (mtype2(lhs->type, rhs->type)) {
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+    switch (MTYPE2(lhs->type, rhs->type)) {
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             xi = AS_I64(lhs) + offset;
             si = rhs->i64;
             for (i = 0; i < len; i++)
                 out[i] = xi[i] == si;
             break;
-        case mtype2(TYPE_ENUM, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_ENUM, -TYPE_SYMBOL):
             k = ray_key(lhs);
             sym = ray_get(k);
             drop_obj(k);
@@ -114,24 +114,24 @@ obj_p ray_eq(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_B8, -TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_B8, -TYPE_B8):
             return (b8(x->b8 == y->b8));
 
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             return (b8(x->i64 == y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 == y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
-        case mtype2(TYPE_ENUM, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_ENUM, -TYPE_SYMBOL):
             return cmp_map(ray_eq_partial, x, y);
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
 
@@ -139,7 +139,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
                 AS_B8(vec)[i] = AS_F64(x)[i] == y->f64;
 
             return vec;
-        case mtype2(TYPE_F64, -TYPE_I64):
+        case MTYPE2(TYPE_F64, -TYPE_I64):
             l = x->len;
             vec = B8(l);
 
@@ -148,11 +148,11 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(-TYPE_I64, TYPE_I64):
-        case mtype2(-TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, TYPE_I64):
+        case MTYPE2(-TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             return cmp_map(ray_eq_partial, y, x);
-        case mtype2(-TYPE_F64, TYPE_F64):
+        case MTYPE2(-TYPE_F64, TYPE_F64):
             l = y->len;
             vec = B8(l);
 
@@ -161,7 +161,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_C8, TYPE_C8):
+        case MTYPE2(TYPE_C8, TYPE_C8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "eq: vectors of different length");
 
@@ -172,9 +172,9 @@ obj_p ray_eq(obj_p x, obj_p y) {
                 AS_B8(vec)[i] = AS_C8(x)[i] == AS_C8(y)[i];
 
             return vec;
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "eq: vectors of different length");
 
@@ -185,7 +185,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
                 AS_B8(vec)[i] = AS_I64(x)[i] == AS_I64(y)[i];
 
             return vec;
-            // case mtype2(TYPE_SYMBOL, TYPE_ENUM):
+            // case MTYPE2(TYPE_SYMBOL, TYPE_ENUM):
             //     if (x->len != y->len)
             //         return error_str(ERR_LENGTH, "eq: vectors of different length");
 
@@ -197,7 +197,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
             //     return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "eq: vectors of different length");
 
@@ -209,7 +209,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_I64):
+        case MTYPE2(TYPE_F64, TYPE_I64):
             l = y->len;
             vec = B8(l);
 
@@ -218,7 +218,7 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "eq: lists of different length");
 
@@ -239,21 +239,21 @@ obj_p ray_ne(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_B8, TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_B8, TYPE_B8):
             return (b8(x->b8 != y->b8));
 
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             return (b8(x->i64 != y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 != y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -261,9 +261,9 @@ obj_p ray_ne(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: vectors of different length");
 
@@ -275,7 +275,7 @@ obj_p ray_ne(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -283,7 +283,7 @@ obj_p ray_ne(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: vectors of different length");
 
@@ -295,7 +295,7 @@ obj_p ray_ne(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: lists of different length");
 
@@ -316,15 +316,15 @@ obj_p ray_lt(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, -TYPE_I64):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
             return (b8(x->i64 < y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 < y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -332,8 +332,8 @@ obj_p ray_lt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "lt: vectors of different length");
 
@@ -345,7 +345,7 @@ obj_p ray_lt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -353,7 +353,7 @@ obj_p ray_lt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "lt: vectors of different length");
 
@@ -365,7 +365,7 @@ obj_p ray_lt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: lists of different length");
 
@@ -386,15 +386,15 @@ obj_p ray_le(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, -TYPE_I64):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
             return (b8(x->i64 <= y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 <= y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -402,8 +402,8 @@ obj_p ray_le(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "le: vectors of different length");
 
@@ -415,7 +415,7 @@ obj_p ray_le(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -423,7 +423,7 @@ obj_p ray_le(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "le: vectors of different length");
 
@@ -435,7 +435,7 @@ obj_p ray_le(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: lists of different length");
 
@@ -456,16 +456,16 @@ obj_p ray_gt(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             return (b8(x->i64 > y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 > y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -473,8 +473,8 @@ obj_p ray_gt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "gt: vectors of different length");
 
@@ -486,7 +486,7 @@ obj_p ray_gt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -494,7 +494,7 @@ obj_p ray_gt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "gt: vectors of different length");
 
@@ -506,7 +506,7 @@ obj_p ray_gt(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: lists of different length");
 
@@ -527,16 +527,16 @@ obj_p ray_ge(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p vec;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             return (b8(x->i64 >= y->i64));
 
-        case mtype2(-TYPE_F64, -TYPE_F64):
+        case MTYPE2(-TYPE_F64, -TYPE_F64):
             return (b8(x->f64 >= y->f64));
 
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -544,8 +544,8 @@ obj_p ray_ge(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ge: vectors of different length");
 
@@ -557,7 +557,7 @@ obj_p ray_ge(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             l = x->len;
             vec = B8(l);
             for (i = 0; i < l; i++)
@@ -565,7 +565,7 @@ obj_p ray_ge(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ge: vectors of different length");
 
@@ -577,7 +577,7 @@ obj_p ray_ge(obj_p x, obj_p y) {
 
             return vec;
 
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "ne: lists of different length");
 

@@ -44,20 +44,20 @@ obj_p ray_at(obj_p x, obj_p y) {
     obj_p res, k, s, v, cols;
     u8_t *buf;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_B8, -TYPE_I64):
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_F64, -TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_I64):
-        case mtype2(TYPE_GUID, -TYPE_I64):
-        case mtype2(TYPE_C8, -TYPE_I64):
-        case mtype2(TYPE_LIST, -TYPE_I64):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_B8, -TYPE_I64):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_F64, -TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
+        case MTYPE2(TYPE_GUID, -TYPE_I64):
+        case MTYPE2(TYPE_C8, -TYPE_I64):
+        case MTYPE2(TYPE_LIST, -TYPE_I64):
             return at_idx(x, y->i64);
 
-        case mtype2(TYPE_TABLE, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TABLE, -TYPE_SYMBOL):
             return at_obj(x, y);
 
-        case mtype2(TYPE_B8, TYPE_I64):
+        case MTYPE2(TYPE_B8, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = B8(yl);
@@ -70,9 +70,9 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_I64):
-        case mtype2(TYPE_TIMESTAMP, TYPE_I64):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_I64):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = vector(x->type, yl);
@@ -85,7 +85,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_F64, TYPE_I64):
+        case MTYPE2(TYPE_F64, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = F64(yl);
@@ -98,7 +98,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_GUID, TYPE_I64):
+        case MTYPE2(TYPE_GUID, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = GUID(yl);
@@ -111,7 +111,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_C8, TYPE_I64):
+        case MTYPE2(TYPE_C8, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = C8(yl);
@@ -124,7 +124,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_LIST, TYPE_I64):
+        case MTYPE2(TYPE_LIST, TYPE_I64):
             yl = y->len;
             xl = x->len;
             res = vector(TYPE_LIST, yl);
@@ -137,7 +137,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_TABLE, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TABLE, TYPE_SYMBOL):
             xl = AS_LIST(x)[1]->len;
             yl = y->len;
             if (yl == 0)
@@ -170,7 +170,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return cols;
 
-        case mtype2(TYPE_ENUM, -TYPE_I64):
+        case MTYPE2(TYPE_ENUM, -TYPE_I64):
             k = ray_key(x);
             s = ray_get(k);
             drop_obj(k);
@@ -198,7 +198,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_ENUM, TYPE_I64):
+        case MTYPE2(TYPE_ENUM, TYPE_I64):
             k = ray_key(x);
             v = ENUM_VAL(x);
 
@@ -248,7 +248,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_ANYMAP, -TYPE_I64):
+        case MTYPE2(TYPE_ANYMAP, -TYPE_I64):
             k = ANYMAP_KEY(x);
             v = ANYMAP_VAL(x);
 
@@ -262,7 +262,7 @@ obj_p ray_at(obj_p x, obj_p y) {
 
             return load_obj(&buf, xl);
 
-        case mtype2(TYPE_ANYMAP, TYPE_I64):
+        case MTYPE2(TYPE_ANYMAP, TYPE_I64):
             k = ANYMAP_KEY(x);
             v = ANYMAP_VAL(x);
 
@@ -293,14 +293,14 @@ obj_p ray_at(obj_p x, obj_p y) {
 obj_p ray_find(obj_p x, obj_p y) {
     u64_t i, l;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_B8, -TYPE_B8):
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_F64, -TYPE_F64):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
-        case mtype2(TYPE_GUID, -TYPE_GUID):
-        case mtype2(TYPE_C8, -TYPE_C8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_B8, -TYPE_B8):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_GUID, -TYPE_GUID):
+        case MTYPE2(TYPE_C8, -TYPE_C8):
             l = x->len;
             i = find_obj(x, y);
 
@@ -308,19 +308,19 @@ obj_p ray_find(obj_p x, obj_p y) {
                 return i64(NULL_I64);
             else
                 return i64(i);
-        case mtype2(TYPE_B8, TYPE_B8):
-        case mtype2(TYPE_U8, TYPE_U8):
-        case mtype2(TYPE_C8, TYPE_C8):
+        case MTYPE2(TYPE_B8, TYPE_B8):
+        case MTYPE2(TYPE_U8, TYPE_U8):
+        case MTYPE2(TYPE_C8, TYPE_C8):
             return index_find_i8((i8_t *)AS_U8(x), x->len, (i8_t *)AS_U8(y), y->len);
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             return index_find_i64(AS_I64(x), x->len, AS_I64(y), y->len);
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             return index_find_i64((i64_t *)AS_F64(x), x->len, (i64_t *)AS_F64(y), y->len);
-        case mtype2(TYPE_GUID, TYPE_GUID):
+        case MTYPE2(TYPE_GUID, TYPE_GUID):
             return index_find_guid(AS_GUID(x), x->len, AS_GUID(y), y->len);
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             return index_find_obj(AS_LIST(x), x->len, AS_LIST(y), y->len);
         default:
             THROW(ERR_TYPE, "find: unsupported types: '%s '%s", type_name(x->type), type_name(y->type));
@@ -331,8 +331,8 @@ obj_p ray_filter(obj_p x, obj_p y) {
     u64_t i, j = 0, l;
     obj_p res, vals, col;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_B8, TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_B8, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -347,7 +347,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_I64, TYPE_B8):
+        case MTYPE2(TYPE_I64, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -362,7 +362,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_SYMBOL, TYPE_B8):
+        case MTYPE2(TYPE_SYMBOL, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -377,7 +377,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_F64, TYPE_B8):
+        case MTYPE2(TYPE_F64, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -392,7 +392,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_TIMESTAMP, TYPE_B8):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -407,7 +407,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_GUID, TYPE_B8):
+        case MTYPE2(TYPE_GUID, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -421,7 +421,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_C8, TYPE_B8):
+        case MTYPE2(TYPE_C8, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -436,7 +436,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_LIST, TYPE_B8):
+        case MTYPE2(TYPE_LIST, TYPE_B8):
             if (x->len != y->len)
                 return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
 
@@ -451,7 +451,7 @@ obj_p ray_filter(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_TABLE, TYPE_B8):
+        case MTYPE2(TYPE_TABLE, TYPE_B8):
             vals = AS_LIST(x)[1];
             l = vals->len;
             res = LIST(l);
@@ -474,10 +474,10 @@ obj_p ray_take(obj_p x, obj_p y) {
     obj_p k, s, v, res;
     u8_t *buf;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_I64, TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, TYPE_B8):
             l = y->len;
-            m = absi64(x->i64);
+            m = ABSI64(x->i64);
             res = B8(m);
 
             if (x->i64 >= 0) {
@@ -491,11 +491,11 @@ obj_p ray_take(obj_p x, obj_p y) {
             }
 
             return res;
-        case mtype2(-TYPE_I64, TYPE_I64):
-        case mtype2(-TYPE_I64, TYPE_SYMBOL):
-        case mtype2(-TYPE_I64, TYPE_TIMESTAMP):
+        case MTYPE2(-TYPE_I64, TYPE_I64):
+        case MTYPE2(-TYPE_I64, TYPE_SYMBOL):
+        case MTYPE2(-TYPE_I64, TYPE_TIMESTAMP):
             l = y->len;
-            m = absi64(x->i64);
+            m = ABSI64(x->i64);
             res = vector(y->type, m);
 
             if (x->i64 >= 0) {
@@ -510,9 +510,9 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_F64):
+        case MTYPE2(-TYPE_I64, TYPE_F64):
             l = y->len;
-            m = absi64(x->i64);
+            m = ABSI64(x->i64);
             res = F64(m);
 
             if (x->i64 >= 0) {
@@ -527,10 +527,10 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, -TYPE_I64):
-        case mtype2(-TYPE_I64, -TYPE_SYMBOL):
-        case mtype2(-TYPE_I64, -TYPE_TIMESTAMP):
-            l = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+        case MTYPE2(-TYPE_I64, -TYPE_SYMBOL):
+        case MTYPE2(-TYPE_I64, -TYPE_TIMESTAMP):
+            l = ABSI64(x->i64);
             res = I64(l);
 
             for (i = 0; i < l; i++)
@@ -539,8 +539,8 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, -TYPE_F64):
-            l = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, -TYPE_F64):
+            l = ABSI64(x->i64);
             res = F64(l);
             for (i = 0; i < l; i++)
                 AS_F64(res)
@@ -548,15 +548,15 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, -TYPE_GUID):
-            l = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, -TYPE_GUID):
+            l = ABSI64(x->i64);
             res = GUID(l);
             for (i = 0; i < l; i++)
                 memcpy(AS_GUID(res)[i], AS_GUID(y)[0], sizeof(guid_t));
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_ENUM):
+        case MTYPE2(-TYPE_I64, TYPE_ENUM):
             k = ray_key(y);
             s = ray_get(k);
             drop_obj(k);
@@ -566,7 +566,7 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             v = ENUM_VAL(y);
 
-            l = absi64(x->i64);
+            l = ABSI64(x->i64);
             m = v->len;
 
             if (!s || s->type != TYPE_SYMBOL) {
@@ -617,8 +617,8 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_ANYMAP):
-            l = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, TYPE_ANYMAP):
+            l = ABSI64(x->i64);
             res = vector(TYPE_LIST, l);
 
             k = ANYMAP_KEY(y);
@@ -671,8 +671,8 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_C8):
-            m = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, TYPE_C8):
+            m = ABSI64(x->i64);
             n = y->len;
             res = C8(m);
 
@@ -688,8 +688,8 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_LIST):
-            m = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, TYPE_LIST):
+            m = ABSI64(x->i64);
             n = y->len;
             res = vector(TYPE_LIST, m);
 
@@ -705,8 +705,8 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_GUID):
-            m = absi64(x->i64);
+        case MTYPE2(-TYPE_I64, TYPE_GUID):
+            m = ABSI64(x->i64);
             n = y->len;
             res = GUID(m);
 
@@ -720,7 +720,7 @@ obj_p ray_take(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(-TYPE_I64, TYPE_TABLE):
+        case MTYPE2(-TYPE_I64, TYPE_TABLE):
             l = AS_LIST(y)[1]->len;
             res = vector(TYPE_LIST, l);
             for (i = 0; i < l; i++) {
@@ -749,9 +749,9 @@ obj_p ray_in(obj_p x, obj_p y) {
     obj_p vec, set;
 
     switch
-        mtype2(x->type, y->type) {
-            case mtype2(TYPE_I64, TYPE_I64):
-            case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
+        MTYPE2(x->type, y->type) {
+            case MTYPE2(TYPE_I64, TYPE_I64):
+            case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
                 xl = x->len;
                 yl = y->len;
                 set = ht_oa_create(yl, -1);
@@ -792,14 +792,14 @@ obj_p ray_within(obj_p x, obj_p y) {
         return error_str(ERR_TYPE, "within: second argument must be a 2-element vector");
 
     switch
-        mtype2(x->type, y->type) {
-            case mtype2(-TYPE_I64, TYPE_I64):
+        MTYPE2(x->type, y->type) {
+            case MTYPE2(-TYPE_I64, TYPE_I64):
                 min = AS_I64(y)[0];
                 max = AS_I64(y)[1];
 
                 return B8(x->i64 >= min && x->i64 <= max);
 
-            case mtype2(TYPE_I64, TYPE_I64):
+            case MTYPE2(TYPE_I64, TYPE_I64):
                 l = x->len;
                 min = AS_I64(y)[0];
                 max = AS_I64(y)[1];
@@ -820,9 +820,9 @@ obj_p ray_within(obj_p x, obj_p y) {
 obj_p ray_sect(obj_p x, obj_p y) {
     obj_p mask, res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
             mask = ray_in(x, y);
             res = ray_filter(x, mask);
             drop_obj(mask);
@@ -839,9 +839,9 @@ obj_p ray_except(obj_p x, obj_p y) {
     i64_t i, j = 0, l;
     obj_p mask, nmask, res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
             l = x->len;
             res = vector(x->type, l);
 
@@ -854,8 +854,8 @@ obj_p ray_except(obj_p x, obj_p y) {
             resize_obj(&res, j);
 
             return res;
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
             mask = ray_in(x, y);
             nmask = ray_not(mask);
             drop_obj(mask);

@@ -111,7 +111,7 @@ typedef enum {
     GLYPH_V_BLOCK
 } glyph_t;
 
-#define maxn(n, e)         \
+#define MAXN(n, e)         \
     {                      \
         i64_t k = e;       \
         n = n > k ? n : k; \
@@ -705,16 +705,16 @@ i64_t list_fmt_into(obj_p *dst, i64_t indent, i64_t limit, b8_t full, obj_p obj)
 
     if (!full) {
         for (i = 0; i < list_height - 1; i++) {
-            maxn(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
-            maxn(n, str_fmt_into(dst, 2, " "));
+            MAXN(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
+            MAXN(n, str_fmt_into(dst, 2, " "));
         }
 
-        maxn(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
+        MAXN(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
 
         if (list_height < (i64_t)obj->len)
-            maxn(n, str_fmt_into(dst, 3, ".."));
+            MAXN(n, str_fmt_into(dst, 3, ".."));
 
-        maxn(n, str_fmt_into(dst, 2, ")"));
+        MAXN(n, str_fmt_into(dst, 2, ")"));
 
         return n;
     }
@@ -722,22 +722,22 @@ i64_t list_fmt_into(obj_p *dst, i64_t indent, i64_t limit, b8_t full, obj_p obj)
     indent += 2;
 
     for (i = 0; i < list_height; i++) {
-        maxn(n, str_fmt_into(dst, 2, "\n"));
-        maxn(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
-        maxn(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
+        MAXN(n, str_fmt_into(dst, 2, "\n"));
+        MAXN(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
+        MAXN(n, obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]));
     }
 
     if (list_height < (i64_t)obj->len) {
-        maxn(n, str_fmt_into(dst, 2, "\n"));
-        maxn(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
-        maxn(n, str_fmt_into(dst, 3, ".."));
+        MAXN(n, str_fmt_into(dst, 2, "\n"));
+        MAXN(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
+        MAXN(n, str_fmt_into(dst, 3, ".."));
     }
 
     indent -= 2;
 
-    maxn(n, str_fmt_into(dst, 2, "\n"));
-    maxn(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
-    maxn(n, str_fmt_into(dst, 2, ")"));
+    MAXN(n, str_fmt_into(dst, 2, "\n"));
+    MAXN(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
+    MAXN(n, str_fmt_into(dst, 2, ")"));
 
     return n;
 }
@@ -801,20 +801,20 @@ i64_t dict_fmt_into(obj_p *dst, i64_t indent, i64_t limit, b8_t full, obj_p obj)
 
     if (!full) {
         for (i = 0; i < dict_height - 1; i++) {
-            maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
-            maxn(n, str_fmt_into(dst, MAX_ROW_WIDTH, ": "));
-            maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
-            maxn(n, str_fmt_into(dst, MAX_ROW_WIDTH, " "));
+            MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
+            MAXN(n, str_fmt_into(dst, MAX_ROW_WIDTH, ": "));
+            MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
+            MAXN(n, str_fmt_into(dst, MAX_ROW_WIDTH, " "));
         }
 
-        maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
-        maxn(n, str_fmt_into(dst, MAX_ROW_WIDTH, ": "));
-        maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
+        MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
+        MAXN(n, str_fmt_into(dst, MAX_ROW_WIDTH, ": "));
+        MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
 
         if (dict_height < ops_count(keys))
-            maxn(n, str_fmt_into(dst, 3, ".."));
+            MAXN(n, str_fmt_into(dst, 3, ".."));
 
-        maxn(n, str_fmt_into(dst, 2, "}"));
+        MAXN(n, str_fmt_into(dst, 2, "}"));
 
         return n;
     }
@@ -822,24 +822,24 @@ i64_t dict_fmt_into(obj_p *dst, i64_t indent, i64_t limit, b8_t full, obj_p obj)
     indent += 2;
 
     for (i = 0; i < dict_height; i++) {
-        maxn(n, str_fmt_into(dst, 2, "\n"));
-        maxn(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
-        maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
+        MAXN(n, str_fmt_into(dst, 2, "\n"));
+        MAXN(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
+        MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, keys, i));
         n += str_fmt_into(dst, MAX_ROW_WIDTH, ": ");
-        maxn(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
+        MAXN(n, raw_fmt_into(dst, indent, MAX_ROW_WIDTH, vals, i));
     }
 
     if (dict_height < ops_count(keys)) {
-        maxn(n, str_fmt_into(dst, 2, "\n"));
-        maxn(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
-        maxn(n, str_fmt_into(dst, 3, ".."));
+        MAXN(n, str_fmt_into(dst, 2, "\n"));
+        MAXN(n, str_fmt_into_n(dst, NO_LIMIT, indent, " "));
+        MAXN(n, str_fmt_into(dst, 3, ".."));
     }
 
     indent -= 2;
 
-    maxn(n, str_fmt_into(dst, 2, "\n"));
-    maxn(n, str_fmt_into_n(dst, limit, indent, " "));
-    maxn(n, str_fmt_into(dst, 2, "}"));
+    MAXN(n, str_fmt_into(dst, 2, "\n"));
+    MAXN(n, str_fmt_into_n(dst, limit, indent, " "));
+    MAXN(n, str_fmt_into(dst, 2, "}"));
 
     return n;
 }
@@ -889,7 +889,7 @@ i64_t table_fmt_into(obj_p *dst, i64_t indent, b8_t full, obj_p obj) {
             s = NULL_OBJ;
             m = raw_fmt_into(&s, 0, 38, column, j);
             formatted_columns[i][j] = s;
-            maxn(l, m);
+            MAXN(l, m);
         }
 
         // Traverse the rest of the column
@@ -901,7 +901,7 @@ i64_t table_fmt_into(obj_p *dst, i64_t indent, b8_t full, obj_p obj) {
             else
                 m = raw_fmt_into(&s, 0, 38, column, rows - table_height + j - 1);
             formatted_columns[i][j] = s;
-            maxn(l, m);
+            MAXN(l, m);
         }
 
         AS_I64(column_widths)[i] = l + 2;  // Add 2 for padding

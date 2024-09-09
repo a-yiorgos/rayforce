@@ -246,7 +246,7 @@ obj_p ray_get(obj_p x) {
 
                 res = (obj_p)mmap_file(fd, size, 0);
 
-                if (is_external_serialized(res)) {
+                if (IS_EXTERNAL_SERIALIZED(res)) {
                     v = de_raw((u8_t *)res, size);
                     mmap_free(res, size);
                     fs_fclose(fd);
@@ -258,7 +258,7 @@ obj_p ray_get(obj_p x) {
                     drop_obj(id);
                 }
 
-                if (is_external_compound(res))
+                if (IS_EXTERNAL_COMPOUND(res))
                     res = (obj_p)((str_p)res + RAY_PAGE_SIZE);
 
                 // anymap needs additional nested mapping of dependencies

@@ -505,7 +505,7 @@ obj_p __ray_set(obj_p x, obj_p y) {
                         return res;
                     }
 
-                    if (is_external_compound(y)) {
+                    if (IS_EXTERNAL_COMPOUND(y)) {
                         size = RAY_PAGE_SIZE + sizeof(struct obj_t) + y->len * sizeof(i64_t);
 
                         c = fs_fwrite(fd, (str_p)y - RAY_PAGE_SIZE, size);

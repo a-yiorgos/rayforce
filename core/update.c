@@ -39,7 +39,7 @@
 #include "query.h"
 #include "aggr.h"
 
-#define uncow_obj(o, v, r)            \
+#define UNCOW_OBJ(o, v, r)            \
     {                                 \
         if ((v == NULL) || (*v != o)) \
             drop_obj(o);              \
@@ -140,7 +140,7 @@ obj_p ray_alter(obj_p *x, u64_t n) {
 
     res = __alter(&obj, x, n);
     if (IS_ERROR(res)) {
-        uncow_obj(obj, val, res);
+        UNCOW_OBJ(obj, val, res);
         return res;
     }
 
@@ -192,7 +192,7 @@ obj_p ray_modify(obj_p *x, u64_t n) {
 
     res = __alter(&obj, x, n);
     if (IS_ERROR(res))
-        uncow_obj(obj, val, res);
+        UNCOW_OBJ(obj, val, res);
 
     return obj;
 }
@@ -215,7 +215,7 @@ obj_p ray_insert(obj_p *x, u64_t n) {
 
     if (obj->type != TYPE_TABLE) {
         res = error(ERR_TYPE, "insert: expected 'Table as 1st argument, got '%s", type_name(obj->type));
-        uncow_obj(obj, val, res);
+        UNCOW_OBJ(obj, val, res);
     }
 
     // Check integrity of the table with the new object
@@ -226,7 +226,7 @@ insert:
             l = lst->len;
             if (l != AS_LIST(obj)[0]->len) {
                 res = error(ERR_LENGTH, "insert: expected list of length %lld, got %lld", AS_LIST(obj)[0]->len, l);
-                uncow_obj(obj, val, res);
+                UNCOW_OBJ(obj, val, res);
             }
 
             // There is one record to be inserted
@@ -236,7 +236,7 @@ insert:
                     if (!__suitable_types(AS_LIST(AS_LIST(obj)[1])[i], AS_LIST(lst)[i])) {
                         res = error(ERR_TYPE, "insert: expected '%s' as %lldth element in a values list, got '%s'",
                                     type_name(-AS_LIST(AS_LIST(obj)[1])[i]->type), i, type_name(AS_LIST(lst)[i]->type));
-                        uncow_obj(obj, val, res);
+                        UNCOW_OBJ(obj, val, res);
                     }
                 }
 
@@ -255,7 +255,7 @@ insert:
                 m = AS_LIST(lst)[0]->len;
                 if (m == 0) {
                     res = error(ERR_LENGTH, "insert: expected non-empty list of records");
-                    uncow_obj(obj, val, res);
+                    UNCOW_OBJ(obj, val, res);
                 }
 
                 // Check all the elements of the list
@@ -263,14 +263,14 @@ insert:
                     if (!__suitable_types(AS_LIST(AS_LIST(obj)[1])[i], AS_LIST(lst)[i])) {
                         res = error(ERR_TYPE, "insert: expected '%s' as %lldth element, got '%s'",
                                     type_name(AS_LIST(AS_LIST(obj)[1])[i]->type), i, type_name(AS_LIST(lst)[i]->type));
-                        uncow_obj(obj, val, res);
+                        UNCOW_OBJ(obj, val, res);
                     }
 
                     if (AS_LIST(lst)[i]->len != m) {
                         res = error(ERR_LENGTH,
                                     "insert: expected list of length %lld, as %lldth element in a values, got %lld",
                                     AS_LIST(AS_LIST(obj)[1])[i]->len, i, n);
-                        uncow_obj(obj, val, res);
+                        UNCOW_OBJ(obj, val, res);
                     }
                 }
 
@@ -292,7 +292,7 @@ insert:
             if (AS_LIST(lst)[0]->type != TYPE_SYMBOL) {
                 res = error(ERR_TYPE, "insert: expected 'Symbol as 1st element in a dictionary, got '%s'",
                             type_name(AS_LIST(lst)[0]->type));
-                uncow_obj(obj, val, res);
+                UNCOW_OBJ(obj, val, res);
             }
             // Fall through
         case TYPE_TABLE:
@@ -300,13 +300,13 @@ insert:
             l = AS_LIST(lst)[0]->len;
             if (l != AS_LIST(obj)[0]->len) {
                 res = error(ERR_LENGTH, "insert: expected 'Table with the same number of columns");
-                uncow_obj(obj, val, res);
+                UNCOW_OBJ(obj, val, res);
             }
 
             for (i = 0; i < l; i++) {
                 if (AS_SYMBOL(AS_LIST(lst)[0])[i] != AS_SYMBOL(AS_LIST(obj)[0])[i]) {
                     res = error(ERR_TYPE, "insert: expected 'Table with the same columns");
-                    uncow_obj(obj, val, res);
+                    UNCOW_OBJ(obj, val, res);
                 }
             }
 
@@ -315,7 +315,7 @@ insert:
 
         default:
             res = error(ERR_TYPE, "insert: unsupported type '%s' as 2nd argument", type_name(lst->type));
-            uncow_obj(obj, val, res);
+            UNCOW_OBJ(obj, val, res);
     }
 
     return __commit(x[0], obj, val);
@@ -538,7 +538,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
                         drop_obj(vals);
                         drop_obj(filters);
                         drop_obj(gids);
-                        uncow_obj(obj, val, res);
+                        UNCOW_OBJ(obj, val, res);
                     }
 
                     if (!__suitable_lengths(AS_LIST(AS_LIST(obj)[1])[j], obj)) {
@@ -553,7 +553,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
                         drop_obj(vals);
                         drop_obj(filters);
                         drop_obj(gids);
-                        uncow_obj(obj, val, res);
+                        UNCOW_OBJ(obj, val, res);
                     }
 
                     drop_obj(v);
@@ -625,7 +625,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
                     drop_obj(keys);
                     drop_obj(vals);
                     drop_obj(filters);
-                    uncow_obj(obj, val, res);
+                    UNCOW_OBJ(obj, val, res);
                 }
 
                 if (!__suitable_lengths(AS_LIST(AS_LIST(obj)[1])[j], AS_LIST(vals)[i])) {
@@ -637,7 +637,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
                     drop_obj(keys);
                     drop_obj(vals);
                     drop_obj(filters);
-                    uncow_obj(obj, val, res);
+                    UNCOW_OBJ(obj, val, res);
                 }
             }
         }

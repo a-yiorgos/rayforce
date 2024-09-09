@@ -36,7 +36,7 @@
 #include "pool.h"
 
 u64_t optimal_hash_table_size(u64_t len, f64_t load_factor) {
-    u64_t size = (u64_t)ceilf64(len / load_factor);
+    u64_t size = (u64_t)CEILF64(len / load_factor);
     return ops_next_prime(size);
 }
 

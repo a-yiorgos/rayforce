@@ -33,11 +33,11 @@ obj_p ray_and(obj_p x, obj_p y) {
     i64_t l;
     obj_p res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_B8, -TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_B8, -TYPE_B8):
             return (b8(x->b8 && y->b8));
 
-        case mtype2(TYPE_B8, TYPE_B8):
+        case MTYPE2(TYPE_B8, TYPE_B8):
             l = x->len;
             res = B8(x->len);
             for (i = 0; i < l; i++)
@@ -56,11 +56,11 @@ obj_p ray_or(obj_p x, obj_p y) {
     i64_t l;
     obj_p res;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(-TYPE_B8, -TYPE_B8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_B8, -TYPE_B8):
             return (b8(x->b8 || y->b8));
 
-        case mtype2(TYPE_B8, TYPE_B8):
+        case MTYPE2(TYPE_B8, TYPE_B8):
             l = x->len;
             res = B8(x->len);
             for (i = 0; i < l; i++)
@@ -78,10 +78,10 @@ obj_p ray_like(obj_p x, obj_p y) {
     i64_t i, l;
     obj_p res, e;
 
-    switch (mtype2(x->type, y->type)) {
-        case mtype2(TYPE_C8, TYPE_C8):
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_C8, TYPE_C8):
             return (b8(str_match(AS_C8(x), x->len, AS_C8(y), y->len)));
-        case mtype2(TYPE_LIST, TYPE_C8):
+        case MTYPE2(TYPE_LIST, TYPE_C8):
             l = x->len;
             res = B8(l);
             for (i = 0; i < l; i++) {
@@ -98,7 +98,7 @@ obj_p ray_like(obj_p x, obj_p y) {
 
             return res;
 
-        case mtype2(TYPE_ANYMAP, TYPE_C8):
+        case MTYPE2(TYPE_ANYMAP, TYPE_C8):
             l = x->len;
             res = B8(l);
             for (i = 0; i < l; i++) {

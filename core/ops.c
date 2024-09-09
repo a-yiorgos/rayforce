@@ -119,42 +119,42 @@ b8_t ops_eq_idx(obj_p a, i64_t ai, obj_p b, i64_t bi) {
     obj_p lv, rv;
     b8_t eq;
 
-    switch (mtype2(a->type, b->type)) {
-        case mtype2(TYPE_U8, -TYPE_U8):
-        case mtype2(TYPE_C8, -TYPE_C8):
-        case mtype2(TYPE_B8, -TYPE_B8):
+    switch (MTYPE2(a->type, b->type)) {
+        case MTYPE2(TYPE_U8, -TYPE_U8):
+        case MTYPE2(TYPE_C8, -TYPE_C8):
+        case MTYPE2(TYPE_B8, -TYPE_B8):
             return AS_U8(a)[ai] == b->u8;
-        case mtype2(TYPE_I64, -TYPE_I64):
-        case mtype2(TYPE_SYMBOL, -TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, -TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_TIMESTAMP):
             return AS_I64(a)[ai] == b->i64;
-        case mtype2(TYPE_U8, TYPE_U8):
-        case mtype2(TYPE_B8, TYPE_B8):
-        case mtype2(TYPE_C8, TYPE_C8):
+        case MTYPE2(TYPE_U8, TYPE_U8):
+        case MTYPE2(TYPE_B8, TYPE_B8):
+        case MTYPE2(TYPE_C8, TYPE_C8):
             return AS_U8(a)[ai] == AS_U8(b)[bi];
-        case mtype2(TYPE_I64, TYPE_I64):
-        case mtype2(TYPE_SYMBOL, TYPE_SYMBOL):
-        case mtype2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I64, TYPE_I64):
+        case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
             return AS_I64(a)[ai] == AS_I64(b)[bi];
-        case mtype2(TYPE_F64, -TYPE_F64):
+        case MTYPE2(TYPE_F64, -TYPE_F64):
             return AS_F64(a)[ai] == b->f64;
-        case mtype2(TYPE_F64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
             return AS_F64(a)[ai] == AS_F64(b)[bi];
-        case mtype2(TYPE_GUID, -TYPE_GUID):
+        case MTYPE2(TYPE_GUID, -TYPE_GUID):
             return memcmp(AS_GUID(a) + ai, AS_GUID(b), sizeof(guid_t)) == 0;
-        case mtype2(TYPE_GUID, TYPE_GUID):
+        case MTYPE2(TYPE_GUID, TYPE_GUID):
             return memcmp(AS_GUID(a) + ai, AS_GUID(b) + bi, sizeof(guid_t)) == 0;
             // TODO: figure out how to distinguish between list as column and a list as a value
-        case mtype2(TYPE_LIST, TYPE_LIST):
+        case MTYPE2(TYPE_LIST, TYPE_LIST):
             return cmp_obj(AS_LIST(a)[ai], AS_LIST(b)[bi]) == 0;
-        case mtype2(TYPE_ENUM, TYPE_ENUM):
+        case MTYPE2(TYPE_ENUM, TYPE_ENUM):
             lv = at_idx(a, ai);
             rv = at_idx(b, bi);
             eq = lv->i64 == rv->i64;
             drop_obj(lv);
             drop_obj(rv);
             return eq;
-        case mtype2(TYPE_ANYMAP, TYPE_ANYMAP):
+        case MTYPE2(TYPE_ANYMAP, TYPE_ANYMAP):
             lv = at_idx(a, ai);
             rv = at_idx(b, bi);
             eq = cmp_obj(lv, rv) == 0;

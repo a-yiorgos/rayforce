@@ -54,7 +54,7 @@ typedef struct stdin_thread_ctx_t {
 listener_p __LISTENER = NULL;
 stdin_thread_ctx_p __STDIN_THREAD_CTX = NULL;
 
-#define _recv_op(poll, selector)                                                                      \
+#define _RECV_OP(poll, selector)                                                                      \
     {                                                                                                 \
         i32_t poll_result;                                                                            \
                                                                                                       \
@@ -69,7 +69,7 @@ stdin_thread_ctx_p __STDIN_THREAD_CTX = NULL;
         }                                                                                             \
     }
 
-#define _send_op(poll, selector)                                                                      \
+#define _SEND_OP(poll, selector)                                                                      \
     {                                                                                                 \
         i32_t poll_result;                                                                            \
                                                                                                       \
@@ -318,7 +318,7 @@ poll_result_t _recv(poll_p poll, selector_p selector) {
                 selector->rx.wsa_buf.buf = selector->rx.wsa_buf.buf + selector->rx.bytes_transfered;
             }
 
-            _recv_op(poll, selector);
+            _RECV_OP(poll, selector);
 
             continue;
         }
@@ -358,7 +358,7 @@ poll_result_t _recv(poll_p poll, selector_p selector) {
         selector->rx.wsa_buf.len -= selector->rx.bytes_transfered;
 
         if (selector->rx.wsa_buf.len != 0) {
-            _recv_op(poll, selector);
+            _RECV_OP(poll, selector);
             continue;
         }
 
@@ -385,7 +385,7 @@ poll_result_t _recv(poll_p poll, selector_p selector) {
         if (selector->rx.wsa_buf.len == 0)
             break;
 
-        _recv_op(poll, selector);
+        _RECV_OP(poll, selector);
     }
 
     selector->rx.header = B8_FALSE;
@@ -399,7 +399,7 @@ poll_result_t _recv_initiate(poll_p poll, selector_p selector) {
     selector->rx.wsa_buf.buf = (str_p)selector->rx.buf;
     selector->rx.wsa_buf.len = selector->rx.size;
 
-    _recv_op(poll, selector);
+    _RECV_OP(poll, selector);
 
     return _recv(poll, selector);
 }
@@ -418,7 +418,7 @@ send:
         selector->tx.wsa_buf.len -= selector->tx.bytes_transfered;
 
         if (selector->tx.wsa_buf.len != 0)
-            _send_op(poll, selector);
+            _SEND_OP(poll, selector);
     }
 
     if (selector->tx.buf) {
