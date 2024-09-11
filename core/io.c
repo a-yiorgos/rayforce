@@ -566,6 +566,7 @@ obj_p ray_load(obj_p x) {
         flen = fs_filename(AS_C8(file), &fname);
         sym = symbol(fname, flen);
         res = ray_set(sym, tab);
+
         drop_obj(file);
         drop_obj(sym);
         drop_obj(tab);
