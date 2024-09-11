@@ -36,6 +36,8 @@
 #include "timestamp.h"
 #include "sys.h"
 #include "string.h"
+#include "unary.h"
+#include "binary.h"
 
 obj_p ray_hopen(obj_p x) {
     i64_t fd;
@@ -546,10 +548,30 @@ obj_p ray_eval(obj_p x) {
 }
 
 obj_p ray_load(obj_p x) {
-    obj_p file, res;
+    u64_t flen;
+    obj_p file, sym, tab, res;
+    lit_p fname;
 
     if (!x || x->type != TYPE_C8)
         THROW(ERR_TYPE, "load: expected string");
+
+    // table expected
+    if (x->len > 1 && AS_C8(x)[x->len - 1] == '/') {
+        tab = ray_get(x);
+        if (IS_ERROR(tab))
+            return tab;
+
+        // bind table to a symbol from the path, so determine the last part of the path
+        file = cstring_from_obj(x);
+        flen = fs_filename(AS_C8(file), &fname);
+        sym = symbol(fname, flen);
+        res = ray_set(sym, tab);
+        drop_obj(file);
+        drop_obj(sym);
+        drop_obj(tab);
+
+        return res;
+    }
 
     file = ray_read(x);
     if (IS_ERROR(file))

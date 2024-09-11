@@ -304,3 +304,33 @@ obj_p fs_read_dir(lit_p path) {
 }
 
 #endif
+
+u64_t fs_filename(lit_p path, lit_p *name) {
+    u64_t i, len;
+    lit_p p;
+
+    *name = NULL;
+    len = strlen(path);
+
+    // Handle empty string case
+    if (len == 0)
+        return 0;
+
+    // Skip trailing slashes
+    while (len > 0 && (path[len - 1] == '/'))
+        len--;
+    // If the entire path was slashes, return the original path
+    if (len == 0)
+        return 0;
+
+    // Manually find the last occurrence of either '/'
+    p = NULL;
+    for (i = 0; i < len; i++) {
+        if (path[i] == '/')
+            p = &path[i];
+    }
+
+    *name = p ? p + 1 : path;
+
+    return len - (*name - path);
+}

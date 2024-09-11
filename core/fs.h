@@ -55,5 +55,6 @@ i64_t fs_dcreate(lit_p path);
 i64_t fs_dopen(lit_p path);
 i64_t fs_dclose(i64_t fd);
 obj_p fs_read_dir(lit_p path);
+u64_t fs_filename(lit_p path, lit_p *name);
 
 #endif  // FS_H
