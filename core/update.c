@@ -247,8 +247,7 @@ insert:
                     push_obj(&col, clone_obj(AS_LIST(lst)[i]));
                     if (need_drop)
                         drop_obj(AS_LIST(AS_LIST(obj)[1])[i]);
-                    AS_LIST(AS_LIST(obj)[1])
-                    [i] = col;
+                    AS_LIST(AS_LIST(obj)[1])[i] = col;
                 }
             } else {
                 // There are multiple records to be inserted
@@ -281,8 +280,8 @@ insert:
                     append_list(&col, AS_LIST(lst)[i]);
                     if (need_drop)
                         drop_obj(AS_LIST(AS_LIST(obj)[1])[i]);
-                    AS_LIST(AS_LIST(obj)[1])
-                    [i] = col;
+
+                    AS_LIST(AS_LIST(obj)[1])[i] = col;
                 }
             }
 
@@ -424,8 +423,7 @@ upsert:
                 col = cow_obj(AS_LIST(AS_LIST(obj)[1])[i]);
                 if (col != AS_LIST(AS_LIST(obj)[1])[i]) {
                     drop_obj(AS_LIST(AS_LIST(obj)[1])[i]);
-                    AS_LIST(AS_LIST(obj)[1])
-                    [i] = col;
+                    AS_LIST(AS_LIST(obj)[1])[i] = col;
                 }
 
                 for (j = 0; j < m; j++) {
@@ -568,8 +566,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
             col = cow_obj(AS_LIST(AS_LIST(obj)[1])[j]);
             if (col != AS_LIST(AS_LIST(obj)[1])[j]) {
                 drop_obj(AS_LIST(AS_LIST(obj)[1])[j]);
-                AS_LIST(AS_LIST(obj)[1])
-                [j] = col;
+                AS_LIST(AS_LIST(obj)[1])[j] = col;
             }
         }
 
@@ -649,8 +646,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
             col = cow_obj(AS_LIST(AS_LIST(obj)[1])[j]);
             if (col != AS_LIST(AS_LIST(obj)[1])[j]) {
                 drop_obj(AS_LIST(AS_LIST(obj)[1])[j]);
-                AS_LIST(AS_LIST(obj)[1])
-                [j] = col;
+                AS_LIST(AS_LIST(obj)[1])[j] = col;
             }
         }
 
@@ -827,8 +823,7 @@ obj_p ray_update(obj_p obj) {
             return val;
         }
 
-        AS_LIST(vals)
-        [i] = val;
+        AS_LIST(vals)[i] = val;
     }
 
     unmount_env(tablen);
