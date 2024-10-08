@@ -484,23 +484,33 @@ obj_p ray_parse_str(i64_t fd, obj_p str, obj_p file) {
 }
 
 obj_p eval_obj(obj_p obj) {
-    obj_p res;
+    obj_p res, fn;
     ctx_p ctx;
     i64_t sp;
 
-    ctx = ctx_top(NULL_OBJ);
+    fn = lambda(NULL_OBJ, NULL_OBJ, NULL_OBJ);
+
+    sp = __INTERPRETER->sp;
+
+    stack_push(NULL_OBJ);  // null env
+
+    ctx = ctx_push(fn);
+    ctx->sp = sp;
     res = (setjmp(ctx->jmp) == 0) ? eval(obj) : stack_pop();
 
     // cleanup stack frame
-    sp = ctx->sp;
     while (__INTERPRETER->sp > sp)
         drop_obj(stack_pop());
+
+    drop_obj(fn);
+
+    ctx_pop();
 
     return res;
 }
 
 obj_p ray_eval_str(obj_p str, obj_p file) {
-    obj_p parsed, res, info;
+    obj_p parsed, res, info, fn;
     ctx_p ctx;
     i64_t sp;
 
@@ -519,17 +529,23 @@ obj_p ray_eval_str(obj_p str, obj_p file) {
         return parsed;
     }
 
-    ctx = ctx_top(info);
-    sp = ctx->sp;
+    sp = __INTERPRETER->sp;
+    stack_push(NULL_OBJ);  // null env
+    fn = lambda(NULL_OBJ, NULL_OBJ, info);
+
+    ctx = ctx_push(fn);
+    ctx->sp = sp;
 
     res = (setjmp(ctx->jmp) == 0) ? eval(parsed) : stack_pop();
 
     drop_obj(parsed);
-    drop_obj(info);
+    drop_obj(fn);
 
     // cleanup stack frame
     while (__INTERPRETER->sp > sp)
         drop_obj(stack_pop());
+
+    ctx_pop();
 
     timeit_span_end("top-level");
 
@@ -539,10 +555,11 @@ obj_p ray_eval_str(obj_p str, obj_p file) {
 obj_p try_obj(obj_p obj, obj_p ctch) {
     ctx_p ctx;
     i64_t sp;
-    obj_p res;
+    obj_p fn, res;
     b8_t sig;
 
-    ctx = ctx_top(NULL_OBJ);
+    fn = lambda(NULL_OBJ, NULL_OBJ, NULL_OBJ);
+    ctx = ctx_push(fn);
 
     switch (setjmp(ctx->jmp)) {
         case 0:
@@ -570,6 +587,9 @@ obj_p try_obj(obj_p obj, obj_p ctch) {
     // cleanup stack frame
     while (__INTERPRETER->sp > sp)
         drop_obj(stack_pop());
+
+    drop_obj(fn);
+    ctx_pop();
 
     if (IS_ERROR(res) || sig) {
         if (ctch) {
