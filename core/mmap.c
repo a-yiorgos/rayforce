@@ -31,7 +31,7 @@ raw_p mmap_stack(u64_t size) { return VirtualAlloc(NULL, size, MEM_COMMIT | MEM_
 
 raw_p mmap_alloc(u64_t size) { return VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); }
 
-raw_p mmap_file(i64_t fd, u64_t size, i32_t shared) {
+raw_p mmap_file(i64_t fd, raw_p addr, u64_t size, i32_t shared) {
     UNUSED(shared);
     HANDLE hMapping;
     raw_p ptr;
@@ -97,9 +97,9 @@ raw_p mmap_alloc(u64_t size) {
     return ptr;
 }
 
-raw_p mmap_file(i64_t fd, u64_t size, i32_t shared) {
+raw_p mmap_file(i64_t fd, raw_p addr, u64_t size, i32_t shared) {
     i32_t flags = (shared) ? MAP_SHARED : MAP_PRIVATE;
-    raw_p ptr = mmap(NULL, size, PROT_READ | PROT_WRITE | MAP_POPULATE | MAP_NONBLOCK, flags, fd, 0);
+    raw_p ptr = mmap(addr, size, PROT_READ | PROT_WRITE | MAP_POPULATE | MAP_NONBLOCK, flags, fd, 0);
 
     if (ptr == MAP_FAILED)
         return NULL;
@@ -135,9 +135,14 @@ raw_p mmap_stack(u64_t size) {
 
 raw_p mmap_alloc(u64_t size) { return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0); }
 
-raw_p mmap_file(i64_t fd, u64_t size, i32_t shared) {
+raw_p mmap_file(i64_t fd, raw_p addr, u64_t size, i64_t offset, i32_t shared) {
     i32_t flags = (shared) ? MAP_SHARED : MAP_PRIVATE;
-    raw_p ptr = mmap(NULL, size, PROT_READ | PROT_WRITE | MADV_WILLNEED, flags, fd, 0);
+    raw_p ptr;
+
+    if (addr != NULL)
+        flags |= MAP_FIXED;
+
+    ptr = mmap(addr, size, PROT_READ | PROT_WRITE | MADV_WILLNEED, flags, fd, offset);
 
     if (ptr == MAP_FAILED)
         return NULL;

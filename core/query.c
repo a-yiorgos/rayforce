@@ -42,6 +42,7 @@
 #include "pool.h"
 #include "time.h"
 #include "runtime.h"
+#include "fs.h"
 
 obj_p remap_filter(obj_p tab, obj_p index) { return filter_map(tab, index); }
 
@@ -106,6 +107,98 @@ obj_p remap_group(obj_p *gvals, obj_p cols, obj_p tab, obj_p filter, obj_p gkeys
         default:
             return error(ERR_TYPE, "grouping key mapping(s) must be a symbol(s)");
     }
+}
+
+obj_p virtmap_materialize(obj_p virtmap) {
+    u64_t i, j, l, n;
+    i64_t *ptr;
+    obj_p res;
+
+    l = virtmap->len;
+
+    // Calculate the total number of elements
+    n = 0;
+    for (i = 0; i < l; i++)
+        n += AS_LIST(AS_LIST(virtmap)[i])[1]->i64;
+
+    res = vector(AS_LIST(AS_LIST(virtmap)[0])[0]->type, n);
+    ptr = AS_I64(res);
+
+    for (i = 0; i < l; i++) {
+        n = AS_LIST(AS_LIST(virtmap)[i])[1]->i64;
+        for (j = 0; j < n; j++)
+            ptr[j] = AS_LIST(AS_LIST(virtmap)[i])[0]->i64;
+
+        ptr += n;
+    }
+
+    return res;
+}
+
+obj_p filemap_materialize(obj_p filemap) {
+    u64_t i, j, l, n, size;
+    i64_t fd;
+    obj_p res;
+    raw_p ptr, p, r;
+
+    l = filemap->len;
+
+    // Calculate the total size required
+    n = 0;
+    size = 0;
+    size = AS_LIST(AS_LIST(filemap)[0])[1]->i64;
+    for (i = 1; i < l; i++)
+        size += AS_LIST(AS_LIST(filemap)[i])[1]->i64 - sizeof(struct obj_t);
+
+    // Reserve memory
+    ptr = mmap_reserve(NULL, size);
+    p = ptr;
+
+    // Map first chunk
+    i = 0;
+    size = AS_LIST(AS_LIST(filemap)[i])[1]->i64;
+
+    // TODO: do not reallocate string path during fs open
+    fd = fs_fopen(AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]), ATTR_RDONLY);
+
+    if (fd == -1) {
+        res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
+        return res;
+    }
+
+    r = mmap_file(fd, p, size, 0, 0);
+    if (r == NULL) {
+        res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[0])[0]));
+        return res;
+    }
+    n = ((obj_p)p)->len;
+    p += size;
+
+    // Mmap every chunk
+    for (i = 1; i < l; i++) {
+        size = AS_LIST(AS_LIST(filemap)[i])[1]->i64 - sizeof(struct obj_t);
+
+        // TODO: do not reallocate string path during fs open
+        fd = fs_fopen(AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]), ATTR_RDONLY);
+
+        if (fd == -1) {
+            res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
+            return res;
+        }
+
+        r = mmap_file(fd, p, size, sizeof(struct obj_t), 0);
+        if (r == NULL) {
+            res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
+            return res;
+        }
+        p += size;
+        n += 100;
+    }
+
+    res = (obj_p)ptr;
+    res->len = n;
+
+    return res;
 }
 
 obj_p get_gkeys(obj_p cols, obj_p obj) {
@@ -356,19 +449,51 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx) {
             }
 
             // Materialize fields
-            if (val->type == TYPE_GROUPMAP) {
-                prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
-                drop_obj(val);
-                val = prm;
-            } else if (val->type == TYPE_FILTERMAP) {
-                prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
-                drop_obj(val);
-                val = prm;
-            } else if (val->type == TYPE_ENUM) {
-                prm = ray_value(val);
-                drop_obj(val);
-                val = prm;
+            switch (val->type) {
+                case TYPE_FILTERMAP:
+                    prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
+                    drop_obj(val);
+                    val = prm;
+                    break;
+                case TYPE_ENUM:
+                    prm = ray_value(val);
+                    drop_obj(val);
+                    val = prm;
+                    break;
+                case TYPE_GROUPMAP:
+                    prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
+                    drop_obj(val);
+                    val = prm;
+                    break;
+                case TYPE_FILEMAP:
+                    prm = filemap_materialize(val);
+                    drop_obj(val);
+                    val = prm;
+                    break;
+                case TYPE_VIRTMAP:
+                    prm = virtmap_materialize(val);
+                    drop_obj(val);
+                    val = prm;
+                    break;
+                default:
+                    prm = ray_value(val);
+                    drop_obj(val);
+                    val = prm;
+                    break;
             }
+            // if (val->type == TYPE_GROUPMAP) {
+            //     prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
+            //     drop_obj(val);
+            //     val = prm;
+            // } else if (val->type == TYPE_FILTERMAP) {
+            //     prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
+            //     drop_obj(val);
+            //     val = prm;
+            // } else if (val->type == TYPE_ENUM) {
+            //     prm = ray_value(val);
+            //     drop_obj(val);
+            //     val = prm;
+            // }
 
             if (IS_ERROR(val)) {
                 res->len = i;
@@ -391,16 +516,6 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx) {
     drop_obj(keys);
 
     return NULL_OBJ;
-}
-
-obj_p virtmap_materialize(obj_p virtmap) {
-    DEBUG_PRINT("L: %lld", virtmap->len);
-    return I64(virtmap->len);
-}
-
-obj_p filemap_materialize(obj_p filemap) {
-    DEBUG_PRINT("L: %lld", filemap->len);
-    return I64(filemap->len);
 }
 
 obj_p select_collect_fields(query_ctx_p ctx) {
@@ -470,6 +585,10 @@ obj_p select_collect_fields(query_ctx_p ctx) {
                 break;
             case TYPE_FILEMAP:
                 val = filemap_materialize(prm);
+                drop_obj(prm);
+                break;
+            case TYPE_VIRTMAP:
+                val = virtmap_materialize(prm);
                 drop_obj(prm);
                 break;
             default:
