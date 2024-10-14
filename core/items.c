@@ -932,8 +932,10 @@ obj_p ray_key(obj_p x) {
 
 obj_p ray_value(obj_p x) {
     obj_p sym, k, v, res, e;
-    i64_t i, l, sl, xl;
-    u8_t *buf;
+    u8_t *u8ptr, *buf;
+    i64_t i, j, l, n, sl, xl, *i64ptr;
+    f64_t *f64ptr;
+    guid_t *guidptr;
 
     switch (x->type) {
         case TYPE_ENUM:
@@ -1019,6 +1021,78 @@ obj_p ray_value(obj_p x) {
         case TYPE_DICT:
             return clone_obj(AS_LIST(x)[1]);
 
+        case TYPE_VIRTMAP:
+            l = AS_LIST(x)[0]->len;
+
+            // Calculate the total number of elements
+            n = ops_count(x);
+            res = vector(AS_LIST(x)[0]->type, n);
+            i64ptr = AS_I64(res);
+
+            for (i = 0; i < l; i++) {
+                n = AS_I64(AS_LIST(x)[1])[i];
+                for (j = 0; j < n; j++)
+                    i64ptr[j] = AS_I64(AS_LIST(x)[0])[i];
+
+                i64ptr += n;
+            }
+
+            return res;
+        case TYPE_MAPB8:
+        case TYPE_MAPU8:
+            l = x->len;
+            n = ops_count(x);
+            res = vector(AS_LIST(x)[0]->type, n);
+            u8ptr = AS_U8(res);
+
+            for (i = 0; i < l; i++) {
+                n = AS_LIST(x)[i]->len;
+                memcpy(u8ptr, AS_U8(AS_LIST(x)[i]), n * sizeof(i8_t));
+                u8ptr += n;
+            }
+
+            return res;
+        case TYPE_MAPI64:
+        case TYPE_MAPTIMESTAMP:
+        case TYPE_MAPENUM:
+            l = x->len;
+            n = ops_count(x);
+            res = vector(AS_LIST(x)[0]->type, n);
+            i64ptr = AS_I64(res);
+
+            for (i = 0; i < l; i++) {
+                n = AS_LIST(x)[i]->len;
+                memcpy(i64ptr, AS_I64(AS_LIST(x)[i]), n * sizeof(i64_t));
+                i64ptr += n;
+            }
+
+            return res;
+        case TYPE_MAPF64:
+            l = x->len;
+            n = ops_count(x);
+            res = vector(AS_LIST(x)[0]->type, n);
+            f64ptr = AS_F64(res);
+
+            for (i = 0; i < l; i++) {
+                n = AS_LIST(x)[i]->len;
+                memcpy(f64ptr, AS_F64(AS_LIST(x)[i]), n * sizeof(f64_t));
+                f64ptr += n;
+            }
+
+            return res;
+        case TYPE_MAPGUID:
+            l = x->len;
+            n = ops_count(x);
+            res = vector(AS_LIST(x)[0]->type, n);
+            guidptr = AS_GUID(res);
+
+            for (i = 0; i < l; i++) {
+                n = AS_LIST(x)[i]->len;
+                memcpy(guidptr, AS_GUID(AS_LIST(x)[i]), n * sizeof(guid_t));
+                guidptr += n;
+            }
+
+            return res;
         default:
             return clone_obj(x);
     }

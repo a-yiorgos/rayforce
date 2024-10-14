@@ -109,95 +109,6 @@ obj_p remap_group(obj_p *gvals, obj_p cols, obj_p tab, obj_p filter, obj_p gkeys
     }
 }
 
-obj_p virtmap_materialize(obj_p virtmap) {
-    u64_t i, j, l, n;
-    i64_t *ptr;
-    obj_p res;
-
-    l = AS_LIST(virtmap)[0]->len;
-
-    // Calculate the total number of elements
-    n = ops_count(virtmap);
-    res = vector(AS_LIST(virtmap)[0]->type, n);
-    ptr = AS_I64(res);
-
-    for (i = 0; i < l; i++) {
-        n = AS_I64(AS_LIST(virtmap)[1])[i];
-        for (j = 0; j < n; j++)
-            ptr[j] = AS_I64(AS_LIST(virtmap)[0])[i];
-
-        ptr += n;
-    }
-
-    return res;
-}
-
-obj_p filemap_materialize(obj_p filemap) {
-    u64_t i, j, l, n, size;
-    i64_t fd;
-    obj_p res;
-    raw_p ptr, p, r;
-
-    l = filemap->len;
-
-    // Calculate the total size required
-    n = 0;
-    size = 0;
-    size = AS_LIST(AS_LIST(filemap)[0])[1]->i64;
-    for (i = 1; i < l; i++)
-        size += AS_LIST(AS_LIST(filemap)[i])[1]->i64 - sizeof(struct obj_t);
-
-    // Reserve memory
-    ptr = mmap_reserve(NULL, size);
-    p = ptr;
-
-    // Map first chunk
-    i = 0;
-    size = AS_LIST(AS_LIST(filemap)[i])[1]->i64;
-
-    // TODO: do not reallocate string path during fs open
-    fd = fs_fopen(AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]), ATTR_RDONLY);
-
-    if (fd == -1) {
-        res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
-        return res;
-    }
-
-    r = mmap_file(fd, p, size, 0, 0);
-    if (r == NULL) {
-        res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[0])[0]));
-        return res;
-    }
-    n = ((obj_p)p)->len;
-    p += size;
-
-    // Mmap every chunk
-    for (i = 1; i < l; i++) {
-        size = AS_LIST(AS_LIST(filemap)[i])[1]->i64 - sizeof(struct obj_t);
-
-        // TODO: do not reallocate string path during fs open
-        fd = fs_fopen(AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]), ATTR_RDONLY);
-
-        if (fd == -1) {
-            res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
-            return res;
-        }
-
-        r = mmap_file(fd, p, size, sizeof(struct obj_t), 0);
-        if (r == NULL) {
-            res = sys_error(ERROR_TYPE_SYS, AS_C8(AS_LIST(AS_LIST(filemap)[i])[0]));
-            return res;
-        }
-        p += size;
-        n += 100;
-    }
-
-    res = (obj_p)ptr;
-    res->len = n;
-
-    return res;
-}
-
 obj_p get_gkeys(obj_p cols, obj_p obj) {
     u64_t i, l;
     obj_p x;
@@ -462,11 +373,6 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx) {
                     drop_obj(val);
                     val = prm;
                     break;
-                case TYPE_VIRTMAP:
-                    prm = virtmap_materialize(val);
-                    drop_obj(val);
-                    val = prm;
-                    break;
                 default:
                     prm = ray_value(val);
                     drop_obj(val);
@@ -562,12 +468,9 @@ obj_p select_collect_fields(query_ctx_p ctx) {
                 val = ray_value(prm);
                 drop_obj(prm);
                 break;
-            case TYPE_VIRTMAP:
-                val = virtmap_materialize(prm);
-                drop_obj(prm);
-                break;
             default:
-                val = prm;
+                val = ray_value(prm);
+                drop_obj(prm);
         }
 
         if (IS_ERROR(val)) {
