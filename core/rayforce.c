@@ -1477,6 +1477,13 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj) {
 
     switch (obj->type) {
         case TYPE_LIST:
+        case TYPE_MAPB8:
+        case TYPE_MAPU8:
+        case TYPE_MAPI64:
+        case TYPE_MAPF64:
+        case TYPE_MAPGUID:
+        case TYPE_MAPENUM:
+        case TYPE_MAPTIMESTAMP:
         case TYPE_FILTERMAP:
         case TYPE_GROUPMAP:
             l = obj->len;
