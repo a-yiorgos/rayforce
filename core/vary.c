@@ -282,17 +282,14 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
                 THROW(ERR_LENGTH, "get parted: partition may not have zero columns");
             }
 
+            // Create maps over columns
             fmaps = LIST(wide);
             for (i = 0; i < wide; i++)
                 AS_LIST(fmaps)[i] = LIST(0);
 
             // Create filemaps over columns of the 1st partition
-            for (i = 0; i < wide; i++) {
-                colpath = str_fmt(-1, "%s%s", AS_C8(path), str_from_symbol(AS_SYMBOL(AS_LIST(t1)[0])[i]));
-                fdmap = runtime_fdmap_get(runtime, AS_LIST(AS_LIST(t1)[1])[i]);
-                push_obj(AS_LIST(fmaps) + i, vn_list(2, colpath, i64(AS_I64(AS_LIST(fdmap)[0])[2])));
-                drop_obj(fdmap);
-            }
+            for (i = 0; i < wide; i++)
+                push_obj(AS_LIST(fmaps) + i, clone_obj(AS_LIST(AS_LIST(t1)[1])[i]));
 
             drop_obj(path);
 
@@ -348,12 +345,8 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
                 }
 
                 // Create filemaps over columns of the partition
-                for (j = 0; j < wide; j++) {
-                    colpath = str_fmt(-1, "%s%s", AS_C8(path), str_from_symbol(AS_SYMBOL(AS_LIST(t2)[0])[j]));
-                    fdmap = runtime_fdmap_get(runtime, AS_LIST(AS_LIST(t2)[1])[j]);
-                    push_obj(AS_LIST(fmaps) + j, vn_list(2, colpath, i64(AS_I64(AS_LIST(fdmap)[0])[2])));
-                    drop_obj(fdmap);
-                }
+                for (j = 0; j < wide; j++)
+                    push_obj(AS_LIST(fmaps) + j, clone_obj(AS_LIST(AS_LIST(t2)[1])[j]));
 
                 push_obj(&virtmap, vn_list(2, at_idx(gcol, i), i64((i64_t)ops_count(t2))));
 
@@ -364,20 +357,21 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
             sym = (gcol->type == TYPE_TIMESTAMP) ? symbol("Date", 4) : symbol("Id", 2);
             keys = ray_concat(sym, AS_LIST(t1)[0]);
 
-            // l = wide + 1;
-            // vals = LIST(l);
+            l = wide + 1;
+            vals = LIST(l);
             // virtmap->type = TYPE_VIRTMAP;
-            // AS_LIST(vals)[0] = virtmap;
-            // for (i = 0; i < wide; i++) {
-            //     AS_LIST(vals)[i + 1] = clone_obj(AS_LIST(fmaps)[i]);
-            //     AS_LIST(vals)[i + 1]->type = TYPE_FILEMAP;
-            // }
+            AS_LIST(vals)[0] = virtmap;
+            for (i = 0; i < wide; i++) {
+                AS_LIST(vals)[i + 1] = clone_obj(AS_LIST(fmaps)[i]);
+                AS_LIST(vals)[i + 1]->type = TYPE_ANYMAP + AS_LIST(AS_LIST(t1)[1])[i]->type;
+                DEBUG_PRINT("TYPE: %d", AS_LIST(vals)[i + 1]->type);
+            }
 
-            // drop_obj(sym);
-            // drop_obj(res);
-            // drop_obj(t1);
-            // drop_obj(gcol);
-            // drop_obj(fmaps);
+            drop_obj(sym);
+            drop_obj(res);
+            drop_obj(t1);
+            drop_obj(gcol);
+            drop_obj(fmaps);
 
             return table(keys, vals);
 

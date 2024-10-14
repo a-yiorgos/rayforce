@@ -41,19 +41,15 @@ extern "C"
 #define TYPE_GUID 7
 #define TYPE_C8 8
 #define TYPE_ENUM 20
-// Maps 77..83 (Anymap 77 + type) 
+// Maps 77..97 (Anymap 77 + type) 
 #define TYPE_ANYMAP 77
-#define TYPE_MAPB8 78
-#define TYPE_MAPU8 79
-#define TYPE_MAPI64 81
-#define TYPE_MAPENUM 80
-#define TYPE_MAPTIMESTAMP 82
-#define TYPE_MAPF64 83
-#define TYPE_MAPGUID 84
-// Internal types (78..97)
-#define TYPE_FILTERMAP 90
-#define TYPE_GROUPMAP 91
-#define TYPE_FDMAP 92
+#define TYPE_MAPB8 (TYPE_ANYMAP + TYPE_B8)
+#define TYPE_MAPU8 (TYPE_ANYMAP + TYPE_U8)
+#define TYPE_MAPI64 (TYPE_ANYMAP + TYPE_I64)
+#define TYPE_MAPENUM (TYPE_ANYMAP + TYPE_ENUM)
+#define TYPE_MAPTIMESTAMP (TYPE_ANYMAP + TYPE_TIMESTAMP)
+#define TYPE_MAPF64 (TYPE_ANYMAP + TYPE_F64)
+#define TYPE_MAPGUID (TYPE_ANYMAP + TYPE_GUID)
 // Other types
 #define TYPE_TABLE 98
 #define TYPE_DICT 99
@@ -61,6 +57,11 @@ extern "C"
 #define TYPE_UNARY 101
 #define TYPE_BINARY 102
 #define TYPE_VARY 103
+// Internal types
+#define TYPE_FILTERMAP 120
+#define TYPE_GROUPMAP 121
+#define TYPE_FDMAP 122
+// Special types
 #define TYPE_NULL 126
 #define TYPE_ERROR 127
 
