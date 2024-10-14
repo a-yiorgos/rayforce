@@ -167,6 +167,8 @@ b8_t ops_eq_idx(obj_p a, i64_t ai, obj_p b, i64_t bi) {
 }
 
 u64_t ops_count(obj_p x) {
+    u64_t i, l, c;
+
     switch (x->type) {
         case TYPE_NULL:
             return 0;
@@ -179,9 +181,7 @@ u64_t ops_count(obj_p x) {
         case TYPE_TIMESTAMP:
         case TYPE_GUID:
         case TYPE_LIST:
-        case TYPE_FILEMAP:
         case TYPE_FDMAP:
-        case TYPE_VIRTMAP:
             return x->len;
         case TYPE_TABLE:
             return AS_LIST(x)[1]->len ? ops_count(AS_LIST(AS_LIST(x)[1])[0]) : 0;
@@ -191,6 +191,18 @@ u64_t ops_count(obj_p x) {
             return ENUM_VAL(x)->len;
         case TYPE_ANYMAP:
             return ANYMAP_VAL(x)->len;
+        case TYPE_MAPB8:
+        case TYPE_MAPU8:
+        case TYPE_MAPI64:
+        case TYPE_MAPENUM:
+        case TYPE_MAPTIMESTAMP:
+        case TYPE_MAPF64:
+        case TYPE_MAPGUID:
+            l = x->len;
+            for (i = 0, c = 0; i < l; i++)
+                c += ops_count(AS_LIST(x)[i]);
+
+            return c;
         case TYPE_FILTERMAP:
             return AS_LIST(x)[1]->len;
         case TYPE_GROUPMAP:

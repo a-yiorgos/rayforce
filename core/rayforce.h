@@ -30,7 +30,7 @@ extern "C"
 {
 #endif
 
-// Type constants
+// Simple types
 #define TYPE_LIST 0
 #define TYPE_B8 1
 #define TYPE_U8 2
@@ -41,8 +41,20 @@ extern "C"
 #define TYPE_GUID 7
 #define TYPE_C8 8
 #define TYPE_ENUM 20
+// Maps 77..83 (Anymap 77 + type) 
 #define TYPE_ANYMAP 77
-// 78..97 are internal types
+#define TYPE_MAPB8 78
+#define TYPE_MAPU8 79
+#define TYPE_MAPI64 81
+#define TYPE_MAPENUM 80
+#define TYPE_MAPTIMESTAMP 82
+#define TYPE_MAPF64 83
+#define TYPE_MAPGUID 84
+// Internal types (78..97)
+#define TYPE_FILTERMAP 90
+#define TYPE_GROUPMAP 91
+#define TYPE_FDMAP 92
+// Other types
 #define TYPE_TABLE 98
 #define TYPE_DICT 99
 #define TYPE_LAMBDA 100

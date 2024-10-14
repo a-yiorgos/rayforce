@@ -364,20 +364,20 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
             sym = (gcol->type == TYPE_TIMESTAMP) ? symbol("Date", 4) : symbol("Id", 2);
             keys = ray_concat(sym, AS_LIST(t1)[0]);
 
-            l = wide + 1;
-            vals = LIST(l);
-            virtmap->type = TYPE_VIRTMAP;
-            AS_LIST(vals)[0] = virtmap;
-            for (i = 0; i < wide; i++) {
-                AS_LIST(vals)[i + 1] = clone_obj(AS_LIST(fmaps)[i]);
-                AS_LIST(vals)[i + 1]->type = TYPE_FILEMAP;
-            }
+            // l = wide + 1;
+            // vals = LIST(l);
+            // virtmap->type = TYPE_VIRTMAP;
+            // AS_LIST(vals)[0] = virtmap;
+            // for (i = 0; i < wide; i++) {
+            //     AS_LIST(vals)[i + 1] = clone_obj(AS_LIST(fmaps)[i]);
+            //     AS_LIST(vals)[i + 1]->type = TYPE_FILEMAP;
+            // }
 
-            drop_obj(sym);
-            drop_obj(res);
-            drop_obj(t1);
-            drop_obj(gcol);
-            drop_obj(fmaps);
+            // drop_obj(sym);
+            // drop_obj(res);
+            // drop_obj(t1);
+            // drop_obj(gcol);
+            // drop_obj(fmaps);
 
             return table(keys, vals);
 
