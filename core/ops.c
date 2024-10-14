@@ -203,6 +203,12 @@ u64_t ops_count(obj_p x) {
                 c += ops_count(AS_LIST(x)[i]);
 
             return c;
+        case TYPE_VIRTMAP:
+            l = AS_LIST(x)[0]->len;
+            for (i = 0, c = 0; i < l; i++)
+                c += AS_I64(AS_LIST(x)[1])[i];
+
+            return c;
         case TYPE_FILTERMAP:
             return AS_LIST(x)[1]->len;
         case TYPE_GROUPMAP:

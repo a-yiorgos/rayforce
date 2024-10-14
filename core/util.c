@@ -134,6 +134,7 @@ b8_t is_valid(obj_p obj) {
            || obj->type == TYPE_FILTERMAP || obj->type == TYPE_GROUPMAP
            || obj->type == TYPE_FDMAP     || (obj->type >= TYPE_MAPB8 && obj->type <= TYPE_MAPGUID)
            || obj->type == TYPE_LIST      || obj->type == TYPE_MAPENUM
+           || obj->type == TYPE_VIRTMAP
            || obj->type == TYPE_NULL      || obj->type == TYPE_ERROR;
     // clang-format on
 }

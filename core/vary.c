@@ -269,8 +269,12 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
             }
 
             // Create virtmap for virtual column
-            virtmap = LIST(0);
-            push_obj(&virtmap, vn_list(2, at_idx(gcol, 0), i64((i64_t)ops_count(t1))));
+            virtmap = LIST(2);
+            virtmap->type = TYPE_VIRTMAP;
+            AS_LIST(virtmap)[0] = clone_obj(gcol);
+            AS_LIST(virtmap)[1] = I64(gcol->len);
+
+            AS_I64(AS_LIST(virtmap)[1])[0] = (i64_t)ops_count(t1);
 
             wide = AS_LIST(t1)[1]->len;
 
@@ -348,7 +352,7 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
                 for (j = 0; j < wide; j++)
                     push_obj(AS_LIST(fmaps) + j, clone_obj(AS_LIST(AS_LIST(t2)[1])[j]));
 
-                push_obj(&virtmap, vn_list(2, at_idx(gcol, i), i64((i64_t)ops_count(t2))));
+                AS_I64(AS_LIST(virtmap)[1])[i] = (i64_t)ops_count(t2);
 
                 drop_obj(t2);
                 drop_obj(path);
@@ -359,7 +363,7 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
 
             l = wide + 1;
             vals = LIST(l);
-            // virtmap->type = TYPE_VIRTMAP;
+
             AS_LIST(vals)[0] = virtmap;
             for (i = 0; i < wide; i++) {
                 AS_LIST(vals)[i + 1] = clone_obj(AS_LIST(fmaps)[i]);

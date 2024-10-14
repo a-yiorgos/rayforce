@@ -114,20 +114,17 @@ obj_p virtmap_materialize(obj_p virtmap) {
     i64_t *ptr;
     obj_p res;
 
-    l = virtmap->len;
+    l = AS_LIST(virtmap)[0]->len;
 
     // Calculate the total number of elements
-    n = 0;
-    for (i = 0; i < l; i++)
-        n += AS_LIST(AS_LIST(virtmap)[i])[1]->i64;
-
-    res = vector(AS_LIST(AS_LIST(virtmap)[0])[0]->type, n);
+    n = ops_count(virtmap);
+    res = vector(AS_LIST(virtmap)[0]->type, n);
     ptr = AS_I64(res);
 
     for (i = 0; i < l; i++) {
-        n = AS_LIST(AS_LIST(virtmap)[i])[1]->i64;
+        n = AS_I64(AS_LIST(virtmap)[1])[i];
         for (j = 0; j < n; j++)
-            ptr[j] = AS_LIST(AS_LIST(virtmap)[i])[0]->i64;
+            ptr[j] = AS_I64(AS_LIST(virtmap)[0])[i];
 
         ptr += n;
     }
@@ -465,25 +462,17 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx) {
                     drop_obj(val);
                     val = prm;
                     break;
+                case TYPE_VIRTMAP:
+                    prm = virtmap_materialize(val);
+                    drop_obj(val);
+                    val = prm;
+                    break;
                 default:
                     prm = ray_value(val);
                     drop_obj(val);
                     val = prm;
                     break;
             }
-            // if (val->type == TYPE_GROUPMAP) {
-            //     prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
-            //     drop_obj(val);
-            //     val = prm;
-            // } else if (val->type == TYPE_FILTERMAP) {
-            //     prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
-            //     drop_obj(val);
-            //     val = prm;
-            // } else if (val->type == TYPE_ENUM) {
-            //     prm = ray_value(val);
-            //     drop_obj(val);
-            //     val = prm;
-            // }
 
             if (IS_ERROR(val)) {
                 res->len = i;
@@ -571,6 +560,10 @@ obj_p select_collect_fields(query_ctx_p ctx) {
                 break;
             case TYPE_ENUM:
                 val = ray_value(prm);
+                drop_obj(prm);
+                break;
+            case TYPE_VIRTMAP:
+                val = virtmap_materialize(prm);
                 drop_obj(prm);
                 break;
             default:

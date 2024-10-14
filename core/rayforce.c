@@ -1486,6 +1486,7 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj) {
         case TYPE_MAPTIMESTAMP:
         case TYPE_FILTERMAP:
         case TYPE_GROUPMAP:
+        case TYPE_VIRTMAP:
             l = obj->len;
             for (i = 0; i < l; i++)
                 drop_obj(AS_LIST(obj)[i]);

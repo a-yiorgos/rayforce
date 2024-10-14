@@ -61,6 +61,7 @@ extern "C"
 #define TYPE_FILTERMAP 120
 #define TYPE_GROUPMAP 121
 #define TYPE_FDMAP 122
+#define TYPE_VIRTMAP 123
 // Special types
 #define TYPE_NULL 126
 #define TYPE_ERROR 127
