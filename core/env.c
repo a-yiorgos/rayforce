@@ -238,37 +238,44 @@ nil_t init_functions(obj_p functions)
     
 nil_t init_typenames(obj_p typenames)    
 {
-    REGISTER_TYPE(typenames,   -TYPE_ERROR,     "Null");
-    REGISTER_TYPE(typenames,   -TYPE_B8,        "b8");
-    REGISTER_TYPE(typenames,   -TYPE_U8,        "byte");
-    REGISTER_TYPE(typenames,   -TYPE_I64,       "i64");
-    REGISTER_TYPE(typenames,   -TYPE_F64,       "f64");
-    REGISTER_TYPE(typenames,   -TYPE_C8,        "char");
-    REGISTER_TYPE(typenames,   -TYPE_SYMBOL,    "symbol");
-    REGISTER_TYPE(typenames,   -TYPE_TIMESTAMP, "timestamp");
-    REGISTER_TYPE(typenames,   -TYPE_GUID,      "guid");
-    REGISTER_TYPE(typenames,    TYPE_B8,        "B8");
-    REGISTER_TYPE(typenames,    TYPE_U8,        "Byte");
-    REGISTER_TYPE(typenames,    TYPE_I64,       "I64");
-    REGISTER_TYPE(typenames,    TYPE_F64,       "F64");
-    REGISTER_TYPE(typenames,    TYPE_C8,        "String");
-    REGISTER_TYPE(typenames,    TYPE_ENUM,      "Enum");
-    REGISTER_TYPE(typenames,    TYPE_ANYMAP,    "Anymap");
-    REGISTER_TYPE(typenames,    TYPE_FILTERMAP, "Filtermap");
-    REGISTER_TYPE(typenames,    TYPE_GROUPMAP,  "Groupmap");
-    REGISTER_TYPE(typenames,    TYPE_FDMAP,     "Fdmap");
-    REGISTER_TYPE(typenames,    TYPE_SYMBOL,    "Symbol");
-    REGISTER_TYPE(typenames,    TYPE_TIMESTAMP, "Timestamp");
-    REGISTER_TYPE(typenames,    TYPE_GUID,      "Guid");
-    REGISTER_TYPE(typenames,    TYPE_LIST,      "List");
-    REGISTER_TYPE(typenames,    TYPE_TABLE,     "Table");
-    REGISTER_TYPE(typenames,    TYPE_DICT,      "Dict");
-    REGISTER_TYPE(typenames,    TYPE_UNARY,     "Unary");
-    REGISTER_TYPE(typenames,    TYPE_BINARY,    "Binary");
-    REGISTER_TYPE(typenames,    TYPE_VARY,      "Vary");
-    REGISTER_TYPE(typenames,    TYPE_LAMBDA,    "Lambda");
-    REGISTER_TYPE(typenames,    TYPE_NULL,      "Null");
-    REGISTER_TYPE(typenames,    TYPE_ERROR,     "Error");
+    REGISTER_TYPE(typenames,   -TYPE_ERROR,        "Null");
+    REGISTER_TYPE(typenames,   -TYPE_B8,           "b8");
+    REGISTER_TYPE(typenames,   -TYPE_U8,           "byte");
+    REGISTER_TYPE(typenames,   -TYPE_I64,          "i64");
+    REGISTER_TYPE(typenames,   -TYPE_F64,          "f64");
+    REGISTER_TYPE(typenames,   -TYPE_C8,           "char");
+    REGISTER_TYPE(typenames,   -TYPE_SYMBOL,       "symbol");
+    REGISTER_TYPE(typenames,   -TYPE_TIMESTAMP,    "timestamp");
+    REGISTER_TYPE(typenames,   -TYPE_GUID,         "guid");
+    REGISTER_TYPE(typenames,    TYPE_B8,           "B8");
+    REGISTER_TYPE(typenames,    TYPE_U8,           "Byte");
+    REGISTER_TYPE(typenames,    TYPE_I64,          "I64");
+    REGISTER_TYPE(typenames,    TYPE_F64,          "F64");
+    REGISTER_TYPE(typenames,    TYPE_C8,           "String");
+    REGISTER_TYPE(typenames,    TYPE_ENUM,         "Enum");
+    REGISTER_TYPE(typenames,    TYPE_ANYMAP,       "Anymap");
+    REGISTER_TYPE(typenames,    TYPE_MAPB8,        "Mapb8");
+    REGISTER_TYPE(typenames,    TYPE_MAPU8,        "Mapu8");
+    REGISTER_TYPE(typenames,    TYPE_MAPI64,       "Mapi64");
+    REGISTER_TYPE(typenames,    TYPE_MAPF64,       "Mapf64");
+    REGISTER_TYPE(typenames,    TYPE_MAPTIMESTAMP, "Maptimestamp");
+    REGISTER_TYPE(typenames,    TYPE_MAPGUID,      "Mapguid");
+    REGISTER_TYPE(typenames,    TYPE_MAPENUM,      "Mapenum");
+    REGISTER_TYPE(typenames,    TYPE_FILTERMAP,    "Filtermap");
+    REGISTER_TYPE(typenames,    TYPE_GROUPMAP,     "Groupmap");
+    REGISTER_TYPE(typenames,    TYPE_FDMAP,        "Fdmap");
+    REGISTER_TYPE(typenames,    TYPE_SYMBOL,       "Symbol");
+    REGISTER_TYPE(typenames,    TYPE_TIMESTAMP,    "Timestamp");
+    REGISTER_TYPE(typenames,    TYPE_GUID,         "Guid");
+    REGISTER_TYPE(typenames,    TYPE_LIST,         "List");
+    REGISTER_TYPE(typenames,    TYPE_TABLE,        "Table");
+    REGISTER_TYPE(typenames,    TYPE_DICT,         "Dict");
+    REGISTER_TYPE(typenames,    TYPE_UNARY,        "Unary");
+    REGISTER_TYPE(typenames,    TYPE_BINARY,       "Binary");
+    REGISTER_TYPE(typenames,    TYPE_VARY,         "Vary");
+    REGISTER_TYPE(typenames,    TYPE_LAMBDA,       "Lambda");
+    REGISTER_TYPE(typenames,    TYPE_NULL,         "Null");
+    REGISTER_TYPE(typenames,    TYPE_ERROR,        "Error");
 }
 // clang-format on
 

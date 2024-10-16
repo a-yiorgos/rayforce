@@ -1,6 +1,6 @@
-(set n 100)
+(set n 100000000)
 
-(set a (table [OrderId Symbol Price Size Timestamp] 
+(set t (table [OrderId Symbol Price Size Timestamp] 
     (list (take n (guid 1000000))
           (take n [AAPL GOOG MSFT IBM AMZN FB BABA]) 
           (as 'F64 (til n)) 
@@ -9,7 +9,9 @@
     ))
 )
 
-(set b (table [OrderId Symbol Price Size Timestamp] 
+(set-splayed "/tmp/db/2024.01.01/a/" t "/tmp/db/sym")
+
+(set t (table [OrderId Symbol Price Size Timestamp] 
     (list (take n (guid 1000000))
           (take n [AAPL GOOG MSFT IBM AMZN FB BABA]) 
           (as 'F64 (+ 100 (til n))) 
@@ -18,7 +20,9 @@
     ))
 )
 
-(set c (table [OrderId Symbol Price Size Timestamp] 
+(set-splayed "/tmp/db/2024.01.02/a/" t "/tmp/db/sym")
+
+(set t (table [OrderId Symbol Price Size Timestamp] 
     (list (take n (guid 1000000))
           (take n [AAPL GOOG MSFT IBM AMZN FB BABA]) 
           (as 'F64 (+ 2000 (til n))) 
@@ -27,9 +31,7 @@
     ))
 )
 
-(set-splayed "/tmp/db/2024.01.01/a/" a "/tmp/db/sym")
-(set-splayed "/tmp/db/2024.01.02/a/" b "/tmp/db/sym")
-(set-splayed "/tmp/db/2024.01.03/a/" c "/tmp/db/sym")
+(set-splayed "/tmp/db/2024.01.03/a/" t "/tmp/db/sym")
 
 (println "Save parted done.")
 (exit 0)
