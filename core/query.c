@@ -358,12 +358,12 @@ obj_p select_apply_mappings(obj_p obj, query_ctx_p ctx) {
 
             // Materialize fields
             switch (val->type) {
-                case TYPE_FILTERMAP:
+                case TYPE_MAPFILTER:
                     prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
                     drop_obj(val);
                     val = prm;
                     break;
-                case TYPE_GROUPMAP:
+                case TYPE_MAPGROUP:
                     prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
                     drop_obj(val);
                     val = prm;
@@ -455,7 +455,7 @@ obj_p select_collect_fields(query_ctx_p ctx) {
         drop_obj(sym);
 
         switch (prm->type) {
-            case TYPE_FILTERMAP:
+            case TYPE_MAPFILTER:
                 val = filter_collect(AS_LIST(prm)[0], AS_LIST(prm)[1]);
                 drop_obj(prm);
                 break;

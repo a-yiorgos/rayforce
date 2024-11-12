@@ -50,6 +50,10 @@ extern "C"
 #define TYPE_MAPTIMESTAMP (TYPE_ANYMAP + TYPE_TIMESTAMP)
 #define TYPE_MAPF64 (TYPE_ANYMAP + TYPE_F64)
 #define TYPE_MAPGUID (TYPE_ANYMAP + TYPE_GUID)
+#define TYPE_MAPFILTER 93
+#define TYPE_MAPGROUP 94
+#define TYPE_MAPFD 95
+#define TYPE_MAPGENERATOR 96
 // Other types
 #define TYPE_TABLE 98
 #define TYPE_DICT 99
@@ -57,10 +61,6 @@ extern "C"
 #define TYPE_UNARY 101
 #define TYPE_BINARY 102
 #define TYPE_VARY 103
-// Internal types
-#define TYPE_FILTERMAP 120
-#define TYPE_GROUPMAP 121
-#define TYPE_FDMAP 122
 // Special types
 #define TYPE_NULL 126
 #define TYPE_ERROR 127

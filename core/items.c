@@ -892,7 +892,7 @@ obj_p ray_union(obj_p x, obj_p y) {
 
 obj_p ray_first(obj_p x) {
     switch (x->type) {
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_first(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
             return at_idx(x, 0);
@@ -903,7 +903,7 @@ obj_p ray_last(obj_p x) {
     u64_t l;
 
     switch (x->type) {
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_last(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
             l = ops_count(x);

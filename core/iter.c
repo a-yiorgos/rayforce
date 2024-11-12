@@ -102,7 +102,7 @@ obj_p ray_map(obj_p *x, u64_t n) {
             // first item to get type of res
             for (j = 0; j < n; j++) {
                 b = x + j;
-                v = (IS_VECTOR(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, 0) : clone_obj(*b);
+                v = (IS_VECTOR(*b) || (*b)->type == TYPE_MAPGROUP) ? at_idx(*b, 0) : clone_obj(*b);
                 stack_push(v);
             }
 
@@ -117,7 +117,7 @@ obj_p ray_map(obj_p *x, u64_t n) {
             for (i = 1; i < l; i++) {
                 for (j = 0; j < n; j++) {
                     b = x + j;
-                    v = (IS_VECTOR(*b) || (*b)->type == TYPE_GROUPMAP) ? at_idx(*b, i) : clone_obj(*b);
+                    v = (IS_VECTOR(*b) || (*b)->type == TYPE_MAPGROUP) ? at_idx(*b, i) : clone_obj(*b);
                     stack_push(v);
                 }
 

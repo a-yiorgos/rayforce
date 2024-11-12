@@ -638,7 +638,7 @@ i64_t raw_fmt_into(obj_p *dst, i64_t indent, i64_t limit, obj_p obj, i64_t i) {
             return c8_fmt_into(dst, B8_TRUE, AS_C8(obj)[i]);
         case TYPE_LIST:
             return obj_fmt_into(dst, indent, limit, B8_FALSE, AS_LIST(obj)[i]);
-        case TYPE_FILTERMAP:
+        case TYPE_MAPFILTER:
             res = at_idx(AS_LIST(obj)[0], AS_I64(AS_LIST(obj)[1])[i]);
             n = obj_fmt_into(dst, indent, limit, B8_FALSE, res);
             drop_obj(res);

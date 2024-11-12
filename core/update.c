@@ -798,11 +798,11 @@ obj_p ray_update(obj_p obj) {
         }
 
         // Materialize fields
-        if (val->type == TYPE_GROUPMAP) {
+        if (val->type == TYPE_MAPGROUP) {
             prm = aggr_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
             drop_obj(val);
             val = prm;
-        } else if (val->type == TYPE_FILTERMAP) {
+        } else if (val->type == TYPE_MAPFILTER) {
             prm = filter_collect(AS_LIST(val)[0], AS_LIST(val)[1]);
             drop_obj(val);
             val = prm;

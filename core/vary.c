@@ -356,6 +356,7 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
             for (i = 0, n = 0; i < gcol->len; i++)
                 n += ops_count(AS_LIST(AS_LIST(fmaps)[0])[i]);
 
+            // Create a virtual column for the grouping column
             virtcol = vector(gcol->type, n);
             ptr = AS_I64(virtcol);
             for (i = 0; i < gcol->len; i++) {

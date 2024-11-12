@@ -181,7 +181,7 @@ u64_t ops_count(obj_p x) {
         case TYPE_TIMESTAMP:
         case TYPE_GUID:
         case TYPE_LIST:
-        case TYPE_FDMAP:
+        case TYPE_MAPFD:
             return x->len;
         case TYPE_TABLE:
             return AS_LIST(x)[1]->len ? ops_count(AS_LIST(AS_LIST(x)[1])[0]) : 0;
@@ -203,9 +203,9 @@ u64_t ops_count(obj_p x) {
                 c += ops_count(AS_LIST(x)[i]);
 
             return c;
-        case TYPE_FILTERMAP:
+        case TYPE_MAPFILTER:
             return AS_LIST(x)[1]->len;
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return AS_LIST(AS_LIST(x)[1])[0]->i64;
         default:
             return 1;

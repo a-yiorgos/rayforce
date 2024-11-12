@@ -257,9 +257,9 @@ nil_t init_typenames(obj_p typenames)
     REGISTER_TYPE(typenames,    TYPE_MAPTIMESTAMP, "Maptimestamp");
     REGISTER_TYPE(typenames,    TYPE_MAPGUID,      "Mapguid");
     REGISTER_TYPE(typenames,    TYPE_MAPENUM,      "Mapenum");
-    REGISTER_TYPE(typenames,    TYPE_FILTERMAP,    "Filtermap");
-    REGISTER_TYPE(typenames,    TYPE_GROUPMAP,     "Groupmap");
-    REGISTER_TYPE(typenames,    TYPE_FDMAP,        "Fdmap");
+    REGISTER_TYPE(typenames,    TYPE_MAPFILTER,    "Filtermap");
+    REGISTER_TYPE(typenames,    TYPE_MAPGROUP,     "Groupmap");
+    REGISTER_TYPE(typenames,    TYPE_MAPFD,        "Fdmap");
     REGISTER_TYPE(typenames,    TYPE_SYMBOL,       "Symbol");
     REGISTER_TYPE(typenames,    TYPE_TIMESTAMP,    "Timestamp");
     REGISTER_TYPE(typenames,    TYPE_GUID,         "Guid");

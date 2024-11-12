@@ -43,7 +43,7 @@ obj_p filter_map(obj_p val, obj_p index) {
 
         default:
             res = vn_list(2, clone_obj(val), clone_obj(index));
-            res->type = TYPE_FILTERMAP;
+            res->type = TYPE_MAPFILTER;
             return res;
     }
 }

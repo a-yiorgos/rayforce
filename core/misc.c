@@ -47,7 +47,7 @@ obj_p ray_type(obj_p x) {
 
 obj_p ray_count(obj_p x) {
     switch (x->type) {
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_count(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
             return i64(ops_count(x));
@@ -63,7 +63,7 @@ obj_p ray_quote(obj_p x) { return clone_obj(x); }
 
 obj_p ray_ids(obj_p x) {
     switch (x->type) {
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_ids(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
             return ray_til(x);

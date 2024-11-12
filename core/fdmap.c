@@ -31,7 +31,7 @@ obj_p fdmap_create(u64_t size) {
     obj_p fdmap;
 
     fdmap = LIST(size);
-    fdmap->type = TYPE_FDMAP;
+    fdmap->type = TYPE_MAPFD;
     fdmap->len = 0;
 
     return fdmap;

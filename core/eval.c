@@ -188,11 +188,11 @@ __attribute__((hot)) obj_p eval(obj_p obj) {
                         if (IS_ERROR(x))
                             return x;
 
-                        if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP) {
+                        if (!(car->attrs & FN_AGGR) && x->type == TYPE_MAPGROUP) {
                             y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                             drop_obj(x);
                             x = y;
-                        } else if (x->type == TYPE_FILTERMAP) {
+                        } else if (x->type == TYPE_MAPFILTER) {
                             y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                             drop_obj(x);
                             x = y;
@@ -214,11 +214,11 @@ __attribute__((hot)) obj_p eval(obj_p obj) {
                         if (IS_ERROR(x))
                             return x;
 
-                        if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP) {
+                        if (!(car->attrs & FN_AGGR) && x->type == TYPE_MAPGROUP) {
                             y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                             drop_obj(x);
                             x = y;
-                        } else if (x->type == TYPE_FILTERMAP) {
+                        } else if (x->type == TYPE_MAPFILTER) {
                             y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                             drop_obj(x);
                             x = y;
@@ -230,11 +230,11 @@ __attribute__((hot)) obj_p eval(obj_p obj) {
                             return y;
                         }
 
-                        if (!(car->attrs & FN_AGGR) && y->type == TYPE_GROUPMAP) {
+                        if (!(car->attrs & FN_AGGR) && y->type == TYPE_MAPGROUP) {
                             z = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                             drop_obj(y);
                             y = z;
-                        } else if (y->type == TYPE_FILTERMAP) {
+                        } else if (y->type == TYPE_MAPFILTER) {
                             z = filter_collect(AS_LIST(y)[0], AS_LIST(y)[1]);
                             drop_obj(y);
                             y = z;
@@ -259,12 +259,12 @@ __attribute__((hot)) obj_p eval(obj_p obj) {
                             if (IS_ERROR(x))
                                 return x;
 
-                            if (!(car->attrs & FN_AGGR) && x->type == TYPE_GROUPMAP) {
+                            if (!(car->attrs & FN_AGGR) && x->type == TYPE_MAPGROUP) {
                                 attrs = FN_GROUP_MAP;
                                 y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                                 drop_obj(x);
                                 x = y;
-                            } else if (x->type == TYPE_FILTERMAP) {
+                            } else if (x->type == TYPE_MAPFILTER) {
                                 y = filter_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                                 drop_obj(x);
                                 x = y;
@@ -296,14 +296,14 @@ __attribute__((hot)) obj_p eval(obj_p obj) {
                         if (IS_ERROR(x))
                             return x;
 
-                        // if (x->type == TYPE_GROUPMAP)
+                        // if (x->type == TYPE_MAPGROUP)
                         // {
                         //     attrs = FN_GROUP_MAP;
                         //     y = aggr_collect(AS_LIST(x)[0], AS_LIST(x)[1]);
                         //     drop_obj(x);
                         //     x = y;
                         // }
-                        // else if (x->type == TYPE_FILTERMAP)
+                        // else if (x->type == TYPE_MAPFILTER)
                         // {
                         //     y = filter_collect(x);
                         //     drop_obj(x);

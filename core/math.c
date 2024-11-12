@@ -961,7 +961,7 @@ obj_p ray_sum(obj_p x) {
                 fsum += xfi[i];
 
             return f64(fsum);
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_sum(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:
@@ -1000,7 +1000,7 @@ obj_p ray_avg(obj_p x) {
 
             return f64(fsum / l);
 
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_avg(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:
@@ -1052,7 +1052,7 @@ obj_p ray_min(obj_p x) {
 
             return f64(fmin);
 
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_min(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:
@@ -1099,7 +1099,7 @@ obj_p ray_max(obj_p x) {
 
             return f64(fmax);
 
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_max(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:
@@ -1158,7 +1158,7 @@ obj_p ray_dev(obj_p x) {
 
             return res;
 
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_dev(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:
@@ -1199,7 +1199,7 @@ obj_p ray_med(obj_p x) {
 
             return f64(med);
 
-        case TYPE_GROUPMAP:
+        case TYPE_MAPGROUP:
             return aggr_med(AS_LIST(x)[0], AS_LIST(x)[1]);
 
         default:

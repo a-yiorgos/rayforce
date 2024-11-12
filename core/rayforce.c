@@ -1605,8 +1605,9 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj) {
         case TYPE_MAPGUID:
         case TYPE_MAPENUM:
         case TYPE_MAPTIMESTAMP:
-        case TYPE_FILTERMAP:
-        case TYPE_GROUPMAP:
+        case TYPE_MAPFILTER:
+        case TYPE_MAPGROUP:
+        case TYPE_MAPGENERATOR:
             l = obj->len;
             for (i = 0; i < l; i++)
                 drop_obj(AS_LIST(obj)[i]);
@@ -1616,7 +1617,7 @@ nil_t __attribute__((hot)) drop_obj(obj_p obj) {
             else
                 heap_free(obj);
             return;
-        case TYPE_FDMAP:
+        case TYPE_MAPFD:
             fdmap_destroy(obj);
             l = obj->len;
             for (i = 0; i < l; i++)
