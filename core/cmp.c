@@ -40,7 +40,7 @@ obj_p cmp_map(raw_p cmp, obj_p lhs, obj_p rhs) {
     ray_cmp_f cmp_fn = (ray_cmp_f)cmp;
 
     l = lhs->len;
-    n = pool_split_by(pool, l, 0);
+    n = pool_split_by(pool, l, 0, B8_FALSE);
     res = B8(l);
 
     if (n == 1) {
@@ -164,15 +164,15 @@ obj_p ray_eq(obj_p x, obj_p y) {
 
         case MTYPE2(TYPE_C8, TYPE_C8):
             if (x->len != y->len)
-                return error_str(ERR_LENGTH, "eq: vectors of different length");
+                return b8(B8_FALSE);
 
             l = x->len;
-            vec = B8(l);
 
             for (i = 0; i < l; i++)
-                AS_B8(vec)[i] = AS_C8(x)[i] == AS_C8(y)[i];
+                if (AS_C8(x)[i] != AS_C8(y)[i])
+                    return b8(B8_FALSE);
 
-            return vec;
+            return b8(B8_TRUE);
         case MTYPE2(TYPE_I64, TYPE_I64):
         case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
         case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):

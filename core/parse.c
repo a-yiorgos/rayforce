@@ -77,11 +77,11 @@ obj_p parse_error(parser_t *parser, i64_t id, obj_p msg) {
 
 b8_t is_whitespace(c8_t c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
 
-b8_t IS_DIGIT(c8_t c) { return c >= '0' && c <= '9'; }
+b8_t is_digit(c8_t c) { return c >= '0' && c <= '9'; }
 
 b8_t is_alpha(c8_t c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
-b8_t is_alphanum(c8_t c) { return is_alpha(c) || IS_DIGIT(c); }
+b8_t is_alphanum(c8_t c) { return is_alpha(c) || is_digit(c); }
 
 b8_t is_op(c8_t c) { return c && strchr("+-*/%&|^~<>!=._?", c) != NULL; }
 
@@ -193,7 +193,7 @@ obj_p parse_timestamp(parser_t *parser) {
     span_t span = span_start(parser);
 
     // parse year
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1)) && IS_DIGIT(*(current + 2)) && IS_DIGIT(*(current + 3))) {
+    if (is_digit(*current) && is_digit(*(current + 1)) && is_digit(*(current + 2)) && is_digit(*(current + 3))) {
         ts.year = (*current - '0') * 1000 + (*(current + 1) - '0') * 100 + (*(current + 2) - '0') * 10 +
                   (*(current + 3) - '0');
         current += 4;
@@ -207,7 +207,7 @@ obj_p parse_timestamp(parser_t *parser) {
     current++;
 
     // parse month
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1))) {
+    if (is_digit(*current) && is_digit(*(current + 1))) {
         ts.month = (*current - '0') * 10 + (*(current + 1) - '0');
 
         current += 2;
@@ -228,7 +228,7 @@ obj_p parse_timestamp(parser_t *parser) {
     current++;
 
     // parse day
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1))) {
+    if (is_digit(*current) && is_digit(*(current + 1))) {
         ts.day = (*current - '0') * 10 + (*(current + 1) - '0');
 
         current += 2;
@@ -256,7 +256,7 @@ obj_p parse_timestamp(parser_t *parser) {
     current++;
 
     // parse hour
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1))) {
+    if (is_digit(*current) && is_digit(*(current + 1))) {
         ts.hours = (*current - '0') * 10 + (*(current + 1) - '0');
 
         current += 2;
@@ -277,7 +277,7 @@ obj_p parse_timestamp(parser_t *parser) {
     current++;
 
     // parse minute
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1))) {
+    if (is_digit(*current) && is_digit(*(current + 1))) {
         ts.mins = (*current - '0') * 10 + (*(current + 1) - '0');
 
         current += 2;
@@ -298,7 +298,7 @@ obj_p parse_timestamp(parser_t *parser) {
     current++;
 
     // parse second
-    if (IS_DIGIT(*current) && IS_DIGIT(*(current + 1))) {
+    if (is_digit(*current) && is_digit(*(current + 1))) {
         ts.secs = (*current - '0') * 10 + (*(current + 1) - '0');
 
         current += 2;
@@ -899,7 +899,7 @@ obj_p parser_advance(parser_t *parser) {
     if ((*parser->current) == '{')
         return parse_dict(parser);
 
-    if (IS_DIGIT(*parser->current)) {
+    if (is_digit(*parser->current)) {
         tok = parse_0x(parser);
         if (tok != NULL_OBJ)
             return tok;
@@ -911,7 +911,7 @@ obj_p parser_advance(parser_t *parser) {
         drop_obj(tok);
     }
 
-    if (((*parser->current) == '-' && IS_DIGIT(*(parser->current + 1))) || IS_DIGIT(*parser->current))
+    if (((*parser->current) == '-' && is_digit(*(parser->current + 1))) || is_digit(*parser->current))
         return parse_number(parser);
 
     if ((*parser->current) == '\'')

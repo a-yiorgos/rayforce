@@ -280,7 +280,7 @@ i64_t fs_fclose(i64_t fd) { return close(fd); }
 
 i64_t fs_dcreate(lit_p path) {
 #ifdef __cplusplus
-    struct stat st {};
+    struct stat st{};
 #else
     struct stat st = {0};
 #endif

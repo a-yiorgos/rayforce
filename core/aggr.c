@@ -137,7 +137,7 @@ obj_p aggr_map(raw_p aggr, obj_p val, i8_t outype, obj_p index) {
     idx_type = index_group_type(index);
     group_count = index_group_count(index);
     group_len = index_group_len(index);
-    n = pool_split_by(pool, group_len, group_count);
+    n = pool_split_by(pool, group_len, group_count, idx_type == INDEX_TYPE_GENERATOR);
 
     if (n == 1) {
         argv[0] = (raw_p)group_len;

@@ -28,6 +28,7 @@
 #include "util.h"
 #include "error.h"
 #include "string.h"
+#include "parse.h"
 
 CASSERT(sizeof(struct timestamp_t) == 16, timestamp_h)
 
@@ -184,85 +185,84 @@ i64_t timestamp_into_i64(timestamp_t ts) {
 }
 
 timestamp_t timestamp_from_str(str_p src, u64_t len) {
-    i64_t cnt, val;
+    i64_t cnt = 0, val = 0, digit_count, digit;
     timestamp_t ts = {.null = B8_FALSE, .year = 0, .month = 0, .day = 0, .hours = 0, .mins = 0, .secs = 0, .nanos = 0};
-    c8_t *cur, *end;
+    lit_p cur = src;
 
-    if (src == NULL || len == 0)
-        goto null;
+    if (!src || len == 0) {
+        ts.null = B8_TRUE;
+        return ts;
+    }
 
-    cur = src;
-    cnt = 0;
+    while (len > 0 && cnt < 7) {
+        // Reset value for the next number
+        val = 0;
+        digit_count = 0;
 
-    while (*cur != '\0' && cnt < 7 && len > 0) {
-        errno = 0;                     // reset errno before the call
-        val = strtoll(cur, &end, 10);  // base 10 for decimal
+        // Parse the next numeric value
+        while (len > 0 && is_digit(*cur)) {
+            digit = *cur - '0';
 
-        if ((val == LONG_MAX || val == LONG_MIN) && errno == ERANGE)
-            goto null;
+            // Check for overflow before adding the next digit
+            if (val > (LONG_MAX - digit) / 10) {
+                ts.null = B8_TRUE;
+                return ts;
+            }
 
-        if (cur == end)
-            goto null;
+            val = val * 10 + digit;
+            cur++;
+            len--;
+            digit_count++;
+        }
 
-        if (errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
-            goto null;
+        if (digit_count == 0) {  // No digits found
+            ts.null = B8_TRUE;
+            return ts;
+        }
 
+        // Validate and assign values
         switch (cnt) {
             case 0:
-                if (val < 0)
-                    goto null;
-                ts.year = (u16_t)val;
+                ts.year = (val >= 0) ? (u16_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 1:
-                if (val < 1 || val > 12)
-                    goto null;
-                ts.month = (u8_t)val;
+                ts.month = (val >= 1 && val <= 12) ? (u8_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 2:
-                if (val < 1 || val > 31)
-                    goto null;
-                ts.day = (u8_t)val;
+                ts.day = (val >= 1 && val <= 31) ? (u8_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 3:
-                if (val < 0 || val > 23)
-                    goto null;
-                ts.hours = (u8_t)val;
+                ts.hours = (val >= 0 && val <= 23) ? (u8_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 4:
-                if (val < 0 || val > 59)
-                    goto null;
-                ts.mins = (u8_t)val;
+                ts.mins = (val >= 0 && val <= 59) ? (u8_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 5:
-                if (val < 0 || val > 59)
-                    goto null;
-                ts.secs = (u8_t)val;
+                ts.secs = (val >= 0 && val <= 59) ? (u8_t)val : (ts.null = B8_TRUE, 0);
                 break;
             case 6:
                 ts.nanos = (u32_t)val;
                 break;
-            default:
-                break;
         }
 
-        cnt++;
-        len -= end - cur;
-        cur = end;
+        if (ts.null)
+            return ts;
 
-        // skip non-digits
-        while (*cur != '\0' && cnt < 7 && len > 0 && (*cur < '0' || *cur > '9')) {
+        cnt++;
+
+        // Skip non-digit characters
+        while (len > 0 && !is_digit(*cur)) {
             cur++;
             len--;
         }
     }
 
-    if (cnt < 3) {
-    null:
+    if (cnt < 3)
         ts.null = B8_TRUE;
-    }
 
     return ts;
 }
+
 #if defined(OS_WINDOWS)
 
 timestamp_t timestamp_current(lit_p tz) {

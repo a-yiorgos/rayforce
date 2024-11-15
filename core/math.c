@@ -867,7 +867,7 @@ obj_p ray_sum(obj_p x) {
             xii = AS_I64(x);
 
             pool = pool_get();
-            chunks = pool_split_by(pool, l, 0);
+            chunks = pool_split_by(pool, l, 0, B8_FALSE);
 
             if (chunks == 1) {
                 for (i = 0, isum = 0; i < l; i++)

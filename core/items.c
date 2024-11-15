@@ -864,6 +864,13 @@ obj_p ray_except(obj_p x, obj_p y) {
 
                     for (i = 0; i < l; i++) {
                         mask = ray_eq(AS_LIST(x)[i], y);
+
+                        if (IS_ERROR(mask)) {
+                            res->len = i;
+                            drop_obj(res);
+                            return mask;
+                        }
+
                         if (!mask->b8)
                             AS_LIST(res)[j++] = clone_obj(AS_LIST(x)[i]);
 

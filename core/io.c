@@ -309,7 +309,7 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
     str_p batch_start, batch_end;
     pool_p pool = runtime_get()->pool;
 
-    num_batches = pool_split_by(pool, total_lines, 0);
+    num_batches = pool_split_by(pool, total_lines, 0, B8_FALSE);
 
     if (num_batches == 1)
         return parse_csv_range(types, num_types, buf, size, total_lines, 0, cols, sep);
@@ -640,7 +640,6 @@ obj_p io_get_symfile(obj_p path) {
 }
 
 obj_p io_set_table_splayed(obj_p path, obj_p table, obj_p symfile) {
-    i64_t c = 0;
     u64_t i, l;
     obj_p res, col, s, p, v, e, cols, sym;
     DEBUG_OBJ(path);
@@ -671,7 +670,7 @@ obj_p io_set_table_splayed(obj_p path, obj_p table, obj_p symfile) {
     cols = LIST(0);
 
     // find symbol columns
-    for (i = 0, c = 0; i < l; i++) {
+    for (i = 0; i < l; i++) {
         if (AS_LIST(AS_LIST(table)[1])[i]->type == TYPE_SYMBOL)
             push_obj(&cols, clone_obj(AS_LIST(AS_LIST(table)[1])[i]));
     }
