@@ -824,7 +824,6 @@ obj_p at_ids(obj_p obj, i64_t ids[], u64_t len) {
             return res;
         case TYPE_MAPI64:
         case TYPE_MAPTIMESTAMP:
-        case TYPE_MAPENUM:
             res = vector(obj->type - TYPE_ANYMAP, len);
             n = AS_LIST(obj)[0]->len;
             for (i = 0, mapid = 0, m = 0; i < len; i++) {
@@ -847,6 +846,32 @@ obj_p at_ids(obj_p obj, i64_t ids[], u64_t len) {
                 AS_F64(res)[i] = AS_F64(AS_LIST(obj)[mapid])[ids[i] - m];
             }
 
+            return res;
+        case TYPE_MAPENUM:
+            k = ray_key(AS_LIST(obj)[0]);
+            if (IS_ERROR(k))
+                return k;
+
+            v = ray_get(k);
+            drop_obj(k);
+
+            if (IS_ERROR(v))
+                return v;
+
+            if (v->type != TYPE_SYMBOL)
+                return error(ERR_TYPE, "enum: '%s' is not a 'Symbol'", type_name(v->type));
+
+            res = SYMBOL(len);
+            n = AS_LIST(obj)[0]->len;
+            for (i = 0, mapid = 0, m = 0; i < len; i++) {
+                while (ids[i] >= n) {
+                    m = n;
+                    n += AS_LIST(obj)[++mapid]->len;
+                }
+                AS_I64(res)[i] = AS_I64(v)[AS_I64(ENUM_VAL(AS_LIST(obj)[mapid]))[ids[i] - m]];
+            }
+
+            drop_obj(v);
             return res;
         case TYPE_MAPGUID:
             res = GUID(len);
