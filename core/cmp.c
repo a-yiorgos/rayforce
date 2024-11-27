@@ -240,12 +240,8 @@ obj_p ray_eq(obj_p x, obj_p y) {
                 map = LIST(l);
                 map->type = TYPE_PARTEDB8;
 
-                for (i = 0; i < l; i++) {
-                    if (AS_B8(vec)[i])
-                        AS_LIST(map)[i] = b8(B8_TRUE);
-                    else
-                        AS_LIST(map)[i] = NULL_OBJ;
-                }
+                for (i = 0; i < l; i++)
+                    AS_LIST(map)[i] = AS_B8(vec)[i] ? b8(B8_TRUE) : NULL_OBJ;
 
                 drop_obj(vec);
 
@@ -258,12 +254,8 @@ obj_p ray_eq(obj_p x, obj_p y) {
                 l = vec->len;
                 map = LIST(l);
 
-                for (i = 0; i < l; i++) {
-                    if (AS_B8(vec)[i])
-                        AS_LIST(map)[i] = b8(B8_TRUE);
-                    else
-                        AS_LIST(map)[i] = NULL_OBJ;
-                }
+                for (i = 0; i < l; i++)
+                    AS_LIST(map)[i] = AS_B8(vec)[i] ? b8(B8_TRUE) : NULL_OBJ;
 
                 drop_obj(vec);
 

@@ -1156,12 +1156,8 @@ obj_p ray_where(obj_p x) {
             res = LIST(l);
             res->type = TYPE_PARTEDI64;
 
-            for (i = 0; i < l; i++) {
-                if (AS_LIST(x)[i] == NULL_OBJ)
-                    AS_LIST(res)[i] = NULL_OBJ;
-                else
-                    AS_LIST(res)[i] = i64(1);
-            }
+            for (i = 0; i < l; i++)
+                AS_LIST(res)[i] = (AS_LIST(x)[i] == NULL_OBJ) ? NULL_OBJ : i64(1);
 
             return res;
         default:

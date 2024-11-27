@@ -211,9 +211,10 @@ obj_p aggr_first_partial(raw_p arg1, raw_p arg2, raw_p arg3, raw_p arg4, raw_p a
 }
 
 obj_p aggr_first(obj_p val, obj_p index) {
-    u64_t i, n;
+    u64_t i, j, l, n;
     i64_t *xo, *xe;
-    obj_p parts, res, ek, sym;
+    obj_p parts, res, ek, filter, sym;
+
     n = index_group_count(index);
 
     switch (val->type) {
@@ -306,7 +307,22 @@ obj_p aggr_first(obj_p val, obj_p index) {
                 memcpy(AS_GUID(res) + i, AS_GUID(AS_LIST(val)[i])[0], sizeof(guid_t));
             return res;
         case TYPE_MAPCOMMON:
-            return clone_obj(AS_LIST(val)[0]);
+            // TODO!!!!!!!
+            filter = AS_LIST(index)[5];
+            if (filter == NULL_OBJ)
+                return clone_obj(AS_LIST(val)[0]);
+
+            l = AS_LIST(val)[0]->len;
+            res = vector(AS_LIST(val)[0]->type, n);
+
+            for (i = 0, j = 0; i < l; i++) {
+                if (AS_LIST(filter)[i] != NULL_OBJ)
+                    AS_I64(res)[j++] = AS_I64(AS_LIST(val)[0])[i];
+            }
+
+            resize_obj(&res, j);
+
+            return res;
         default:
             return error(ERR_TYPE, "first: unsupported type: '%s'", type_name(val->type));
     }
