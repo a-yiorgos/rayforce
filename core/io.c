@@ -290,13 +290,13 @@ obj_p parse_csv_line(i8_t types[], i64_t cnt, str_p start, str_p end, i64_t row,
     return NULL_OBJ;
 }
 
-obj_p parse_csv_range(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t lines, i64_t start_line, obj_p cols,
+obj_p parse_csv_range(i8_t *types, i64_t num_types, str_p buf, i64_t size, u64_t lines, i64_t start_line, obj_p cols,
                       c8_t sep) {
+    u64_t i, j, k, l;
     str_p line_end, prev;
     obj_p res = NULL_OBJ;
-    i64_t j;
 
-    for (j = 0, prev = buf; j < lines; j++) {
+    for (i = 0, prev = buf; i < lines; i++) {
         line_end = (str_p)memchr(prev, '\n', buf + size - prev);
         if (line_end == NULL) {
             line_end = prev + size;  // Handle last line without newline
@@ -304,19 +304,30 @@ obj_p parse_csv_range(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
                 line_end--;  // Handle carriage return
         }
 
-        res = parse_csv_line(types, num_types, prev, line_end, start_line + j, cols, sep);
-        if (res != NULL_OBJ)
-            return res;
+        res = parse_csv_line(types, num_types, prev, line_end, start_line + i, cols, sep);
 
-        prev = line_end + 1;  // Move past the newline
+        if (res != NULL_OBJ) {
+            l = cols->len;
+            for (j = 0; j < l; j++) {
+                // Need to free allocated objects in case of compound type
+                if (AS_LIST(cols)[j]->type == TYPE_LIST) {
+                    for (k = 0; k < i; k++) {
+                        drop_obj(AS_LIST(AS_LIST(cols)[j])[k]);
+                    }
+                }
+                return res;
+            }
+
+            prev = line_end + 1;  // Move past the newline
+        }
+
+        return NULL_OBJ;  // Success
     }
-
-    return NULL_OBJ;  // Success
 }
 
-obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t total_lines, obj_p cols, c8_t sep) {
-    obj_p res = NULL_OBJ;
-    i64_t i, batch, batch_size, num_batches, lines_per_batch, start_line, end_line, lines_in_batch;
+obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, u64_t total_lines, obj_p cols, c8_t sep) {
+    obj_p err, res = NULL_OBJ;
+    u64_t i, l, batch, batch_size, num_batches, lines_per_batch, start_line, end_line, lines_in_batch;
     str_p batch_start, batch_end;
     pool_p pool = runtime_get()->pool;
 
@@ -364,8 +375,14 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
 
     res = pool_run(pool);
 
-    if (IS_ERROR(res))
-        return res;
+    l = res->len;
+    for (i = 0; i < l; i++) {
+        if (IS_ERROR(AS_LIST(res)[i])) {
+            err = clone_obj(AS_LIST(res)[i]);
+            drop_obj(res);
+            return err;
+        }
+    }
 
     drop_obj(res);
 
@@ -373,7 +390,8 @@ obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, i64_t
 }
 
 obj_p ray_read_csv(obj_p *x, i64_t n) {
-    i64_t i, l, fd, len, lines, size;
+    i64_t fd, size;
+    u64_t i, l, len, lines;
     str_p buf, prev, pos, line;
     obj_p types, names, cols, path, res;
     i8_t type;
@@ -526,6 +544,10 @@ obj_p ray_read_csv(obj_p *x, i64_t n) {
 
             if (!is_null(res)) {
                 drop_obj(names);
+                l = cols->len;
+                for (i = 0; i < l; i++)
+                    AS_LIST(cols)[i]->len = 0;
+
                 drop_obj(cols);
                 return res;
             }
@@ -698,7 +720,8 @@ obj_p io_set_table_splayed(obj_p path, obj_p table, obj_p symfile) {
                 break;
             case TYPE_C8:
                 // First we need to ckeck if symfile is already exist, if so - we need to merge
-                // it with sym and enumerate symbol columns over the whole new sym file, preserving ids of the old ones
+                // it with sym and enumerate symbol columns over the whole new sym file, preserving ids of the old
+                // ones
                 s = ray_get(symfile);
                 if (s->type == TYPE_SYMBOL) {
                     // First retrieve distinct symbols from the new columns not present in current sym file
