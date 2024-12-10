@@ -320,9 +320,9 @@ obj_p parse_csv_range(i8_t *types, i64_t num_types, str_p buf, i64_t size, u64_t
 
             prev = line_end + 1;  // Move past the newline
         }
-
-        return NULL_OBJ;  // Success
     }
+
+    return NULL_OBJ;  // Success
 }
 
 obj_p parse_csv_lines(i8_t *types, i64_t num_types, str_p buf, i64_t size, u64_t total_lines, obj_p cols, c8_t sep) {
