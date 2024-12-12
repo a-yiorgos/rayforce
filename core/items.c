@@ -845,8 +845,8 @@ obj_p ray_sect(obj_p x, obj_p y) {
 }
 
 obj_p ray_except(obj_p x, obj_p y) {
-    i64_t i, j = 0, l;
-    obj_p mask, nmask, res;
+    i64_t i, j, l;
+    obj_p mask, nmask, ids, k, v, res;
 
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(TYPE_I64, -TYPE_I64):
@@ -854,7 +854,7 @@ obj_p ray_except(obj_p x, obj_p y) {
             l = x->len;
             res = vector(x->type, l);
 
-            for (i = 0; i < l; i++) {
+            for (i = 0, j = 0; i < l; i++) {
                 if (AS_I64(x)[i] != y->i64)
                     AS_I64(res)[j++] = AS_I64(x)[i];
             }
@@ -865,11 +865,57 @@ obj_p ray_except(obj_p x, obj_p y) {
         case MTYPE2(TYPE_I64, TYPE_I64):
         case MTYPE2(TYPE_SYMBOL, TYPE_SYMBOL):
             mask = ray_in(x, y);
+            if (IS_ERROR(mask))
+                return mask;
+
             nmask = ray_not(mask);
             drop_obj(mask);
+
+            if (IS_ERROR(nmask))
+                return nmask;
+
             res = ray_filter(x, nmask);
             drop_obj(nmask);
             return res;
+        case MTYPE2(TYPE_TABLE, -TYPE_SYMBOL):
+            mask = ray_ne(AS_LIST(x)[0], y);
+            if (IS_ERROR(mask))
+                return mask;
+
+            ids = ray_where(mask);
+            drop_obj(mask);
+
+            if (IS_ERROR(ids))
+                return ids;
+
+            k = ray_at(AS_LIST(x)[0], ids);
+            v = ray_at(AS_LIST(x)[1], ids);
+            drop_obj(ids);
+
+            return table(k, v);
+        case MTYPE2(TYPE_TABLE, TYPE_SYMBOL):
+            mask = ray_in(AS_LIST(x)[0], y);
+            if (IS_ERROR(mask))
+                return mask;
+
+            nmask = ray_not(mask);
+            drop_obj(mask);
+
+            if (IS_ERROR(nmask))
+                return nmask;
+
+            ids = ray_where(nmask);
+            drop_obj(nmask);
+
+            if (IS_ERROR(ids))
+                return ids;
+
+            k = ray_at(AS_LIST(x)[0], ids);
+            v = ray_at(AS_LIST(x)[1], ids);
+
+            drop_obj(ids);
+
+            return table(k, v);
         default:
             if (x->type == TYPE_LIST) {
                 if (y->type == TYPE_LIST) {
@@ -878,7 +924,7 @@ obj_p ray_except(obj_p x, obj_p y) {
                     l = x->len;
                     res = LIST(l);
 
-                    for (i = 0; i < l; i++) {
+                    for (i = 0, j = 0; i < l; i++) {
                         mask = ray_eq(AS_LIST(x)[i], y);
 
                         if (IS_ERROR(mask)) {
