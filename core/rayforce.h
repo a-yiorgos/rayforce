@@ -219,7 +219,7 @@ extern b8_t is_null(obj_p obj);
 extern str_p type_name(i8_t tp);
 #define IS_ERROR(obj)  ((obj)->type == TYPE_ERROR)
 #define IS_ATOM(obj)   ((obj)->type < 0)
-#define IS_VECTOR(obj) ((obj)->type >= 0 && (obj)->type <= TYPE_C8)
+#define IS_VECTOR(obj) ((obj)->type >= 0 && (obj)->type <= TYPE_ENUM)
 
 // Push a value to the end of a list
 extern obj_p push_raw(obj_p *obj, raw_p val); // push raw value into a list

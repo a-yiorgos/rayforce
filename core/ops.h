@@ -56,6 +56,7 @@ extern struct obj_t __NULL_OBJECT;
 #define ALIGNUP(x, a) (((x) + (a) - 1) & ~((a) - 1))
 #define ALIGN8(x) ((str_p)(((u64_t)x + 7) & ~7))
 #define MTYPE2(x, y) ((u8_t)(x) | ((u8_t)(y) << 8))
+#define ABSI8(x) ((x) < 0 ? -(x) : (x))
 #define ABSI64(x) ((x) == NULL_I64 ? 0 : (((x) < 0 ? -(x) : (x))))
 #define ABSI32(x) ((x) == NULL_I32 ? 0 : (((x) < 0 ? -(x) : (x))))
 #define ADDI32(x, y) (((x) == NULL_I32) ? (y) : ((y) == NULL_I32) ? NULL_I32 : (x) + (y))

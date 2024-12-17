@@ -34,87 +34,62 @@
 #include "order.h"
 #include "runtime.h"
 
-#define __OP_A_V(x, y, lt, rt, ot, op)                                  \
+#define __OP_A_V(x, y, lt, rt, ot, op, ln, of, ov)                      \
     ({                                                                  \
-        u64_t $i, $l = y->len;                                          \
         rt##_t *$rhs;                                                   \
         __INNER_##ot *$out;                                             \
-        obj_p $vec;                                                     \
         $rhs = __AS_##rt(y);                                            \
-        $vec = vector(__TYPE_##ot, $l);                                 \
-        $out = __AS_##ot($vec);                                         \
-        for ($i = 0; $i < $l; $i++)                                     \
+        $out = __AS_##ot(ov) + of;                                      \
+        for (u64_t $i = 0; $i < ln; $i++)                               \
             $out[$i] = op((__INNER_##ot)x->lt, (__INNER_##ot)$rhs[$i]); \
-        $vec;                                                           \
+        NULL_OBJ;                                                       \
     })
 
-#define __OP_V_A(x, y, lt, rt, ot, op)                                  \
+#define __OP_V_A(x, y, lt, rt, ot, op, ln, of, ov)                      \
     ({                                                                  \
-        u64_t $i, $l = x->len;                                          \
         lt##_t *$lhs;                                                   \
         __INNER_##ot *$out;                                             \
-        obj_p $vec;                                                     \
         $lhs = __AS_##lt(x);                                            \
-        $vec = __v_##ot($l);                                            \
-        $out = __AS_##ot($vec);                                         \
-        for ($i = 0; $i < $l; $i++)                                     \
+        $out = __AS_##ot(ov) + of;                                      \
+        for (u64_t $i = 0; $i < ln; $i++)                               \
             $out[$i] = op((__INNER_##ot)$lhs[$i], (__INNER_##ot)y->rt); \
-        $vec;                                                           \
+        NULL_OBJ;                                                       \
     })
 
-#define __OP_V_V(x, y, lt, rt, ot, op)                                     \
+#define __OP_V_V(x, y, lt, rt, ot, op, ln, of, ov)                         \
     ({                                                                     \
-        u64_t $i, $l = x->len;                                             \
         lt##_t *$lhs;                                                      \
         rt##_t *$rhs;                                                      \
         __INNER_##ot *$out;                                                \
-        obj_p $vec;                                                        \
-        if ($l != y->len)                                                  \
-            THROW(ERR_LENGTH, #op ": vectors must be of the same length"); \
         $lhs = __AS_##lt(x);                                               \
         $rhs = __AS_##rt(y);                                               \
-        $vec = __v_##ot($l);                                               \
-        $out = __AS_##ot($vec);                                            \
-                                                                           \
-        for ($i = 0; $i < $l; $i++)                                        \
+        $out = __AS_##ot(ov) + of;                                         \
+        for (u64_t $i = 0; $i < ln; $i++)                                  \
             $out[$i] = op((__INNER_##ot)$lhs[$i], (__INNER_##ot)$rhs[$i]); \
-        $vec;                                                              \
+        NULL_OBJ;                                                          \
     })
 
-// obj_p op_partial(raw_p op, obj_p val) {}
-
-obj_p op_map(raw_p op, obj_p val) {
-    // pool_p pool = runtime_get()->pool;
-    // u64_t i, l, n;
-    // obj_p res;
-    // raw_p argv[6];
-
-    // l = val->len;
-    // n = pool_split_by(pool, l, 0);
-    // if (n == 1) {
-    //     argv[0] = (raw_p)l;
-    //     argv[1] = (raw_p)0;
-    //     argv[2] = val;
-    //     argv[3] = index;
-    //     argv[4] = (index_type == INDEX_TYPE_PARTEDCOMMON) ? vector(outype, 1) : vector(outype, out_len);
-    //     res = pool_call_task_fn(aggr, 5, argv);
-
-    //     return vn_list(1, res);
-    // }
-
-    // pool_prepare(pool);
-    // l = group_len;
-    // chunk = l / n;
-
-    // for (i = 0; i < n - 1; i++)
-    //     pool_add_task(pool, aggr, 5, chunk, i * chunk, val, index, vector(outype, out_len));
-
-    // pool_add_task(pool, aggr, 5, l - i * chunk, i * chunk, val, index, vector(outype, out_len));
-
-    // return pool_run(pool);
+i8_t infer_math_type(obj_p x, obj_p y) {
+    switch (MTYPE2(ABSI8(x->type), ABSI8(y->type))) {
+        case MTYPE2(TYPE_I32, TYPE_I32):
+            return TYPE_I32;
+        case MTYPE2(TYPE_I64, TYPE_I64):
+            return TYPE_I64;
+        case MTYPE2(TYPE_I64, TYPE_F64):
+        case MTYPE2(TYPE_F64, TYPE_I64):
+        case MTYPE2(TYPE_F64, TYPE_F64):
+            return TYPE_F64;
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_I32):
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
+        case MTYPE2(TYPE_I64, TYPE_TIMESTAMP):
+        case MTYPE2(TYPE_I32, TYPE_TIMESTAMP):
+            return TYPE_TIMESTAMP;
+        default:
+            return TYPE_I64;
+    }
 }
 
-obj_p ray_add(obj_p x, obj_p y) {
+obj_p ray_add_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
             return i64(ADDI64(x->i64, y->i64));
@@ -127,709 +102,243 @@ obj_p ray_add(obj_p x, obj_p y) {
         case MTYPE2(-TYPE_TIMESTAMP, -TYPE_I64):
             return timestamp(ADDI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            return __OP_A_V(x, y, i64, i64, i64, ADDI64);
+            return __OP_A_V(x, y, i64, i64, i64, ADDI64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_F64):
-            return __OP_A_V(x, y, i64, f64, f64, ADDF64);
+            return __OP_A_V(x, y, i64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_F64):
-            return __OP_A_V(x, y, f64, f64, f64, ADDF64);
+            return __OP_A_V(x, y, f64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_I64):
-            return __OP_A_V(x, y, f64, i64, f64, ADDF64);
+            return __OP_A_V(x, y, f64, i64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            return __OP_V_A(x, y, i64, i64, i64, ADDI64);
+            return __OP_V_A(x, y, i64, i64, i64, ADDI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_F64):
-            return __OP_V_A(x, y, i64, f64, f64, ADDF64);
+            return __OP_V_A(x, y, i64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            return __OP_V_V(x, y, i64, i64, i64, ADDI64);
+            return __OP_V_V(x, y, i64, i64, i64, ADDI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_F64):
-            return __OP_V_V(x, y, i64, f64, f64, ADDF64);
+            return __OP_V_V(x, y, i64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_F64):
-            return __OP_V_A(x, y, f64, f64, f64, ADDF64);
+            return __OP_V_A(x, y, f64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_I64):
-            return __OP_V_A(x, y, f64, i64, f64, ADDF64);
+            return __OP_V_A(x, y, f64, i64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_F64):
-            return __OP_V_V(x, y, f64, f64, f64, ADDF64);
+            return __OP_V_V(x, y, f64, f64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_I64):
-            return __OP_V_V(x, y, f64, i64, f64, ADDF64);
+            return __OP_V_V(x, y, f64, i64, f64, ADDF64, len, offset, out);
         case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
-            return __OP_V_A(x, y, i64, i64, timestamp, ADDI64);
+            return __OP_V_A(x, y, i64, i64, timestamp, ADDI64, len, offset, out);
         case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
-            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64);
+            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64, len, offset, out);
         case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
-            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64);
+            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64, len, offset, out);
         case MTYPE2(TYPE_TIMESTAMP, TYPE_F64):
-            return __OP_V_A(x, y, i64, f64, timestamp, ADDF64);
+            return __OP_V_A(x, y, i64, f64, timestamp, ADDF64, len, offset, out);
         case MTYPE2(TYPE_TIMESTAMP, -TYPE_F64):
-            return __OP_V_A(x, y, i64, f64, timestamp, ADDF64);
+            return __OP_V_A(x, y, i64, f64, timestamp, ADDF64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_TIMESTAMP):
-            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64);
+            return __OP_V_V(x, y, i64, i64, timestamp, ADDI64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_TIMESTAMP):
-            return __OP_V_V(x, y, f64, i64, timestamp, ADDF64);
+            return __OP_V_V(x, y, f64, i64, timestamp, ADDF64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_TIMESTAMP):
-            return __OP_A_V(x, y, i64, i64, timestamp, ADDI64);
+            return __OP_A_V(x, y, i64, i64, timestamp, ADDI64, len, offset, out);
         default:
             THROW(ERR_TYPE, "add: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
-obj_p ray_sub(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    obj_p vec;
-    i64_t *xivals = NULL, *yivals = NULL;
-    f64_t *xfvals = NULL, *yfvals = NULL;
-
+obj_p ray_sub_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
             return i64(SUBI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, -TYPE_F64):
-            return i64(SUBI64(x->i64, (i64_t)y->f64));
+            return f64(SUBF64(x->i64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_F64):
             return f64(SUBF64(x->f64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_I64):
             return f64(SUBF64(x->f64, (f64_t)y->i64));
         case MTYPE2(-TYPE_TIMESTAMP, -TYPE_I64):
             return timestamp(SUBI64(x->i64, y->i64));
+        case MTYPE2(-TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+            return i64(SUBI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBI64(x->i64, yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, i64, i64, SUBI64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBF64((f64_t)x->i64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(x->f64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(x->f64, (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, i64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBI64(xivals[i], y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, i64, i64, SUBI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_F64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBF64((f64_t)xivals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "sub: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, i64, i64, SUBI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "sub: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = SUBI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_F64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(xfvals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(xfvals[i], (f64_t)y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, i64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "sub: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(xfvals[i], yfvals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, f64, f64, SUBF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "sub: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = SUBF64(xfvals[i], (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, i64, f64, SUBF64, len, offset, out);
+        case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
+            return __OP_V_A(x, y, i64, i64, timestamp, SUBI64, len, offset, out);
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_I64):
+            return __OP_V_V(x, y, i64, i64, timestamp, SUBI64, len, offset, out);
+        case MTYPE2(TYPE_TIMESTAMP, TYPE_TIMESTAMP):
+            return __OP_V_V(x, y, i64, i64, i64, SUBI64, len, offset, out);
         default:
             THROW(ERR_TYPE, "sub: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
-obj_p ray_mul(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    obj_p vec;
-    i64_t *xivals = NULL, *yivals = NULL;
-    f64_t *xfvals = NULL, *yfvals = NULL;
-
+obj_p ray_mul_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
             return i64(MULI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, -TYPE_F64):
-            return i64(MULI64(x->i64, (i64_t)y->f64));
+            return f64(MULF64(x->i64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_F64):
-            return f64(SUBF64(x->f64, y->f64));
+            return f64(MULF64(x->f64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_I64):
             return f64(MULF64(x->f64, (f64_t)y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULI64(x->i64, yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, i64, i64, MULI64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULF64((f64_t)x->i64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(x->f64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(x->f64, (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, i64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULI64(xivals[i], y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, i64, i64, MULI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_F64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULF64((f64_t)xivals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mul: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, i64, i64, MULI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mul: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MULI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_F64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(xfvals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(xfvals[i], (f64_t)y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, i64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mul: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(xfvals[i], yfvals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, f64, f64, MULF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mul: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MULF64(xfvals[i], (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, i64, f64, MULF64, len, offset, out);
         default:
             THROW(ERR_TYPE, "mul: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
-obj_p ray_div(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    obj_p vec;
-    i64_t *xivals = NULL, *yivals = NULL;
-    f64_t *xfvals = NULL, *yfvals = NULL;
-
+obj_p ray_div_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
             return i64(DIVI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, -TYPE_F64):
-            return i64(DIVI64(x->i64, (i64_t)y->f64));
+            return i64(DIVI64(x->i64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_F64):
-            return f64(DIVF64(x->f64, y->f64));
+            return i64(DIVF64(x->f64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_I64):
-            return f64(DIVF64(x->f64, (f64_t)y->i64));
+            return i64(DIVF64(x->f64, y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVI64(x->i64, yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, i64, i64, DIVI64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVF64((f64_t)x->i64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, f64, i64, DIVI64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(x->f64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, f64, i64, DIVF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(x->f64, (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, i64, i64, DIVF64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVI64(xivals[i], y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, i64, i64, DIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_F64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVF64((f64_t)xivals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, f64, i64, DIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "div: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, i64, i64, DIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "div: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = DIVI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, f64, i64, DIVI64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_F64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(xfvals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, f64, i64, DIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(xfvals[i], (f64_t)y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, i64, i64, DIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "div: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(xfvals[i], yfvals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, f64, i64, DIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "div: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = DIVF64(xfvals[i], (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, i64, i64, DIVF64, len, offset, out);
         default:
             THROW(ERR_TYPE, "div: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
-obj_p ray_fdiv(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    obj_p vec;
-    i64_t *xivals = NULL, *yivals = NULL;
-    f64_t *xfvals = NULL, *yfvals = NULL;
-
+obj_p ray_fdiv_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
-            return f64(FDIVI64(x->i64, (f64_t)y->i64));
+            return f64(FDIVI64(x->i64, y->i64));
         case MTYPE2(-TYPE_I64, -TYPE_F64):
             return f64(FDIVI64(x->i64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_F64):
             return f64(FDIVF64(x->f64, y->f64));
         case MTYPE2(-TYPE_F64, -TYPE_I64):
-            return f64(FDIVI64(x->f64, y->i64));
+            return f64(FDIVF64(x->f64, y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(x->i64, yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, i64, f64, FDIVI64, len, offset, out);
         case MTYPE2(-TYPE_I64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(x->i64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, f64, f64, FDIVI64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVF64(x->f64, yfvals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, f64, f64, FDIVF64, len, offset, out);
         case MTYPE2(-TYPE_F64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(x->f64, yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, f64, i64, f64, FDIVF64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xivals[i], y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, i64, f64, FDIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_F64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xivals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, f64, f64, FDIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "fdiv: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, i64, f64, FDIVI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "fdiv: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xivals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, f64, f64, FDIVI64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_F64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVF64(xfvals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, f64, f64, FDIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xfvals[i], y->i64);
-
-            return vec;
+            return __OP_V_A(x, y, f64, i64, f64, FDIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "fdiv: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVF64(xfvals[i], yfvals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, f64, f64, FDIVF64, len, offset, out);
         case MTYPE2(TYPE_F64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "fdiv: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = FDIVI64(xfvals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, f64, i64, f64, FDIVF64, len, offset, out);
         default:
-            THROW(ERR_TYPE, "add: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
+            THROW(ERR_TYPE, "fdiv: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
-obj_p ray_mod(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    obj_p vec;
-    i64_t *xivals = NULL, *yivals = NULL;
-    f64_t *xfvals = NULL, *yfvals = NULL;
-
+obj_p ray_mod_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(-TYPE_I64, -TYPE_I64):
             return i64(MODI64(x->i64, y->i64));
-        case MTYPE2(-TYPE_I64, -TYPE_F64):
-            return i64(MODI64(x->i64, (i64_t)y->f64));
-        case MTYPE2(-TYPE_F64, -TYPE_F64):
-            return i64(MODF64(x->f64, y->f64));
-        case MTYPE2(-TYPE_F64, -TYPE_I64):
-            return i64(MODF64(x->f64, (f64_t)y->i64));
         case MTYPE2(-TYPE_I64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODI64(x->i64, yivals[i]);
-
-            return vec;
-        case MTYPE2(-TYPE_I64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODF64((f64_t)x->i64, yfvals[i]);
-
-            return vec;
-        case MTYPE2(-TYPE_F64, TYPE_F64):
-            l = y->len;
-            yfvals = AS_F64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODF64(x->f64, yfvals[i]);
-
-            return vec;
-        case MTYPE2(-TYPE_F64, TYPE_I64):
-            l = y->len;
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODF64(x->f64, (f64_t)yivals[i]);
-
-            return vec;
+            return __OP_A_V(x, y, i64, i64, i64, MODI64, len, offset, out);
         case MTYPE2(TYPE_I64, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODI64(xivals[i], y->i64);
-
-            return vec;
-        case MTYPE2(TYPE_I64, -TYPE_F64):
-            l = x->len;
-            xivals = AS_I64(x);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODF64((f64_t)xivals[i], y->f64);
-
-            return vec;
+            return __OP_V_A(x, y, i64, i64, i64, MODI64, len, offset, out);
         case MTYPE2(TYPE_I64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mod: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODI64(xivals[i], yivals[i]);
-
-            return vec;
-        case MTYPE2(TYPE_I64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mod: vectors must be of the same length");
-
-            xivals = AS_I64(x);
-            yivals = AS_I64(y);
-            vec = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(vec)[i] = MODI64(xivals[i], yivals[i]);
-
-            return vec;
-        case MTYPE2(TYPE_F64, -TYPE_F64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MODF64(xfvals[i], y->f64);
-
-            return vec;
-        case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MODI64(xfvals[i], y->i64);
-
-            return vec;
-        case MTYPE2(TYPE_F64, TYPE_F64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mod: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yfvals = AS_F64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MODF64(xfvals[i], yfvals[i]);
-
-            return vec;
-        case MTYPE2(TYPE_F64, TYPE_I64):
-            l = x->len;
-            if (l != y->len)
-                THROW(ERR_LENGTH, "mod: vectors must be of the same length");
-
-            xfvals = AS_F64(x);
-            yivals = AS_I64(y);
-            vec = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(vec)[i] = MODI64(xfvals[i], yivals[i]);
-
-            return vec;
+            return __OP_V_V(x, y, i64, i64, i64, MODI64, len, offset, out);
         default:
-            THROW(ERR_TYPE, "add: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
+            THROW(ERR_TYPE, "mod: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
+    }
+}
+
+obj_p ray_xbar_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(-TYPE_I64, -TYPE_I64):
+            return i64(XBARI64(x->i64, y->i64));
+        case MTYPE2(-TYPE_I64, TYPE_I64):
+            return __OP_A_V(x, y, i64, i64, i64, XBARI64, len, offset, out);
+        case MTYPE2(TYPE_I64, -TYPE_I64):
+            return __OP_V_A(x, y, i64, i64, i64, XBARI64, len, offset, out);
+        case MTYPE2(TYPE_I64, TYPE_I64):
+            return __OP_V_V(x, y, i64, i64, i64, XBARI64, len, offset, out);
+        default:
+            THROW(ERR_TYPE, "xbar: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
 }
 
@@ -1234,38 +743,61 @@ obj_p ray_ceil(obj_p x) {
     }
 }
 
-obj_p ray_xbar(obj_p x, obj_p y) {
-    u64_t i, l = 0;
-    i64_t *xivals = NULL;
-    f64_t *xfvals = NULL;
-    obj_p res;
+obj_p op_map(raw_p op, obj_p x, obj_p y) {
+    pool_p pool = runtime_get()->pool;
+    u64_t i, l, n, chunk;
+    obj_p v, res;
+    raw_p argv[5];
+    i8_t t;
 
-    switch (MTYPE2(x->type, y->type)) {
-        case MTYPE2(-TYPE_I64, -TYPE_I64):
-        case MTYPE2(-TYPE_TIMESTAMP, -TYPE_I64):
-            return i64(XBARI64(x->i64, y->i64));
-        case MTYPE2(-TYPE_F64, -TYPE_I64):
-            return f64(XBARF64(x->i64, y->f64));
-        case MTYPE2(TYPE_I64, -TYPE_I64):
-        case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
-            l = x->len;
-            xivals = AS_I64(x);
-            res = I64(l);
-            for (i = 0; i < l; i++)
-                AS_I64(res)[i] = XBARI64(xivals[i], y->i64);
+    if (IS_VECTOR(x) && IS_VECTOR(y)) {
+        if (x->len != y->len)
+            THROW(ERR_LENGTH, "vectors must have the same length");
 
-            return res;
-
-        case MTYPE2(TYPE_F64, -TYPE_I64):
-            l = x->len;
-            xfvals = AS_F64(x);
-            res = F64(l);
-            for (i = 0; i < l; i++)
-                AS_F64(res)[i] = XBARF64(xfvals[i], y->i64);
-
-            return res;
-
-        default:
-            THROW(ERR_TYPE, "xbar: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
+        l = x->len;
+    } else if (IS_VECTOR(x))
+        l = x->len;
+    else if (IS_VECTOR(y))
+        l = y->len;
+    else {
+        argv[0] = (raw_p)x;
+        argv[1] = (raw_p)y;
+        return pool_call_task_fn(op, 2, argv);
     }
+
+    t = (op == ray_fdiv_partial) ? TYPE_F64 : infer_math_type(x, y);
+
+    n = pool_split_by(pool, l, 0);
+    res = vector(t, l);
+
+    if (n == 1) {
+        argv[0] = (raw_p)x;
+        argv[1] = (raw_p)y;
+        argv[2] = (raw_p)l;
+        argv[3] = (raw_p)0;
+        argv[4] = (raw_p)res;
+        pool_call_task_fn(op, 5, argv);
+        return res;
+    }
+
+    pool_prepare(pool);
+    chunk = l / n;
+
+    for (i = 0; i < n - 1; i++)
+        pool_add_task(pool, op, 5, x, y, chunk, i * chunk, res);
+
+    pool_add_task(pool, op, 5, x, y, l - i * chunk, i * chunk, res);
+
+    v = pool_run(pool);
+    drop_obj(v);
+
+    return res;
 }
+
+obj_p ray_add(obj_p x, obj_p y) { return op_map(ray_add_partial, x, y); }
+obj_p ray_sub(obj_p x, obj_p y) { return op_map(ray_sub_partial, x, y); }
+obj_p ray_mul(obj_p x, obj_p y) { return op_map(ray_mul_partial, x, y); }
+obj_p ray_div(obj_p x, obj_p y) { return op_map(ray_div_partial, x, y); }
+obj_p ray_fdiv(obj_p x, obj_p y) { return op_map(ray_fdiv_partial, x, y); }
+obj_p ray_mod(obj_p x, obj_p y) { return op_map(ray_mod_partial, x, y); }
+obj_p ray_xbar(obj_p x, obj_p y) { return op_map(ray_xbar_partial, x, y); }
