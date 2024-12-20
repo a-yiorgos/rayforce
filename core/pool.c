@@ -171,7 +171,7 @@ raw_p executor_run(raw_p arg) {
 
     executor->heap = heap_create(executor->id + 1);
     executor->interpreter = interpreter_create(executor->id + 1);
-    rc_sync(B8_TRUE);
+    rc_sync_set(B8_TRUE);
 
     for (;;) {
         mutex_lock(&executor->pool->mutex);
@@ -351,7 +351,7 @@ obj_p pool_run(pool_p pool) {
 
     mutex_lock(&pool->mutex);
 
-    rc_sync(B8_TRUE);
+    rc_sync_set(B8_TRUE);
 
     tasks_count = pool->tasks_count;
     executors_count = pool->executors_count;
@@ -405,7 +405,7 @@ obj_p pool_run(pool_p pool) {
         interpreter_env_unset(pool->executors[i].interpreter);
     }
 
-    rc_sync(B8_FALSE);
+    rc_sync_set(B8_FALSE);
 
     mutex_unlock(&pool->mutex);
 
@@ -426,7 +426,7 @@ obj_p pool_run(pool_p pool) {
 u64_t pool_split_by(pool_p pool, u64_t input_len, u64_t groups_len) {
     if (pool == NULL)
         return 1;
-    else if (interpreter_current()->id != 0)
+    else if (!rc_sync_get())
         return 1;
     else if (input_len <= pool->executors_count + 1)
         return 1;

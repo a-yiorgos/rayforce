@@ -1845,4 +1845,6 @@ obj_p eval_str(lit_p str) {
 
 obj_p parse_str(lit_p str) { return parse(str, NULL_OBJ); }
 
-nil_t rc_sync(b8_t on) { __RC_SYNC = on; }
+b8_t rc_sync_get() { return __RC_SYNC; }
+
+nil_t rc_sync_set(b8_t on) { __RC_SYNC = on; }
