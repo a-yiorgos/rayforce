@@ -226,7 +226,7 @@ obj_p ray_get_parted(obj_p *x, u64_t n) {
                 return dirs;
 
             // Try to convert dirs to a parted column (one of numeric datatypes)
-            res = cast_obj(TYPE_TIMESTAMP, dirs);
+            res = cast_obj(TYPE_DATE, dirs);
 
             if (IS_ERROR(res))
                 return res;

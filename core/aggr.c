@@ -222,7 +222,8 @@ obj_p aggr_first(obj_p val, obj_p index) {
         case TYPE_TIMESTAMP:
         case TYPE_ENUM:
             parts = aggr_map((raw_p)aggr_first_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, i64, i64, if ($out[$y] == NULL_I64) $out[$y] = $in[$x]);
             res->type = val->type;
             drop_obj(parts);
@@ -255,13 +256,15 @@ obj_p aggr_first(obj_p val, obj_p index) {
             return res;
         case TYPE_F64:
             parts = aggr_map((raw_p)aggr_first_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, f64, f64, if (ops_is_nan($out[$y])) $out[$y] = $in[$x]);
             drop_obj(parts);
             return res;
         case TYPE_GUID:
             parts = aggr_map((raw_p)aggr_first_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, guid, guid,
                                if (memcmp($out[$y], NULL_GUID, sizeof(guid_t)) == 0)
                                    memcpy($out[$y], $in[$x], sizeof(guid_t)));
@@ -269,7 +272,8 @@ obj_p aggr_first(obj_p val, obj_p index) {
             return res;
         case TYPE_LIST:
             parts = aggr_map((raw_p)aggr_first_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, list, list, if ($out[$y] == NULL_OBJ) $out[$y] = clone_obj($in[$x]));
             drop_obj(parts);
             return res;
@@ -377,8 +381,8 @@ obj_p aggr_last(obj_p val, obj_p index) {
         case TYPE_TIMESTAMP:
         case TYPE_ENUM:
             parts = aggr_map((raw_p)aggr_last_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
-
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, i64, i64, if ($out[$y] == NULL_I64) $out[$y] = $in[$x]);
             drop_obj(parts);
             if (val->type == TYPE_ENUM) {
@@ -408,13 +412,15 @@ obj_p aggr_last(obj_p val, obj_p index) {
             return res;
         case TYPE_F64:
             parts = aggr_map((raw_p)aggr_last_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, f64, f64, if (ops_is_nan($out[$y])) $out[$y] = $in[$x]);
             drop_obj(parts);
             return res;
         case TYPE_GUID:
             parts = aggr_map((raw_p)aggr_last_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, guid, guid,
                                if (memcmp($out[$y], NULL_GUID, sizeof(guid_t)) == 0)
                                    memcpy($out[$y], $in[$x], sizeof(guid_t)));
@@ -422,7 +428,8 @@ obj_p aggr_last(obj_p val, obj_p index) {
             return res;
         case TYPE_LIST:
             parts = aggr_map((raw_p)aggr_last_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, list, list, if ($out[$y] == NULL_OBJ) $out[$y] = clone_obj($in[$x]));
             drop_obj(parts);
             return res;
@@ -462,13 +469,15 @@ obj_p aggr_sum(obj_p val, obj_p index) {
     switch (val->type) {
         case TYPE_I64:
             parts = aggr_map((raw_p)aggr_sum_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, i64, i64, $out[$y] = ADDI64($out[$y], $in[$x]));
             drop_obj(parts);
             return res;
         case TYPE_F64:
             parts = aggr_map((raw_p)aggr_sum_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, f64, f64, $out[$y] = ADDF64($out[$y], $in[$x]));
             drop_obj(parts);
             return res;
@@ -508,13 +517,15 @@ obj_p aggr_max(obj_p val, obj_p index) {
     switch (val->type) {
         case TYPE_I64:
             parts = aggr_map((raw_p)aggr_max_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, i64, i64, $out[$y] = MAXI64($out[$y], $in[$x]));
             drop_obj(parts);
             return res;
         case TYPE_F64:
             parts = aggr_map((raw_p)aggr_max_partial, val, val->type, index);
-            UNWRAP_LIST(parts);
+            if (IS_ERROR(parts))
+                return parts;
             res = AGGR_COLLECT(parts, n, f64, f64, $out[$y] = MAXF64($out[$y], $in[$x]));
             drop_obj(parts);
             return res;
@@ -552,8 +563,8 @@ obj_p aggr_min(obj_p val, obj_p index) {
 
     n = index_group_count(index);
     parts = aggr_map((raw_p)aggr_max_partial, val, val->type, index);
-    UNWRAP_LIST(parts);
-
+    if (IS_ERROR(parts))
+        return parts;
     switch (val->type) {
         case TYPE_I64:
             res = AGGR_COLLECT(parts, n, i64, i64, $out[$y] = MINI64($out[$y], $in[$x]));
@@ -616,7 +627,8 @@ obj_p aggr_count(obj_p val, obj_p index) {
 
     n = index_group_count(index);
     parts = aggr_map((raw_p)aggr_count_partial, val, TYPE_I64, index);
-    UNWRAP_LIST(parts);
+    if (IS_ERROR(parts))
+        return parts;
     res = AGGR_COLLECT(parts, n, i64, i64, $out[$y] += $in[$x]);
     drop_obj(parts);
 

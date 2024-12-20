@@ -110,20 +110,6 @@ nil_t dump_stack(nil_t);
 #define MAPLIST_KEY(x) (((obj_p)((str_p)x - RAY_PAGE_SIZE))->obj)
 #define MAPLIST_VAL(x) (x)
 
-#define UNWRAP_LIST(x)                            \
-    {                                             \
-        u64_t _i, _l;                             \
-        obj_p _res;                               \
-        _l = (x)->len;                            \
-        for (_i = 0; _i < _l; _i++) {             \
-            if (IS_ERROR(AS_LIST(x)[_i])) {       \
-                _res = clone_obj(AS_LIST(x)[_i]); \
-                drop_obj(x);                      \
-                return _res;                      \
-            }                                     \
-        }                                         \
-    }
-
 #define __TYPE_u8 TYPE_U8
 #define __TYPE_b8 TYPE_B8
 #define __TYPE_c8 TYPE_C8
@@ -167,6 +153,8 @@ nil_t dump_stack(nil_t);
 #define __AS_u8(x) AS_U8(x)
 #define __AS_b8(x) AS_B8(x)
 #define __AS_c8(x) AS_C8(x)
+#define __AS_i16(x) AS_I16(x)
+#define __AS_i32(x) AS_I32(x)
 #define __AS_symbol(x) AS_SYMBOL(x)
 #define __AS_i64(x) AS_I64(x)
 #define __AS_time(x) AS_TIME(x)

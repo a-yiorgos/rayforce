@@ -115,4 +115,117 @@ obj_p index_find_i64(i64_t x[], u64_t xl, i64_t y[], u64_t yl);
 obj_p ops_where(b8_t *mask, u64_t n);
 obj_p sys_error(os_ray_error_type_t, lit_p msg);
 
+// Binary ops/coersions
+
+static inline i64_t i32_to_i32(i32_t x) { return x; }
+static inline i64_t i32_to_date(i32_t x) { return x; }
+static inline i32_t i32_to_time(i32_t x) { return x; }
+static inline i64_t i32_to_timestamp(i32_t x) { return (x == NULL_I32) ? NULL_I64 : (i64_t)x; }
+static inline i64_t i64_to_i64(i64_t x) { return x; }
+static inline i64_t i64_to_date(i64_t x) { return (x == NULL_I64) ? NULL_I32 : (i32_t)x; }
+static inline i64_t i64_to_time(i64_t x) { return (x == NULL_I64) ? NULL_I32 : (i32_t)x; }
+static inline i64_t i64_to_timestamp(i64_t x) { return x; }
+static inline i64_t i32_to_i64(i32_t x) { return (x == NULL_I32) ? NULL_I64 : (i64_t)x; }
+static inline i32_t i64_to_i32(i64_t x) { return (x == NULL_I64) ? NULL_I32 : (i32_t)x; }
+static inline i64_t f64_to_i64(f64_t x) { return (x == NULL_F64) ? NULL_I64 : (i64_t)x; }
+static inline i64_t f64_to_timestamp(f64_t x) { return (x == NULL_F64) ? NULL_I64 : (i64_t)x; }
+static inline f64_t i64_to_f64(i64_t x) { return (x == NULL_I64) ? NULL_F64 : (f64_t)x; }
+static inline f64_t f64_to_f64(i64_t x) { return x; }
+static inline f64_t i32_to_f64(i32_t x) { return (x == NULL_I32) ? NULL_F64 : (f64_t)x; }
+static inline i32_t f64_to_i32(f64_t x) { return (x == NULL_F64) ? NULL_I32 : (i32_t)x; }
+static inline i32_t f64_to_date(f64_t x) { return (x == NULL_F64) ? NULL_I32 : (i32_t)x; }
+static inline i32_t f64_to_time(f64_t x) { return (x == NULL_F64) ? NULL_I32 : (i32_t)x; }
+
+#define __BINOP_I32_I64(x, y, op) \
+    ({                            \
+        i64_t $l = i32_to_i64(x); \
+        i64_t $r = y;             \
+        op($l, $r);               \
+    })
+
+#define __BINOP_I64_I32(x, y, op) \
+    ({                            \
+        i64_t $l = x;             \
+        i64_t $r = i32_to_i64(y); \
+        op($l, $r);               \
+    })
+
+#define __BINOP_I32_F64(x, y, op) \
+    ({                            \
+        f64_t $l = i32_to_f64(x); \
+        f64_t $r = y;             \
+        op($l, $r);               \
+    })
+
+#define __BINOP_I64_F64(x, y, op) \
+    ({                            \
+        f64_t $l = i64_to_f64(x); \
+        f64_t $r = y;             \
+        op($l, $r);               \
+    })
+
+#define __BINOP_F64_I32(x, y, op) \
+    ({                            \
+        f64_t $l = x;             \
+        f64_t $r = i32_to_f64(y); \
+        op($l, $r);               \
+    })
+
+#define __BINOP_F64_I64(x, y, op) \
+    ({                            \
+        f64_t $l = x;             \
+        f64_t $r = i64_to_f64(y); \
+        op($l, $r);               \
+    })
+
+#define __DISPATCH_BINOP(x, y, op, ot, ov)                       \
+    _Generic((x),                                                \
+        i32_t: _Generic((y),                                     \
+            i32_t: ov = op(x, y),                                \
+            i64_t: ov = i64_to_##ot(__BINOP_I32_I64(x, y, op)),  \
+            f64_t: ov = f64_to_##ot(__BINOP_I32_F64(x, y, op))), \
+        i64_t: _Generic((y),                                     \
+            i32_t: ov = i64_to_##ot(__BINOP_I64_I32(x, y, op)),  \
+            i64_t: ov = op(x, y),                                \
+            f64_t: ov = f64_to_##ot(__BINOP_I64_F64(x, y, op))), \
+        f64_t: _Generic((y),                                     \
+            i32_t: ov = f64_to_##ot(__BINOP_F64_I32(x, y, op)),  \
+            i64_t: ov = f64_to_##ot(__BINOP_F64_I64(x, y, op)),  \
+            f64_t: ov = op(x, y)))
+
+#define __BINOP_A_V(x, y, lt, rt, ot, op, ln, of, ov)            \
+    ({                                                           \
+        rt##_t *$rhs;                                            \
+        __INNER_##ot *$out;                                      \
+        $rhs = __AS_##rt(y);                                     \
+        $out = __AS_##ot(ov) + of;                               \
+        for (u64_t $i = 0; $i < ln; $i++)                        \
+            __DISPATCH_BINOP(x->lt, $rhs[$i], op, ot, $out[$i]); \
+        NULL_OBJ;                                                \
+    })
+
+#define __BINOP_V_A(x, y, lt, rt, ot, op, ln, of, ov)            \
+    ({                                                           \
+        lt##_t *$lhs;                                            \
+        __INNER_##ot *$out;                                      \
+        $lhs = __AS_##lt(x);                                     \
+        $out = __AS_##ot(ov) + of;                               \
+        for (u64_t $i = 0; $i < ln; $i++)                        \
+            __DISPATCH_BINOP($lhs[$i], y->rt, op, ot, $out[$i]); \
+        NULL_OBJ;                                                \
+    })
+
+#define __BINOP_V_V(x, y, lt, rt, ot, op, ln, of, ov)               \
+    ({                                                              \
+        lt##_t *$lhs;                                               \
+        rt##_t *$rhs;                                               \
+        __INNER_##ot *$out;                                         \
+        $lhs = __AS_##lt(x);                                        \
+        $rhs = __AS_##rt(y);                                        \
+        $out = __AS_##ot(ov) + of;                                  \
+        for (u64_t $i = 0; $i < ln; $i++)                           \
+            __DISPATCH_BINOP($lhs[$i], $rhs[$i], op, ot, $out[$i]); \
+        NULL_OBJ;                                                   \
+    })
+
 #endif  // OPS_H

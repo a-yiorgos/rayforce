@@ -74,7 +74,6 @@ obj_p unary_call_atomic(unary_f f, obj_p x) {
                     pool_add_task(pool, (raw_p)unary_call_atomic, 2, f, v[i]);
 
                 parts = pool_run(pool);
-                UNWRAP_LIST(parts);
 
                 return parts;
             }

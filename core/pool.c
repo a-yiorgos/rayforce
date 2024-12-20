@@ -343,7 +343,7 @@ nil_t pool_add_task(pool_p pool, raw_p fn, u64_t argc, ...) {
 
 obj_p pool_run(pool_p pool) {
     u64_t i, n, tasks_count, executors_count;
-    obj_p res;
+    obj_p e, res;
     task_data_t data;
 
     if (pool == NULL)
@@ -409,7 +409,18 @@ obj_p pool_run(pool_p pool) {
 
     mutex_unlock(&pool->mutex);
 
-    return res;
+    // Check res for errors
+    for (i = 0; i < tasks_count; i++) {
+        if (IS_ERROR(AS_LIST(res)[i])) {
+            e = clone_obj(AS_LIST(res)[i]);
+            drop_obj(res);
+            return e;
+        }
+    }
+
+    drop_obj(res);
+
+    return NULL_OBJ;
 }
 
 u64_t pool_split_by(pool_p pool, u64_t input_len, u64_t groups_len) {
