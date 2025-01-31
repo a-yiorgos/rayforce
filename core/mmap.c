@@ -131,7 +131,9 @@ raw_p mmap_stack(u64_t size) {
 }
 
 raw_p mmap_alloc(u64_t size) {
-    ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED | MAP_NONBLOCK | MAP_POPULATE, -1, 0);
+    raw_p ptr;
+
+    ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
 
     if (ptr == MAP_FAILED)
         return NULL;
@@ -139,8 +141,10 @@ raw_p mmap_alloc(u64_t size) {
     return ptr;
 }
 
-raw_p mmap_file(i64_t fd, raw_p addr, u64_t size, i64_t offset, i32_t shared) {
-    raw_p ptr = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NONBLOCK | MAP_POPULATE, fd, offset);
+raw_p mmap_file(i64_t fd, raw_p addr, u64_t size, i64_t offset) {
+    raw_p ptr;
+
+    ptr = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
 
     if (ptr == MAP_FAILED)
         return NULL;
