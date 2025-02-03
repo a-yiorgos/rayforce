@@ -47,7 +47,7 @@ obj_p ray_hopen(obj_p x) {
     i64_t fd;
     sock_addr_t addr;
     u8_t handshake[2] = {RAYFORCE_VERSION, 0x00};
-    obj_p err;
+    obj_p path, err;
 
     if (x->type != TYPE_C8)
         THROW(ERR_TYPE, "hopen: expected char");
@@ -77,7 +77,9 @@ obj_p ray_hopen(obj_p x) {
     }
 
     // Otherwise, open file
-    fd = fs_fopen(AS_C8(x), ATTR_RDWR | ATTR_CREAT | ATTR_APPEND);
+    path = cstring_from_obj(x);
+    fd = fs_fopen(AS_C8(path), ATTR_RDWR | ATTR_CREAT | ATTR_APPEND);
+    drop_obj(path);
 
     if (fd == -1)
         return sys_error(ERROR_TYPE_SYS, AS_C8(x));
@@ -145,11 +147,11 @@ obj_p ray_read(obj_p x) {
         case TYPE_C8:
             s = cstring_from_obj(x);
             fd = fs_fopen(AS_C8(s), ATTR_RDONLY);
+            drop_obj(s);
 
             // error handling if file does not exist
             if (fd == -1) {
                 res = sys_error(ERROR_TYPE_SYS, AS_C8(s));
-                drop_obj(s);
                 return res;
             }
 
@@ -162,11 +164,8 @@ obj_p ray_read(obj_p x) {
             if (c != size) {
                 drop_obj(res);
                 res = sys_error(ERROR_TYPE_SYS, AS_C8(s));
-                drop_obj(s);
                 return res;
             }
-
-            drop_obj(s);
 
             return res;
         default:
