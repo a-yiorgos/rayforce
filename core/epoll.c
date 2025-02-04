@@ -186,7 +186,7 @@ nil_t poll_call_usr_on_open(poll_p poll, i64_t id) {
 
     // Call the callback if it's a lambda
     if (clbfn != NULL && (*clbfn)->type == TYPE_LAMBDA) {
-        stack_push(i64(id));
+        stack_push(i32(id));
         v = call(*clbfn, 1);
         if (IS_ERROR(v)) {
             f = obj_fmt(v, B8_FALSE);
@@ -210,13 +210,14 @@ nil_t poll_call_usr_on_close(poll_p poll, i64_t id) {
 
     // Call the callback if it's a lambda
     if (clbfn != NULL && (*clbfn)->type == TYPE_LAMBDA) {
-        stack_push(i64(id));
+        stack_push(i32(id));
         v = call(*clbfn, 1);
         if (IS_ERROR(v)) {
             f = obj_fmt(v, B8_FALSE);
             fprintf(stderr, "Error in .z.pc callback: \n%.*s\n", (i32_t)f->len, AS_C8(f));
             drop_obj(f);
         }
+
         drop_obj(v);
     }
 }
