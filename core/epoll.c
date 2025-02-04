@@ -41,6 +41,7 @@
 #include "heap.h"
 #include "io.h"
 #include "error.h"
+#include "symbols.h"
 #include "eval.h"
 #include "sys.h"
 #include "chrono.h"
@@ -173,6 +174,53 @@ i64_t poll_register(poll_p poll, i64_t fd, u8_t version) {
     return id;
 }
 
+nil_t poll_call_usr_on_open(poll_p poll, i64_t id) {
+    UNUSED(poll);
+    i64_t clbnm;
+    obj_p v, f, *clbfn;
+
+    stack_push(NULL_OBJ);  // null env
+    clbnm = symbols_intern(".z.po", 5);
+    clbfn = resolve(clbnm);
+    stack_pop();  // null env
+
+    // Call the callback if it's a lambda
+    if (clbfn != NULL && (*clbfn)->type == TYPE_LAMBDA) {
+        stack_push(i64(id));
+        v = call(*clbfn, 1);
+        if (IS_ERROR(v)) {
+            f = obj_fmt(v, B8_FALSE);
+            fprintf(stderr, "Error in .z.po callback: \n%.*s\n", (i32_t)f->len, AS_C8(f));
+            drop_obj(f);
+        }
+
+        drop_obj(v);
+    }
+}
+
+nil_t poll_call_usr_on_close(poll_p poll, i64_t id) {
+    UNUSED(poll);
+    i64_t clbnm;
+    obj_p v, f, *clbfn;
+
+    stack_push(NULL_OBJ);  // null env
+    clbnm = symbols_intern(".z.pc", 5);
+    clbfn = resolve(clbnm);
+    stack_pop();  // null env
+
+    // Call the callback if it's a lambda
+    if (clbfn != NULL && (*clbfn)->type == TYPE_LAMBDA) {
+        stack_push(i64(id));
+        v = call(*clbfn, 1);
+        if (IS_ERROR(v)) {
+            f = obj_fmt(v, B8_FALSE);
+            fprintf(stderr, "Error in .z.pc callback: \n%.*s\n", (i32_t)f->len, AS_C8(f));
+            drop_obj(f);
+        }
+        drop_obj(v);
+    }
+}
+
 nil_t poll_deregister(poll_p poll, i64_t id) {
     i64_t idx;
     selector_p selector;
@@ -183,6 +231,9 @@ nil_t poll_deregister(poll_p poll, i64_t id) {
         return;
 
     selector = (selector_p)idx;
+
+    // If there is a callback, call it
+    poll_call_usr_on_close(poll, id);
 
     epoll_ctl(poll->poll_fd, EPOLL_CTL_DEL, selector->fd, NULL);
     close(selector->fd);
@@ -217,6 +268,9 @@ poll_result_t _recv(poll_p poll, selector_p selector) {
 
         selector->version = selector->rx.buf[selector->rx.bytes_transfered - 2];
         selector->rx.bytes_transfered = 0;
+
+        // Now we are ready for income messages and can call userspace callback (if any)
+        poll_call_usr_on_open(poll, selector->id);
 
         // send handshake response
         size = 0;

@@ -123,6 +123,8 @@ nil_t poll_destroy(poll_p poll);
 i64_t poll_run(poll_p poll);
 i64_t poll_register(poll_p poll, i64_t fd, u8_t version);
 nil_t poll_deregister(poll_p poll, i64_t id);
+nil_t poll_call_usr_on_open(poll_p poll, i64_t id);
+nil_t poll_call_usr_on_close(poll_p poll, i64_t id);
 
 // send ipc messages
 obj_p ipc_send_sync(poll_p poll, i64_t id, obj_p msg);

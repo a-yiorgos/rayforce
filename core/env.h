@@ -66,7 +66,6 @@ str_p env_get_internal_function_name(lit_p name, u64_t len, u64_t *index, b8_t e
 str_p env_get_internal_keyword_name(lit_p name, u64_t len, u64_t *index, b8_t exact);
 str_p env_get_global_name(lit_p name, u64_t len, u64_t *index, u64_t *sbidx);
 obj_p env_set(env_t *env, obj_p key, obj_p val);
-obj_p env_get(env_t *env, obj_p key);
 obj_p ray_env(obj_p *x, u64_t n);
 obj_p ray_memstat(obj_p *x, u64_t n);
 
