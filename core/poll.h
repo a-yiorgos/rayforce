@@ -119,6 +119,7 @@ typedef struct poll_t {
 } *poll_p;
 
 poll_p poll_init(i64_t port);
+i64_t poll_listen(poll_p poll, i64_t port);
 nil_t poll_destroy(poll_p poll);
 i64_t poll_run(poll_p poll);
 nil_t poll_set_usr_fd(i64_t fd);

@@ -94,21 +94,6 @@ poll_p poll_init(i64_t port) {
         exit(EXIT_FAILURE);
     }
 
-    // Add server socket
-    if (port) {
-        listen_fd = sock_listen(port);
-        if (listen_fd == -1) {
-            perror("listen");
-            exit(EXIT_FAILURE);
-        }
-        ev.events = EPOLLIN | EPOLLERR | EPOLLHUP;
-        ev.data.fd = listen_fd;
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd, &ev) == -1) {
-            perror("epoll_ctl: listen_fd");
-            exit(EXIT_FAILURE);
-        }
-    }
-
     poll = (poll_p)heap_alloc(sizeof(struct poll_t));
     poll->code = NULL_I64;
     poll->poll_fd = epoll_fd;
@@ -119,9 +104,43 @@ poll_p poll_init(i64_t port) {
     poll->selectors = freelist_create(128);
     poll->timers = timers_create(16);
 
+    // Add server socket
+    if (port) {
+        listen_fd = poll_listen(poll, port);
+        if (listen_fd == -1) {
+            perror("listen");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     poll_set_usr_fd(0);
 
     return poll;
+}
+
+i64_t poll_listen(poll_p poll, i64_t port) {
+    i64_t listen_fd;
+    struct epoll_event ev;
+
+    if (poll == NULL)
+        return -1;
+
+    if (poll->ipc_fd != -1)
+        return -2;
+
+    listen_fd = sock_listen(port);
+    if (listen_fd == -1)
+        return -1;
+
+    ev.events = EPOLLIN | EPOLLERR | EPOLLHUP;
+    ev.data.fd = listen_fd;
+
+    if (epoll_ctl(poll->poll_fd, EPOLL_CTL_ADD, listen_fd, &ev) == -1)
+        return -1;
+
+    poll->ipc_fd = listen_fd;
+
+    return listen_fd;
 }
 
 nil_t poll_destroy(poll_p poll) {
@@ -426,7 +445,7 @@ nil_t process_request(poll_p poll, selector_p selector) {
 }
 
 i64_t poll_run(poll_p poll) {
-    i64_t epoll_fd = poll->poll_fd, listen_fd = poll->ipc_fd, n, nfds, sock, timeout = TIMEOUT_INFINITY;
+    i64_t n, nfds, sock, timeout = TIMEOUT_INFINITY;
     obj_p str, res;
     poll_result_t poll_result;
     b8_t error;
@@ -436,7 +455,7 @@ i64_t poll_run(poll_p poll) {
     term_prompt(poll->term);
 
     while (poll->code == NULL_I64) {
-        nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, timeout);
+        nfds = epoll_wait(poll->poll_fd, events, MAX_EVENTS, timeout);
         if (nfds == -1)
             return 1;
 
@@ -468,8 +487,8 @@ i64_t poll_run(poll_p poll) {
                 }
             }
             // accept new connections
-            else if (ev.data.fd == listen_fd) {
-                sock = sock_accept(listen_fd);
+            else if (ev.data.fd == poll->ipc_fd) {
+                sock = sock_accept(poll->ipc_fd);
                 if (sock != -1)
                     poll_register(poll, sock, 0);
             }

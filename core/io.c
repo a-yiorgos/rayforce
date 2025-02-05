@@ -703,6 +703,23 @@ obj_p ray_load(obj_p x) {
     return res;
 }
 
+obj_p ray_listen(obj_p x) {
+    i64_t res;
+
+    if (x->type != -TYPE_I64)
+        THROW(ERR_TYPE, "listen: expected integer");
+
+    res = poll_listen(runtime_get()->poll, x->i64);
+
+    if (res == -1)
+        return sys_error(ERROR_TYPE_SOCK, "listen");
+
+    if (res == -2)
+        THROW(ERR_LENGTH, "listen: already listening");
+
+    return i64(res);
+}
+
 obj_p distinct_syms(obj_p *x, u64_t n) {
     i64_t p;
     u64_t i, j, h, l;

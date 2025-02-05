@@ -119,6 +119,7 @@ nil_t init_functions(obj_p functions)
     REGISTER_FN(functions,  "parse",               TYPE_UNARY,    FN_NONE,                   ray_parse);
     REGISTER_FN(functions,  "eval",                TYPE_UNARY,    FN_NONE,                   ray_eval);
     REGISTER_FN(functions,  "load",                TYPE_UNARY,    FN_NONE,                   ray_load);
+    REGISTER_FN(functions,  "listen",              TYPE_UNARY,    FN_NONE,                   ray_listen);
     REGISTER_FN(functions,  "type",                TYPE_UNARY,    FN_NONE,                   ray_type);
     REGISTER_FN(functions,  "til",                 TYPE_UNARY,    FN_NONE,                   ray_til);
     REGISTER_FN(functions,  "reverse",             TYPE_UNARY,    FN_NONE,                   ray_reverse);
