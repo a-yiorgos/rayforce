@@ -137,6 +137,157 @@ obj_p ray_map(obj_p *x, u64_t n) {
     }
 }
 
+obj_p ray_map_left(obj_p *x, u64_t n) {
+    u64_t i, j, l;
+    obj_p f, v, *b, res;
+
+    if (n < 2)
+        return LIST(0);
+
+    f = x[0];
+    x++;
+    n--;
+
+    switch (f->type) {
+        case TYPE_UNARY:
+            if (n != 1)
+                THROW(ERR_LENGTH, "'map-left': unary call with wrong arguments count");
+            return unary_call(FN_ATOMIC, (unary_f)f->i64, x[0]);
+        case TYPE_BINARY:
+            if (n != 2)
+                THROW(ERR_LENGTH, "'map-left': binary call with wrong arguments count");
+            return binary_call(FN_ATOMIC, (binary_f)f->i64, x[0], x[1]);
+        case TYPE_VARY:
+            return vary_call(FN_ATOMIC, (vary_f)f->i64, x, n);
+        case TYPE_LAMBDA:
+            if (n != AS_LAMBDA(f)->args->len)
+                THROW(ERR_LENGTH, "'map-left': lambda call with wrong arguments count");
+
+            if (!IS_VECTOR(x[0])) {
+                for (i = 0; i < n; i++)
+                    stack_push(clone_obj(x[i]));
+
+                return call(f, n);
+            }
+
+            l = ops_count(x[0]);
+
+            // first item to get type of res
+            stack_push(at_idx(x[0], 0));
+
+            for (j = 1; j < n; j++) {
+                b = x + j;
+                v = clone_obj(*b);
+                stack_push(v);
+            }
+
+            v = call(f, n);
+            if (IS_ERROR(v))
+                return v;
+
+            res = v->type < 0 ? vector(v->type, l) : vector(TYPE_LIST, l);
+
+            ins_obj(&res, 0, v);
+
+            for (i = 1; i < l; i++) {
+                stack_push(at_idx(x[0], i));
+                for (j = 1; j < n; j++) {
+                    b = x + j;
+                    v = clone_obj(*b);
+                    stack_push(v);
+                }
+
+                v = call(f, n);
+                if (IS_ERROR(v)) {
+                    res->len = i;
+                    drop_obj(res);
+                    return v;
+                }
+
+                ins_obj(&res, i, v);
+            }
+
+            return res;
+        default:
+            THROW(ERR_TYPE, "'map-left': unsupported function type: '%s", type_name(f->type));
+    }
+}
+
+obj_p ray_map_right(obj_p *x, u64_t n) {
+    u64_t i, j, l;
+    obj_p f, v, *b, res;
+
+    if (n < 2)
+        return LIST(0);
+
+    f = x[0];
+    x++;
+    n--;
+
+    switch (f->type) {
+        case TYPE_UNARY:
+            if (n != 1)
+                THROW(ERR_LENGTH, "'map-right': unary call with wrong arguments count");
+            return unary_call(FN_ATOMIC, (unary_f)f->i64, x[0]);
+        case TYPE_BINARY:
+            if (n != 2)
+                THROW(ERR_LENGTH, "'map-right': binary call with wrong arguments count");
+            return binary_call(FN_ATOMIC, (binary_f)f->i64, x[0], x[1]);
+        case TYPE_VARY:
+            return vary_call(FN_ATOMIC, (vary_f)f->i64, x, n);
+        case TYPE_LAMBDA:
+            if (n != AS_LAMBDA(f)->args->len)
+                THROW(ERR_LENGTH, "'map-right': lambda call with wrong arguments count");
+
+            if (!IS_VECTOR(x[n - 1])) {
+                for (i = 0; i < n; i++)
+                    stack_push(clone_obj(x[i]));
+
+                return call(f, n);
+            }
+
+            l = ops_count(x[n - 1]);
+
+            // first item to get type of res
+            for (j = 0; j < n - 1; j++) {
+                b = x + j;
+                v = clone_obj(*b);
+                stack_push(v);
+            }
+            stack_push(at_idx(x[n - 1], 0));
+
+            v = call(f, n);
+            if (IS_ERROR(v))
+                return v;
+
+            res = v->type < 0 ? vector(v->type, l) : vector(TYPE_LIST, l);
+
+            ins_obj(&res, 0, v);
+
+            for (i = 1; i < l; i++) {
+                for (j = 0; j < n - 1; j++) {
+                    b = x + j;
+                    v = clone_obj(*b);
+                    stack_push(v);
+                }
+                stack_push(at_idx(x[n - 1], i));
+
+                v = call(f, n);
+                if (IS_ERROR(v)) {
+                    res->len = i;
+                    drop_obj(res);
+                    return v;
+                }
+
+                ins_obj(&res, i, v);
+            }
+
+            return res;
+        default:
+            THROW(ERR_TYPE, "'map-right': unsupported function type: '%s", type_name(f->type));
+    }
+}
+
 obj_p ray_fold(obj_p *x, u64_t n) {
     u64_t o, i, j, l;
     obj_p f, v, *b, x1, x2;

@@ -28,6 +28,8 @@
 
 obj_p ray_apply(obj_p *x, u64_t n);
 obj_p ray_map(obj_p *x, u64_t n);
+obj_p ray_map_right(obj_p *x, u64_t n);
+obj_p ray_map_left(obj_p *x, u64_t n);
 obj_p ray_fold(obj_p *x, u64_t n);
 
 #endif  // ITER_H
