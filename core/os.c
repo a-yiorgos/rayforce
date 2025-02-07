@@ -63,31 +63,18 @@ i64_t os_get_var(lit_p name, c8_t buf[], u64_t len) {
     return 0;
 }
 
-i64_t os_set_var(lit_p name, u64_t nlen, lit_p value, u64_t vlen) {
-    c8_t var_name[256], var_value[1024];
-
-    if (!name || !value || nlen == 0 || vlen == 0) {
+i64_t os_set_var(lit_p name, lit_p value) {
+    if (!name || !value) {
         return -1;  // Invalid parameters
     }
 
-    // Ensure name and value are null-terminated
-    if (nlen >= sizeof(var_name) || vlen >= sizeof(var_value)) {
-        return -2;  // Name or value too long
-    }
-
-    strncpy(var_name, name, nlen);
-    var_name[nlen] = '\0';  // Null terminate
-
-    strncpy(var_value, value, vlen);
-    var_value[vlen] = '\0';  // Null terminate
-
 #if defined(OS_WINDOWS)
     // Windows implementation using SetEnvironmentVariable
-    if (!SetEnvironmentVariableA(var_name, var_value))
+    if (!SetEnvironmentVariableA(name, value))
         return -3;
 #else
     // UNIX implementation using setenv
-    if (setenv(var_name, var_value, 1) != 0)
+    if (setenv(name, value, 1) != 0)
         return -3;
 
 #endif
@@ -98,11 +85,15 @@ i64_t os_set_var(lit_p name, u64_t nlen, lit_p value, u64_t vlen) {
 obj_p ray_os_get_var(obj_p x) {
     c8_t buf[1024];
     i64_t res;
+    obj_p s;
 
     if (x->type != TYPE_C8)
         THROW(ERR_TYPE, "os-get-var: expected string");
 
-    res = os_get_var(AS_C8(x), buf, sizeof(buf));
+    s = cstring_from_str(AS_C8(x), x->len);
+    res = os_get_var(AS_C8(s), buf, sizeof(buf));
+    drop_obj(s);
+
     if (res == -1)
         THROW(ERR_OS, "os-get-var: failed to get environment variable");
 
@@ -111,11 +102,17 @@ obj_p ray_os_get_var(obj_p x) {
 
 obj_p ray_os_set_var(obj_p x, obj_p y) {
     i64_t res;
+    obj_p sx, sy;
 
     if (x->type != TYPE_C8 || y->type != TYPE_C8)
         THROW(ERR_TYPE, "os-set-var: expected strings");
 
-    res = os_set_var(AS_C8(x), x->len, AS_C8(y), y->len);
+    sx = cstring_from_str(AS_C8(x), x->len);
+    sy = cstring_from_str(AS_C8(y), y->len);
+    res = os_set_var(AS_C8(sx), AS_C8(sy));
+    drop_obj(sx);
+    drop_obj(sy);
+
     if (res == -1)
         THROW(ERR_OS, "os-set-var: invalid arguments");
     if (res == -2)
