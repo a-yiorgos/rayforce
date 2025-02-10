@@ -217,7 +217,7 @@ raw_p executor_run(raw_p arg) {
 }
 
 pool_p pool_create(u64_t executors_count) {
-    u64_t i;
+    u64_t i, rounds = 0;
     pool_p pool;
 
     pool = (pool_p)heap_mmap(sizeof(struct pool_t) + (sizeof(executor_t) * executors_count));
@@ -249,7 +249,7 @@ pool_p pool_create(u64_t executors_count) {
     // Now ensure that all threads are running
     for (i = 0; i < executors_count; i++) {
         while (__atomic_load_n(&pool->executors[i].state, __ATOMIC_RELAXED) != RUN_STATE_RUNNING)
-            ;
+            backoff_spin(&rounds);
     }
 
     return pool;
