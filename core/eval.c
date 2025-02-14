@@ -578,35 +578,31 @@ obj_p try_obj(obj_p obj, obj_p ctch) {
     ctx_pop();
 
     if (IS_ERROR(res) || sig) {
-        if (fn != NULL_OBJ) {
-            switch (fn->type) {
-                case TYPE_LAMBDA:
-                call:
-                    if (AS_LAMBDA(fn)->args->len != 1) {
-                        drop_obj(res);
-                        THROW(ERR_LENGTH, "catch: expected 1 argument, got %llu", AS_LAMBDA(fn)->args->len);
-                    }
-                    if (IS_ERROR(res)) {
-                        stack_push(clone_obj(AS_ERROR(res)->msg));
-                        drop_obj(res);
-                    } else
-                        stack_push(res);
-
-                    return call(fn, 1);
-                case -TYPE_SYMBOL:
-                    pfn = resolve(ctch->i64);
-                    if (pfn != NULL && (*pfn)->type == TYPE_LAMBDA) {
-                        fn = *pfn;
-                        goto call;
-                    }
-                    // Fallthrough
-                default:
+        switch (fn->type) {
+            case TYPE_LAMBDA:
+            call:
+                if (AS_LAMBDA(fn)->args->len != 1) {
                     drop_obj(res);
-                    return clone_obj(fn);
-            }
-        } else {
-            drop_obj(res);
-            return NULL_OBJ;
+                    THROW(ERR_LENGTH, "catch: expected 1 argument, got %llu", AS_LAMBDA(fn)->args->len);
+                }
+                if (IS_ERROR(res)) {
+                    stack_push(clone_obj(AS_ERROR(res)->msg));
+                    drop_obj(res);
+                } else
+                    stack_push(res);
+
+                return call(fn, 1);
+            case -TYPE_SYMBOL:
+                pfn = resolve(fn->i64);
+                if (pfn != NULL && (*pfn)->type == TYPE_LAMBDA) {
+                    fn = *pfn;
+                    goto call;
+                }
+                drop_obj(res);
+                return eval(*pfn);
+            default:
+                drop_obj(res);
+                return eval(fn);
         }
     }
 
