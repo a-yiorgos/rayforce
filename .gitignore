@@ -3,6 +3,8 @@
 .vscode/
 *.a
 *.gch
+*.rfl
+docs
 rayforce
 rayforce.test
 rayforce.S
