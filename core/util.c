@@ -137,6 +137,6 @@ b8_t is_valid(obj_p obj) {
            || obj->type == TYPE_PARTEDLIST      || obj->type == TYPE_PARTEDTIMESTAMP 
            || obj->type == TYPE_MAPCOMMON       || obj->type == TYPE_PARTEDENUM      
            || obj->type == TYPE_ERROR
-           || obj->type == TYPE_NULL;
+           || obj->type == TYPE_TOKEN           || obj->type == TYPE_NULL;
     // clang-format on
 }

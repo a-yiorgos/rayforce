@@ -113,7 +113,9 @@ i8_t shift(parser_t *parser, i32_t num) {
 }
 
 obj_p to_token(parser_t *parser) {
-    obj_p tok = c8(*parser->current);
+    obj_p tok;
+
+    tok = c8(*parser->current);
     tok->type = TYPE_TOKEN;
     nfo_insert(parser->nfo, (i64_t)tok, span_start(parser));
 

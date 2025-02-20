@@ -666,10 +666,17 @@ obj_p ray_read_csv(obj_p *x, i64_t n) {
 }
 
 obj_p ray_parse(obj_p x) {
+    obj_p s, res;
+
     if (!x || x->type != TYPE_C8)
         THROW(ERR_TYPE, "parse: expected string");
 
-    return ray_parse_str(0, x, NULL);
+    s = cstring_from_obj(x);
+
+    res = ray_parse_str(0, s, NULL_OBJ);
+    drop_obj(s);
+
+    return res;
 }
 
 obj_p ray_eval(obj_p x) {
