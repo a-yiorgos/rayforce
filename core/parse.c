@@ -529,23 +529,82 @@ obj_p parse_char(parser_t *parser) {
     span_t span = span_start(parser);
     str_p pos = parser->current + 1;  // skip '''
     obj_p res = NULL_OBJ;
-    i64_t id;
+    i64_t i, id;
     c8_t ch;
 
-    // Check for empty char literal ''
-    if (*pos == '\'') {
-        res = c8(0);
-        shift(parser, 2);  // Skip both quotes
+    // Handle empty quoted symbol (single quote)
+    if (at_eof(*pos) || at_term(*pos)) {
+        // Return a null symbol (0Ns)
+        shift(parser, 1);  // Skip the opening quote
         span_extend(parser, &span);
+        res = symboli64(NULL_I64);  // Create a null symbol (NULL_I64) instead of 0
+        res->attrs = ATTR_QUOTED;   // Make sure it's marked as quoted
         nfo_insert(parser->nfo, (i64_t)res, span);
         return res;
     }
 
-    // Check for regular char literal 'x'
-    if (*(pos + 1) == '\'') {
+    ch = '\0';
+
+    // Check for escape sequences
+    if (*pos == '\\') {
+        pos++;  // Skip backslash
+        switch (*pos) {
+            case 'n':
+                ch = '\n';
+                pos++;
+                break;
+            case 'r':
+                ch = '\r';
+                pos++;
+                break;
+            case 't':
+                ch = '\t';
+                pos++;
+                break;
+            case '\\':
+                ch = '\\';
+                pos++;
+                break;
+            case '\'':
+                ch = '\'';
+                pos++;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+                // Parse octal escape sequence \xxx
+                ch = *pos - '0';
+                pos++;
+                for (i = 0; i < 2; i++) {
+                    if (at_eof(*pos) || !is_digit(*pos) || *pos > '7' || *pos < '0') {
+                        span.end_column += (pos - parser->current);
+                        nfo_insert(parser->nfo, parser->count, span);
+                        return parse_error(parser, parser->count++, str_fmt(-1, "Invalid octal escape sequence"));
+                    }
+                    ch = (ch << 3) | (*pos - '0');
+                    pos++;
+                }
+                break;
+            default:
+                span.end_column += (pos - parser->current);
+                nfo_insert(parser->nfo, parser->count, span);
+                return parse_error(parser, parser->count++, str_fmt(-1, "Invalid escape sequence"));
+        }
+    } else {
         ch = *pos;
+        pos++;
+    }
+
+    // Check if the character is followed by a closing quote
+    if (*pos == '\'') {
+        pos++;
         res = c8(ch);
-        shift(parser, 3);  // Skip both quotes and the character
+        shift(parser, pos - parser->current);  // Skip quotes, backslash, and escape sequence
         span_extend(parser, &span);
         nfo_insert(parser->nfo, (i64_t)res, span);
         return res;
@@ -554,6 +613,12 @@ obj_p parse_char(parser_t *parser) {
     // If not a char literal, parse as quoted symbol
     while (is_alphanum(*pos) || is_op(*pos))
         pos++;
+
+    if (*pos == '\'') {
+        span.end_column += (pos - parser->current);
+        nfo_insert(parser->nfo, parser->count, span);
+        return parse_error(parser, parser->count++, str_fmt(-1, "Char literal is too long"));
+    }
 
     id = symbols_intern(parser->current + 1, pos - (parser->current + 1));
     res = i64(id);
@@ -569,9 +634,9 @@ obj_p parse_char(parser_t *parser) {
 obj_p parse_string(parser_t *parser) {
     span_t span = span_start(parser);
     str_p pos = parser->current + 1;  // skip '"'
-    i32_t len = 0;
+    i32_t i, len = 0;
     obj_p str, err;
-    c8_t lf = '\n', cr = '\r', tb = '\t', bs = '\\';
+    c8_t lf = '\n', cr = '\r', tb = '\t', bs = '\\', octal_val;
 
     str = C8(0);
 
@@ -596,6 +661,28 @@ obj_p parse_string(parser_t *parser) {
                 case 't':
                     push_raw(&str, &tb);
                     pos++;
+                    break;
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                    // Parse octal escape sequence \xxx
+                    for (i = 0; i < 3; i++) {
+                        if (at_eof(*pos) || !is_digit(*pos) || *pos > '7' || *pos < '0') {
+                            drop_obj(str);
+                            span.end_column += (pos - parser->current);
+                            nfo_insert(parser->nfo, parser->count, span);
+                            return parse_error(parser, parser->count++, str_fmt(-1, "Invalid octal escape sequence"));
+                        }
+
+                        octal_val = (octal_val << 3) | (*pos - '0');
+                        pos++;
+                    }
+                    push_raw(&str, &octal_val);
                     break;
                 default:
                     drop_obj(str);

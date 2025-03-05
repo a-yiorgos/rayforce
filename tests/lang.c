@@ -151,3 +151,63 @@ test_result_t test_lang_serde() {
 
     PASS();
 }
+
+test_result_t test_lang_literals() {
+    // Test basic character literals
+    TEST_ASSERT_EQ("'a'", "'a'");
+    TEST_ASSERT_EQ("'z'", "'z'");
+    TEST_ASSERT_EQ("'0'", "'0'");
+    TEST_ASSERT_EQ("'9'", "'9'");
+
+    // Test standard escape sequences in character literals
+    TEST_ASSERT_EQ("'\\n'", "'\\n'");
+    TEST_ASSERT_EQ("'\\r'", "'\\r'");
+    TEST_ASSERT_EQ("'\\t'", "'\\t'");
+    TEST_ASSERT_EQ("'\\\\'", "'\\\\'");
+    TEST_ASSERT_EQ("'\\''", "'\\''");
+
+    // Test octal escape sequences in character literals
+    TEST_ASSERT_EQ("'\\001'", "'\\001'");  // SOH (Start of Heading)
+    TEST_ASSERT_EQ("'\\002'", "'\\002'");  // STX (Start of Text)
+    TEST_ASSERT_EQ("'\\003'", "'\\003'");  // ETX (End of Text)
+    TEST_ASSERT_EQ("'\\007'", "'\\007'");  // BEL (Bell)
+    TEST_ASSERT_EQ("'\\010'", "'\\010'");  // BS (Backspace)
+    TEST_ASSERT_EQ("'\\011'", "'\\011'");  // HT (Horizontal Tab) - same as '\t'
+    TEST_ASSERT_EQ("'\\012'", "'\\012'");  // LF (Line Feed) - same as '\n'
+    TEST_ASSERT_EQ("'\\015'", "'\\015'");  // CR (Carriage Return) - same as '\r'
+    TEST_ASSERT_EQ("'\\032'", "'\\032'");  // SUB (Substitute)
+
+    // Test empty quoted symbol (single quote)
+    TEST_ASSERT_EQ("'", "0Ns");  // Empty quoted symbol should be parsed as a null symbol
+
+    // Test basic string literals
+    TEST_ASSERT_EQ("\"Hello, World!\"", "\"Hello, World!\"");
+    TEST_ASSERT_EQ("\"\"", "\"\"");  // Empty string
+    TEST_ASSERT_EQ("\"123\"", "\"123\"");
+
+    // Test standard escape sequences in string literals
+    TEST_ASSERT_EQ("\"Hello\\nWorld\"", "\"Hello\\nWorld\"");
+    TEST_ASSERT_EQ("\"Hello\\rWorld\"", "\"Hello\\rWorld\"");
+    TEST_ASSERT_EQ("\"Hello\\tWorld\"", "\"Hello\\tWorld\"");
+    TEST_ASSERT_EQ("\"Hello\\\\World\"", "\"Hello\\\\World\"");
+    TEST_ASSERT_EQ("\"Hello\\\"World\"", "\"Hello\\\"World\"");
+
+    // Test octal escape sequences in string literals
+    TEST_ASSERT_EQ("\"Hello\\001World\"", "\"Hello\\001World\"");  // SOH
+    TEST_ASSERT_EQ("\"Hello\\002World\"", "\"Hello\\002World\"");  // STX
+    TEST_ASSERT_EQ("\"Hello\\003World\"", "\"Hello\\003World\"");  // ETX
+    TEST_ASSERT_EQ("\"Hello\\007World\"", "\"Hello\\007World\"");  // BEL
+    TEST_ASSERT_EQ("\"Hello\\010World\"", "\"Hello\\010World\"");  // BS
+    TEST_ASSERT_EQ("\"Hello\\011World\"", "\"Hello\\011World\"");  // HT
+    TEST_ASSERT_EQ("\"Hello\\012World\"", "\"Hello\\012World\"");  // LF
+    TEST_ASSERT_EQ("\"Hello\\015World\"", "\"Hello\\015World\"");  // CR
+
+    // Test FIX protocol message with octal escapes
+    TEST_ASSERT_EQ("\"8=FIX.4.2\\0019=006035=A49=CL156=TR34=152=20\"",
+                   "\"8=FIX.4.2\\0019=006035=A49=CL156=TR34=152=20\"");
+
+    // Test mixed escape sequences
+    TEST_ASSERT_EQ("\"Mixed\\001\\n\\t\\015Escapes\"", "\"Mixed\\001\\n\\t\\015Escapes\"");
+
+    PASS();
+}

@@ -313,6 +313,10 @@ i64_t c8_fmt_into(obj_p *dst, b8_t full, c8_t val) {
         case '\0':
             return full ? str_fmt_into(dst, 3, "''") : str_fmt_into(dst, 2, " ");
         default:
+            // Handle control characters (ASCII 1-31) with \xxx notation
+            if (val > 0 && val < 32)
+                return full ? str_fmt_into(dst, 8, "'\\%03o'", (u8_t)val) : str_fmt_into(dst, 6, "\\%03o", (u8_t)val);
+
             return full ? str_fmt_into(dst, 4, "'%c'", val) : str_fmt_into(dst, 2, "%c", val);
     }
 }
@@ -414,6 +418,7 @@ i64_t string_fmt_into(obj_p *dst, i64_t limit, b8_t full, obj_p obj) {
     i64_t n;
     u64_t i, l;
     str_p s;
+
     n = 0;
 
     if (full)
@@ -957,7 +962,10 @@ i64_t table_fmt_into(obj_p *dst, i64_t indent, b8_t full, obj_p obj) {
             s = NULL_OBJ;
             m = raw_fmt_into(&s, 0, 38, column, j);
             formatted_columns[i][j] = s;
+            DEBUG_PRINT("M: %lld", m);
+            DEBUG_PRINT("L: %lld", l);
             MAXN(l, m);
+            DEBUG_PRINT("L: %lld", l);
         }
 
         // Traverse the rest of the column
