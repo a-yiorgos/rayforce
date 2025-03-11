@@ -124,9 +124,7 @@ obj_p call(obj_p obj, u64_t arity) {
     ctx->sp = sp;
 
     // jump to eval
-    setjmp(ctx->jmp);
-
-    res = eval(lambda->body);
+    res = (setjmp(ctx->jmp) == 0) ? eval(lambda->body) : stack_pop();
 
     // pop context
     ctx_pop();
