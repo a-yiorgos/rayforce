@@ -124,15 +124,16 @@ extern struct obj_t __NULL_OBJECT;
 #define MODI32(x, y) (((y) == 0 || (x) == NULL_I32 || (y) == NULL_I32) ? NULL_I32 : ((x) % (y)))
 #define MODI64(x, y) (((y) == 0 || (x) == NULL_I64 || (y) == NULL_I64) ? NULL_I64 : ((x) % (y)))
 #define MODF64(x, y) ((x) - (y) * i64_to_f64(f64_to_i64((x) / (y))))
-#define MAXI32(x, y) ((x) > (y) ? (x) : (y))
-#define MAXI64(x, y) ((x) > (y) ? (x) : (y))
-#define MAXF64(x, y) ((x) > (y) ? (x) : (y))
-#define MINI32(x, y) ((x) < (y) ? (x) : (y))
-#define MINI64(x, y) (((y) == NULL_I64) || (((x) != NULL_I64) && ((x) < (y))) ? (x) : (y))
-#define MINF64(x, y) ((x) < (y) ? (x) : (y))
+#define MAXI32(x, y) (((x) == NULL_I32) ? (y) : ((y) == NULL_I32) ? (x) : ((x) > (y) ? (x) : (y)))
+#define MAXI64(x, y) (((x) == NULL_I64) ? (y) : ((y) == NULL_I64) ? (x) : ((x) > (y) ? (x) : (y)))
+#define MAXU64(x, y) ((x) > (y) ? (x) : (y))
+#define MAXF64(x, y) (ops_is_nan((x)) ? (y) : ops_is_nan((y)) ? (x) : ((x) > (y) ? (x) : (y)))
+#define MINI32(x, y) (((x) == NULL_I32) ? (y) : ((y) == NULL_I32) ? (x) : ((x) < (y) ? (x) : (y)))
+#define MINI64(x, y) (((x) == NULL_I64) ? (y) : ((y) == NULL_I64) ? (x) : ((x) < (y) ? (x) : (y)))
+#define MINF64(x, y) (ops_is_nan((x)) ? (y) : ops_is_nan((y)) ? (x) : ((x) < (y) ? (x) : (y)))
 #define ROTI32(x, y) (((x) << (y)) | ((x) >> (32 - (y))))
 #define ROTI64(x, y) (((x) << (y)) | ((x) >> (64 - (y))))
-#define ROUNDF64(x) ((x) >= 0.0 ? (i64_t)((x) + 0.5) : (i64_t)((x) - 0.5))
+#define ROUNDF64(x) ((ops_is_nan((x))) ? NULL_F64 : ((x) >= 0.0 ? (i64_t)((x) + 0.5) : (i64_t)((x) - 0.5)))
 #define FLOORF64(x) ((ops_is_nan((x))) ? NULL_F64 : (((x) < 0.0 && (i64_t)(x) != (x)) ? (i64_t)(x) - 1.0 : (i64_t)(x)))
 #define CEILF64(x) ((ops_is_nan((x))) ? NULL_F64 : (-FLOORF64(-(x))))
 #define XBARI32(x, y) \
@@ -174,6 +175,7 @@ static inline i64_t i32_to_i64(i32_t x) { return (x == NULL_I32) ? NULL_I64 : (i
 static inline f64_t i32_to_f64(i32_t x) { return (x == NULL_I32) ? NULL_F64 : (f64_t)x; }
 static inline i32_t i32_to_date(i32_t x) { return x; }
 static inline i32_t i32_to_time(i32_t x) { return x; }
+static inline i32_t i32_to_adate(i32_t x) { return x; }
 static inline i32_t i32_to_atime(i32_t x) { return x; }
 static inline i64_t i32_to_timestamp(i32_t x) { return (x == NULL_I32) ? NULL_I64 : (i64_t)x; }
 static inline i32_t i64_to_i32(i64_t x) { return (x == NULL_I64) ? NULL_I32 : (i32_t)x; }

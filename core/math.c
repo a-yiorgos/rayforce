@@ -1148,11 +1148,25 @@ obj_p ray_sum_partial(obj_p x, u64_t len, u64_t offset) {
 
 obj_p ray_min_partial(obj_p x, u64_t len, u64_t offset) {
     switch (x->type) {
+        case -TYPE_I32:
+        case -TYPE_I64:
+        case -TYPE_F64:
+        case -TYPE_DATE:
+        case -TYPE_TIME:
+        case -TYPE_TIMESTAMP:
+            return clone_obj(x);
+        case TYPE_I32:
+            return __UNOP_FOLD(x, i32, i32, MINI32, len, offset, NULL_I32);
         case TYPE_I64:
-        case TYPE_TIMESTAMP:
-            return __UNOP_FOLD(x, i64, i64, MINI64, len, offset, XFIRST(x, i64));
+            return __UNOP_FOLD(x, i64, i64, MINI64, len, offset, NULL_I64);
         case TYPE_F64:
-            return __UNOP_FOLD(x, f64, f64, MINF64, len, offset, XFIRST(x, f64));
+            return __UNOP_FOLD(x, f64, f64, MINF64, len, offset, NULL_F64);
+        case TYPE_DATE:
+            return __UNOP_FOLD(x, i32, adate, MINI32, len, offset, NULL_I32);
+        case TYPE_TIME:
+            return __UNOP_FOLD(x, i32, atime, MINI32, len, offset, NULL_I32);
+        case TYPE_TIMESTAMP:
+            return __UNOP_FOLD(x, i64, timestamp, MINI64, len, offset, NULL_I64);
         case TYPE_MAPGROUP:
             return aggr_min(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
@@ -1162,11 +1176,25 @@ obj_p ray_min_partial(obj_p x, u64_t len, u64_t offset) {
 
 obj_p ray_max_partial(obj_p x, u64_t len, u64_t offset) {
     switch (x->type) {
+        case -TYPE_I32:
+        case -TYPE_I64:
+        case -TYPE_F64:
+        case -TYPE_DATE:
+        case -TYPE_TIME:
+        case -TYPE_TIMESTAMP:
+            return clone_obj(x);
+        case TYPE_I32:
+            return __UNOP_FOLD(x, i32, i32, MAXI32, len, offset, NULL_I32);
         case TYPE_I64:
-        case TYPE_TIMESTAMP:
-            return __UNOP_FOLD(x, i64, i64, MAXI64, len, offset, XFIRST(x, i64));
+            return __UNOP_FOLD(x, i64, i64, MAXI64, len, offset, NULL_I64);
         case TYPE_F64:
-            return __UNOP_FOLD(x, f64, f64, MAXF64, len, offset, XFIRST(x, f64));
+            return __UNOP_FOLD(x, f64, f64, MAXF64, len, offset, NULL_F64);
+        case TYPE_DATE:
+            return __UNOP_FOLD(x, i32, adate, MAXI32, len, offset, NULL_I32);
+        case TYPE_TIME:
+            return __UNOP_FOLD(x, i32, atime, MAXI32, len, offset, NULL_I32);
+        case TYPE_TIMESTAMP:
+            return __UNOP_FOLD(x, i64, timestamp, MAXI64, len, offset, NULL_I64);
         case TYPE_MAPGROUP:
             return aggr_max(AS_LIST(x)[0], AS_LIST(x)[1]);
         default:
@@ -1176,6 +1204,19 @@ obj_p ray_max_partial(obj_p x, u64_t len, u64_t offset) {
 
 obj_p ray_round_partial(obj_p x, u64_t len, u64_t offset, obj_p out) {
     switch (x->type) {
+        case -TYPE_I32:
+        case -TYPE_I64:
+        case -TYPE_DATE:
+        case -TYPE_TIME:
+        case -TYPE_TIMESTAMP:
+        case TYPE_I32:
+        case TYPE_I64:
+        case TYPE_DATE:
+        case TYPE_TIME:
+        case TYPE_TIMESTAMP:
+            return clone_obj(x);
+        case -TYPE_F64:
+            return f64(ROUNDF64(x->f64));
         case TYPE_F64:
             return __UNOP_MAP(x, f64, f64, ROUNDF64, len, offset, out);
         // case TYPE_MAPGROUP:
@@ -1187,6 +1228,17 @@ obj_p ray_round_partial(obj_p x, u64_t len, u64_t offset, obj_p out) {
 
 obj_p ray_floor_partial(obj_p x, u64_t len, u64_t offset, obj_p out) {
     switch (x->type) {
+        case -TYPE_I32:
+        case -TYPE_I64:
+        case -TYPE_DATE:
+        case -TYPE_TIME:
+        case -TYPE_TIMESTAMP:
+        case TYPE_I32:
+        case TYPE_I64:
+        case TYPE_DATE:
+        case TYPE_TIME:
+        case TYPE_TIMESTAMP:
+            return clone_obj(x);
         case -TYPE_F64:
             return f64(FLOORF64(x->f64));
         case TYPE_F64:
@@ -1200,6 +1252,17 @@ obj_p ray_floor_partial(obj_p x, u64_t len, u64_t offset, obj_p out) {
 
 obj_p ray_ceil_partial(obj_p x, u64_t len, u64_t offset, obj_p out) {
     switch (x->type) {
+        case -TYPE_I32:
+        case -TYPE_I64:
+        case -TYPE_DATE:
+        case -TYPE_TIME:
+        case -TYPE_TIMESTAMP:
+        case TYPE_I32:
+        case TYPE_I64:
+        case TYPE_DATE:
+        case TYPE_TIME:
+        case TYPE_TIMESTAMP:
+            return clone_obj(x);
         case -TYPE_F64:
             return f64(CEILF64(x->f64));
         case TYPE_F64:
@@ -1267,47 +1330,6 @@ obj_p ray_dev(obj_p x) {
 
         default:
             THROW(ERR_TYPE, "dev: unsupported type: '%s", type_name(x->type));
-    }
-}
-
-obj_p ray_med(obj_p x) {
-    u64_t l;
-    i64_t *xisort;
-    f64_t *xfsort, med;
-    obj_p sort;
-
-    switch (x->type) {
-        case TYPE_I64:
-            l = x->len;
-
-            if (l == 0)
-                return null(TYPE_F64);
-
-            sort = ray_asc(x);
-            xisort = AS_I64(sort);
-            med = (l % 2 == 0) ? (xisort[l / 2 - 1] + xisort[l / 2]) / 2.0 : xisort[l / 2];
-            drop_obj(sort);
-
-            return f64(med);
-
-        case TYPE_F64:
-            l = x->len;
-
-            if (l == 0)
-                return null(TYPE_F64);
-
-            sort = ray_asc(x);
-            xfsort = AS_F64(sort);
-            med = (l % 2 == 0) ? (xfsort[l / 2 - 1] + xfsort[l / 2]) / 2.0 : xfsort[l / 2];
-            drop_obj(sort);
-
-            return f64(med);
-
-        case TYPE_MAPGROUP:
-            return aggr_med(AS_LIST(x)[0], AS_LIST(x)[1]);
-
-        default:
-            THROW(ERR_TYPE, "med: unsupported type: '%s", type_name(x->type));
     }
 }
 
@@ -1512,5 +1534,54 @@ obj_p ray_avg(obj_p x) {
 
         default:
             THROW(ERR_TYPE, "avg: unsupported type: '%s", type_name(x->type));
+    }
+}
+
+obj_p ray_med(obj_p x) {
+    i64_t l = ray_cnt(x)->i64;
+    if (l == 0)
+        return f64(NULL_F64);
+
+    i32_t *xi32sort;
+    i64_t *xisort;
+    f64_t *xfsort, med;
+    obj_p sort;
+
+    switch (x->type) {
+        case -TYPE_I32:
+            return f64(i32_to_f64(x->i32));
+        case -TYPE_I64:
+            return f64(i64_to_f64(x->i64));
+        case -TYPE_F64:
+            return clone_obj(x);
+        case TYPE_I32:
+            sort = ray_asc(x);
+            xi32sort = AS_I32(sort);
+            med = (f64_t)((l % 2 == 0) ? (xi32sort[l / 2 - 1] + xi32sort[l / 2]) / 2.0 : xi32sort[l / 2]);
+            drop_obj(sort);
+
+            return f64(med);
+
+        case TYPE_I64:
+            sort = ray_asc(x);
+            xisort = AS_I64(sort);
+            med = (f64_t)((l % 2 == 0) ? (xisort[l / 2 - 1] + xisort[l / 2]) / 2.0 : xisort[l / 2]);
+            drop_obj(sort);
+
+            return f64(med);
+
+        case TYPE_F64:
+            sort = ray_asc(x);
+            xfsort = AS_F64(sort);
+            med = (l % 2 == 0) ? (xfsort[l / 2 - 1] + xfsort[l / 2]) / 2.0 : xfsort[l / 2];
+            drop_obj(sort);
+
+            return f64(med);
+
+        case TYPE_MAPGROUP:
+            return aggr_med(AS_LIST(x)[0], AS_LIST(x)[1]);
+
+        default:
+            THROW(ERR_TYPE, "med: unsupported type: '%s", type_name(x->type));
     }
 }

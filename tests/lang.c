@@ -1683,6 +1683,46 @@ test_result_t test_lang_math() {
     TEST_ASSERT_EQ("(avg [0Ni])", "0Nf");
     TEST_ASSERT_EQ("(avg 0Nf)", "0Nf");
 
+    TEST_ASSERT_EQ("(min 0Nf)", "0Nf");
+    TEST_ASSERT_EQ("(min 5i)", "5i");
+    TEST_ASSERT_EQ("(min -1.7)", "-1.7");
+    TEST_ASSERT_EQ("(min -24)", "-24");
+    TEST_ASSERT_EQ("(min 2020.03.05)", "2020.03.05");
+    TEST_ASSERT_EQ("(min -00:00:05.000)", "-00:00:05.000");
+    TEST_ASSERT_EQ("(min 1999.03.13D11:45:43.848458167)", "1999.03.13D11:45:43.848458167");
+    TEST_ASSERT_EQ("(min [1i 2i -3i])", "-3i");
+    TEST_ASSERT_EQ("(min [0Ni -24i 12i 6i])", "-24i");
+    TEST_ASSERT_EQ("(min [1.0 2.0 3.0 0Nf])", "1.0");
+    TEST_ASSERT_EQ("(min [-24 12 6 0Nl])", "-24");
+    TEST_ASSERT_EQ("(min [0Ni])", "0Ni");
+    TEST_ASSERT_EQ("(min [2020.03.05])", "2020.03.05");
+    TEST_ASSERT_EQ("(min [-00:00:05.000])", "-00:00:05.000");
+    TEST_ASSERT_EQ("(min [1999.03.13D11:45:43.848458167])", "1999.03.13D11:45:43.848458167");
+    TEST_ASSERT_EQ("(min [])", "0Nl");
+
+    TEST_ASSERT_EQ("(max 0Nt)", "0Nt");
+    TEST_ASSERT_EQ("(max 5i)", "5i");
+    TEST_ASSERT_EQ("(max -24)", "-24");
+    TEST_ASSERT_EQ("(max -1.7)", "-1.7");
+    TEST_ASSERT_EQ("(max [-24 12 6])", "12");
+    TEST_ASSERT_EQ("(max 2020.03.05)", "2020.03.05");
+    TEST_ASSERT_EQ("(max -00:00:05.000)", "-00:00:05.000");
+    TEST_ASSERT_EQ("(max 1999.03.13D11:45:43.848458167)", "1999.03.13D11:45:43.848458167");
+    TEST_ASSERT_EQ("(max [1i 2i -3i])", "2i");
+    TEST_ASSERT_EQ("(max [0Ni -24i 12i 6i])", "12i");
+    TEST_ASSERT_EQ("(max [1.0 2.0 3.0 0Nf])", "3.0");
+    TEST_ASSERT_EQ("(max [-24 12 6 0Nl])", "12");
+    TEST_ASSERT_EQ("(max [0Ni])", "0Ni");
+    TEST_ASSERT_EQ("(max [2020.03.05])", "2020.03.05");
+    TEST_ASSERT_EQ("(max [-00:00:05.000])", "-00:00:05.000");
+    TEST_ASSERT_EQ("(max [1999.03.13D11:45:43.848458167])", "1999.03.13D11:45:43.848458167");
+    TEST_ASSERT_EQ("(max [])", "0Nl");
+
+    TEST_ASSERT_EQ("(round [])", "[]");
+    TEST_ASSERT_EQ("(round -0.5)", "-1.0");
+    TEST_ASSERT_EQ("(round [-1.5 -1.1 -0.0 0Nf 0.0 1.1 1.5])", "[-2.0 -1.0 0.0 0Nf 0.0 1.0 2.0]");
+    TEST_ASSERT_EQ("(round 0Nf)", "0Nf");
+
     TEST_ASSERT_EQ("(floor [1.1 2.5 -1.1])", "[1.0 2.0 -2.0]");
     TEST_ASSERT_EQ("(floor -0.0)", "0.0");
     TEST_ASSERT_EQ("(floor [-1.0 3.0])", "[-1.0 3.0]");
@@ -1702,6 +1742,17 @@ test_result_t test_lang_math() {
     TEST_ASSERT_EQ("(ceil 1.5)", "2.0");
     TEST_ASSERT_EQ("(ceil -1.5)", "-1.0");
     TEST_ASSERT_EQ("(ceil 0Nf)", "0Nf");
+
+    TEST_ASSERT_EQ("(med 2i)", "2.0");
+    TEST_ASSERT_EQ("(med -5)", "-5.0");
+    TEST_ASSERT_EQ("(med 0Nf)", "0Nf");
+    TEST_ASSERT_EQ("(med [])", "0Nf");
+    // TEST_ASSERT_EQ("(med [1i 2i 3i])", "2.0");
+    TEST_ASSERT_EQ("(med [0Nl 3 0Nl 1 2])", "2.0");
+    TEST_ASSERT_EQ("(med [0Nl 1 0Nl 2 3])", "2.0");
+
+    // TEST_ASSERT_EQ("(med [0Ni 0Ni])", "0Nf");
+    TEST_ASSERT_EQ("(med [1.0 2.0 3.0 4.0 0Nf 0Nf])", "2.5");
 
     PASS();
 }
