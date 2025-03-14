@@ -209,6 +209,7 @@ nil_t poll_call_usr_on_open(poll_p poll, i64_t id) {
         poll_set_usr_fd(id);
         stack_push(i64(id));
         v = call(*clbfn, 1);
+        drop_obj(stack_pop());
         poll_set_usr_fd(0);
         if (IS_ERROR(v)) {
             f = obj_fmt(v, B8_FALSE);
@@ -235,6 +236,7 @@ nil_t poll_call_usr_on_close(poll_p poll, i64_t id) {
         poll_set_usr_fd(id);
         stack_push(i64(id));
         v = call(*clbfn, 1);
+        drop_obj(stack_pop());
         poll_set_usr_fd(0);
         if (IS_ERROR(v)) {
             f = obj_fmt(v, B8_FALSE);
@@ -457,7 +459,11 @@ i64_t poll_run(poll_p poll) {
     term_prompt(poll->term);
 
     while (poll->code == NULL_I64) {
+        timeout = timer_next_timeout(poll->timers);
         nfds = epoll_wait(poll->poll_fd, events, MAX_EVENTS, timeout);
+        if (nfds == -1 && errno == EINTR)
+            continue;
+
         if (nfds == -1)
             return 1;
 
@@ -529,8 +535,6 @@ i64_t poll_run(poll_p poll) {
                 }
             }
         }
-
-        timeout = timer_next_timeout(poll->timers);
     }
 
     return poll->code;

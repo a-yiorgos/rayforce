@@ -40,58 +40,55 @@
 #include "items.h"
 #include "order.h"
 #include "cmp.h"
+#include "iter.h"
 
-obj_p vary_call_atomic(vary_f f, obj_p *x, u64_t n) {
-    u64_t i, j, l;
-    obj_p v, res;
+obj_p vary_call(obj_p f, obj_p *x, u64_t n) {
+    vary_f fn;
 
-    if (n == 0)
-        return NULL_OBJ;
-
-    l = ops_rank(x, n);
-    if (l == 0xfffffffffffffffful)
-        THROW(ERR_LENGTH, "vary: arguments have different lengths");
-
-    for (j = 0; j < n; j++)
-        stack_push(at_idx(x[j], 0));
-
-    v = f(x + n, n);
-
-    if (IS_ERROR(v)) {
-        res = v;
+    if ((f->attrs & FN_ATOMIC) || (n && x[0]->type == TYPE_MAPGROUP))
+        return map_vary(f, x, n);
+    else {
+        fn = (vary_f)f->i64;
+        return fn(x, n);
     }
-
-    res = v->type < 0 ? vector(v->type, l) : LIST(l);
-
-    ins_obj(&res, 0, v);
-
-    for (i = 1; i < l; i++) {
-        for (j = 0; j < n; j++)
-            stack_push(at_idx(x[j], i));
-
-        v = f(x + n, n);
-
-        // cleanup stack
-        for (j = 0; j < n; j++)
-            drop_obj(stack_pop());
-
-        if (IS_ERROR(v)) {
-            res->len = i;
-            drop_obj(res);
-            return v;
-        }
-
-        ins_obj(&res, i, v);
-    }
-
-    return res;
 }
 
-obj_p vary_call(u8_t attrs, vary_f f, obj_p *x, u64_t n) {
-    if ((attrs & FN_ATOMIC) || (attrs & FN_GROUP_MAP))
-        return vary_call_atomic(f, x, n);
-    else
-        return f(x, n);
+obj_p ray_apply(obj_p *x, u64_t n) {
+    u64_t i;
+    obj_p f, res;
+
+    if (n < 2)
+        return null(0);
+
+    f = x[0];
+    x++;
+    n--;
+
+    switch (f->type) {
+        case TYPE_UNARY:
+            if (n != 1)
+                THROW(ERR_LENGTH, "'apply': unary call with wrong arguments count");
+            return unary_call(f, x[0]);
+        case TYPE_BINARY:
+            if (n != 2)
+                THROW(ERR_LENGTH, "'apply': binary call with wrong arguments count");
+            return binary_call(f, x[0], x[1]);
+        case TYPE_VARY:
+            return vary_call(f, x, n);
+        case TYPE_LAMBDA:
+            if (n != AS_LAMBDA(f)->args->len)
+                THROW(ERR_LENGTH, "'apply': lambda call with wrong arguments count");
+
+            for (i = 0; i < n; i++)
+                stack_push(clone_obj(x[i]));
+
+            res = call(f, n);
+            for (i = 0; i < n; i++)
+                drop_obj(stack_pop());
+            return res;
+        default:
+            THROW(ERR_TYPE, "'map': unsupported function type: '%s", type_name(f->type));
+    }
 }
 
 obj_p ray_do(obj_p *x, u64_t n) {
@@ -144,19 +141,6 @@ obj_p ray_args(obj_p *x, u64_t n) {
     UNUSED(x);
     UNUSED(n);
     return clone_obj(runtime_get()->args);
-}
-
-obj_p ray_exit(obj_p *x, u64_t n) {
-    i64_t code;
-
-    if (n == 0)
-        code = 0;
-    else
-        code = (x[0]->type == -TYPE_I64) ? x[0]->i64 : (i64_t)n;
-
-    poll_exit(runtime_get()->poll, code);
-
-    return NULL_OBJ;
 }
 
 obj_p ray_set_splayed(obj_p *x, u64_t n) {

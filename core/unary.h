@@ -27,7 +27,7 @@
 #include "rayforce.h"
 #include "ops.h"
 
-obj_p unary_call(u8_t attrs, unary_f f, obj_p x);
+obj_p unary_call(obj_p f, obj_p x);
 obj_p ray_get(obj_p x);
 obj_p ray_resolve(obj_p x);
 obj_p ray_time(obj_p x);

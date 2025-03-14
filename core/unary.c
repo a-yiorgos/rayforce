@@ -48,101 +48,16 @@
 #include "pool.h"
 #include "io.h"
 #include "fdmap.h"
+#include "iter.h"
 
-// Atomic unary functions (iterates through list of argument items down to atoms)
-obj_p unary_call_atomic(unary_f f, obj_p x) {
-    u64_t i, l, n;
-    obj_p res = NULL_OBJ, item = NULL_OBJ, a, *v, parts;
-    pool_p pool;
+obj_p unary_call(obj_p f, obj_p x) {
+    unary_f fn;
 
-    pool = pool_get();
+    if (f->attrs & FN_ATOMIC)
+        return map_unary(f, x);
 
-    switch (x->type) {
-        case TYPE_LIST:
-            l = ops_count(x);
-
-            if (l == 0)
-                return NULL_OBJ;
-
-            v = AS_LIST(x);
-            n = pool_split_by(pool, l, 0);
-
-            if (n > 1) {
-                pool_prepare(pool);
-
-                for (i = 0; i < l; i++)
-                    pool_add_task(pool, (raw_p)unary_call_atomic, 2, f, v[i]);
-
-                parts = pool_run(pool);
-
-                return parts;
-            }
-
-            item = unary_call_atomic(f, v[0]);
-
-            if (IS_ERROR(item))
-                return item;
-
-            res = item->type < 0 ? vector(item->type, l) : LIST(l);
-
-            ins_obj(&res, 0, item);
-
-            for (i = 1; i < l; i++) {
-                item = unary_call_atomic(f, v[i]);
-
-                if (IS_ERROR(item)) {
-                    res->len = i;
-                    drop_obj(res);
-                    return item;
-                }
-
-                ins_obj(&res, i, item);
-            }
-
-            return res;
-
-        case TYPE_MAPLIST:
-            l = ops_count(x);
-            if (l == 0)
-                return NULL_OBJ;
-
-            a = at_idx(x, 0);
-            item = unary_call_atomic(f, a);
-            drop_obj(a);
-
-            if (IS_ERROR(item))
-                return item;
-
-            res = item->type < 0 ? vector(item->type, l) : vector(TYPE_LIST, l);
-
-            ins_obj(&res, 0, item);
-
-            for (i = 1; i < l; i++) {
-                a = at_idx(x, i);
-                item = unary_call_atomic(f, a);
-                drop_obj(a);
-
-                if (IS_ERROR(item)) {
-                    res->len = i;
-                    drop_obj(res);
-                    return item;
-                }
-
-                ins_obj(&res, i, item);
-            }
-
-            return res;
-
-        default:
-            return f(x);
-    }
-}
-
-obj_p unary_call(u8_t attrs, unary_f f, obj_p x) {
-    if (attrs & FN_ATOMIC)
-        return unary_call_atomic(f, x);
-
-    return f(x);
+    fn = (unary_f)f->i64;
+    return fn(x);
 }
 
 obj_p ray_get(obj_p x) {

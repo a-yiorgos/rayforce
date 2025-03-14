@@ -258,7 +258,6 @@ obj_p ray_add_partial(obj_p x, obj_p y, u64_t len, u64_t offset, obj_p out) {
             return __BINOP_A_V(x, y, i32, i64, date, date, ADDI32, len, offset, out);
         case MTYPE2(-TYPE_DATE, TYPE_TIME):
             return __BINOP_A_V(x, y, date, time, timestamp, timestamp, ADDI64, len, offset, out);
-
         case MTYPE2(-TYPE_TIME, -TYPE_I32):
             return atime(ADDI32(x->i32, y->i32));
         case MTYPE2(-TYPE_TIME, -TYPE_I64):

@@ -128,19 +128,30 @@ obj_p ray_read(obj_p x) {
             if (size < 1)
                 THROW(ERR_LENGTH, "read: invalid size: %d", size);
 
+            // Check for reasonable file size
+            if (size > 1000000000)  // 1GB max size
+                THROW(ERR_LENGTH, "read: file size too large: %d", size);
+
             map = (u8_t *)mmap_file(fd, NULL, size, 0);
-            cur = map;
-            sz = size;
 
             if (map == NULL)
                 return sys_error(ERROR_TYPE_SYS, "read");
+
+            // Validate minimum file size for header
+            if (size < (i64_t)sizeof(struct header_t)) {
+                mmap_free(map, size);
+                return error_str(ERR_IO, "read: file too small to contain valid header");
+            }
+
+            cur = map;
+            sz = size;
 
             while (sz > 0) {
                 val = load_obj(&cur, &sz);
 
                 if (IS_ERROR(val)) {
                     drop_obj(val);
-                    goto finally;
+                    break;
                 }
 
                 res = eval_obj(val);
@@ -156,7 +167,7 @@ obj_p ray_read(obj_p x) {
                 rs = size - sz;
             }
 
-        finally:
+            // Cleanup and return results
             mmap_free(map, size);
 
             v = I64(3);
@@ -721,23 +732,6 @@ obj_p ray_load(obj_p x) {
     drop_obj(file);
 
     return res;
-}
-
-obj_p ray_listen(obj_p x) {
-    i64_t res;
-
-    if (x->type != -TYPE_I64)
-        THROW(ERR_TYPE, "listen: expected integer");
-
-    res = poll_listen(runtime_get()->poll, x->i64);
-
-    if (res == -1)
-        return sys_error(ERROR_TYPE_SOCK, "listen");
-
-    if (res == -2)
-        THROW(ERR_LENGTH, "listen: already listening");
-
-    return i64(res);
 }
 
 obj_p distinct_syms(obj_p *x, u64_t n) {

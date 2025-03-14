@@ -25,8 +25,14 @@
 #define ITER_H
 
 #include "rayforce.h"
+#include "ops.h"
 
-obj_p ray_apply(obj_p *x, u64_t n);
+obj_p map_unary(obj_p f, obj_p x);
+obj_p map_binary(obj_p f, obj_p x, obj_p y);
+obj_p map_binary_left(obj_p f, obj_p x, obj_p y);
+obj_p map_binary_right(obj_p f, obj_p x, obj_p y);
+obj_p map_vary(obj_p f, obj_p *x, u64_t n);
+obj_p map_lambda(obj_p f, obj_p *x, u64_t n);
 obj_p ray_map(obj_p *x, u64_t n);
 obj_p ray_map_right(obj_p *x, u64_t n);
 obj_p ray_map_left(obj_p *x, u64_t n);

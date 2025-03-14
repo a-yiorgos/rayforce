@@ -100,10 +100,16 @@ typedef obj_p (*ray_cmp_f)(obj_p, obj_p, u64_t, u64_t, obj_p);
                 return b8(op##I8(x->b8, y->u8));                                                            \
             case MTYPE2(-TYPE_U8, -TYPE_B8):                                                                \
                 return b8(op##I8(x->u8, y->b8));                                                            \
+            case MTYPE2(-TYPE_C8, -TYPE_C8):                                                                \
+                return b8(op##C8(x->c8, y->c8));                                                            \
+            case MTYPE2(-TYPE_C8, TYPE_C8):                                                                 \
+                return b8(op##STR((lit_p)(&x->c8), 1, AS_C8(y), y->len));                                   \
+            case MTYPE2(TYPE_C8, -TYPE_C8):                                                                 \
+                return b8(op##STR(AS_C8(x), x->len, (lit_p)(&y->c8), 1));                                   \
             case MTYPE2(TYPE_C8, TYPE_C8):                                                                  \
-                return b8(str_cmp(AS_C8(x), x->len, AS_C8(y), y->len) == 0);                                \
+                return b8(op##STR(AS_C8(x), x->len, AS_C8(y), y->len));                                     \
             case MTYPE2(-TYPE_I16, -TYPE_I16):                                                              \
-                return b8(op##I32(x->i16, y->i16));                                                         \
+                return b8(op##I16(x->i16, y->i16));                                                         \
             case MTYPE2(-TYPE_I32, -TYPE_I32):                                                              \
             case MTYPE2(-TYPE_DATE, -TYPE_DATE):                                                            \
             case MTYPE2(-TYPE_TIME, -TYPE_TIME):                                                            \
@@ -301,8 +307,12 @@ obj_p cmp_map(raw_p op, obj_p x, obj_p y) {
         return map;
     }
 
-    if (x->type == TYPE_C8 && y->type == TYPE_C8)
-        return cmp_fn(x, y, 1, 0, NULL_OBJ);
+    switch (MTYPE2(x->type, y->type)) {
+        case MTYPE2(TYPE_C8, TYPE_C8):
+        case MTYPE2(TYPE_C8, -TYPE_C8):
+        case MTYPE2(-TYPE_C8, TYPE_C8):
+            return cmp_fn(x, y, 1, 0, NULL_OBJ);
+    }
 
     if (IS_VECTOR(x) && IS_VECTOR(y)) {
         if (x->len != y->len)

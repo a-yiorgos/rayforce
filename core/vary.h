@@ -27,14 +27,14 @@
 #include "rayforce.h"
 #include "ops.h"
 
-obj_p vary_call(u8_t attrs, vary_f f, obj_p *x, u64_t n);
+obj_p vary_call(obj_p f, obj_p *x, u64_t n);
 obj_p ray_do(obj_p *x, u64_t n);
+obj_p ray_apply(obj_p *x, u64_t n);
 obj_p ray_gc(obj_p *x, u64_t n);
 obj_p ray_format(obj_p *x, u64_t n);
 obj_p ray_print(obj_p *x, u64_t n);
 obj_p ray_println(obj_p *x, u64_t n);
 obj_p ray_args(obj_p *x, u64_t n);
-obj_p ray_exit(obj_p *x, u64_t n);
 obj_p ray_set_splayed(obj_p *x, u64_t n);
 obj_p ray_get_splayed(obj_p *x, u64_t n);
 obj_p ray_set_parted(obj_p *x, u64_t n);

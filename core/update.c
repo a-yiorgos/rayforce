@@ -60,6 +60,21 @@ obj_p __fetch(obj_p obj, obj_p **val) {
     return obj;
 }
 
+obj_p __commit(obj_p src, obj_p obj, obj_p *val) {
+    // TODO: comparison val and *obj in case of shrink is only guaranteed
+    // to be correct with own allocator
+    if (src->type == -TYPE_SYMBOL) {
+        if ((val != NULL) && (*val != obj)) {
+            drop_obj(*val);
+            *val = obj;
+        }
+
+        return clone_obj(src);
+    }
+
+    return obj;
+}
+
 b8_t __suitable_types(obj_p x, obj_p y) {
     i8_t yt;
 
@@ -83,43 +98,100 @@ b8_t __suitable_lengths(obj_p x, obj_p y) {
     return B8_TRUE;
 }
 
-obj_p __alter(obj_p *obj, obj_p *x, u64_t n) {
-    obj_p v, idx, res;
+obj_p *at_obj_ref(obj_p obj, obj_p idx) {
+    i64_t j;
+    obj_p v, *p;
 
-    // special case for set
-    if (x[1]->i64 == (i64_t)ray_set || x[1]->i64 == (i64_t)ray_let) {
-        if (n != 4)
-            THROW(ERR_LENGTH, "alter: set use expected 4 args");
+    switch (MTYPE2(obj->type, idx->type)) {
+        case MTYPE2(TYPE_LIST, -TYPE_I64):
+            return &AS_LIST(obj)[idx->i64];
+        default:
+            if (obj->type == TYPE_DICT) {
+                j = find_obj_idx(AS_LIST(obj)[0], idx);
+                if (j == NULL_I64)
+                    return NULL;
+                else {
+                    if (AS_LIST(obj)[1]->type != TYPE_LIST)
+                        diverse_obj(AS_LIST(obj) + 1);
 
-        return set_obj(obj, x[2], clone_obj(x[3]));
+                    p = AS_LIST(AS_LIST(obj)[1]) + j;
+                    v = cow_obj(*p);
+                    if (v != *p) {
+                        drop_obj(*p);
+                        *p = v;
+                    }
+
+                    return p;
+                }
+            }
+
+            return NULL;
     }
+}
+
+obj_p dot_obj(obj_p obj, obj_p idx) {
+    u64_t i, l;
+
+    switch (idx->type) {
+        case TYPE_NULL:
+            return obj;
+        case TYPE_LIST:
+            l = idx->len;
+            if (l < 2)
+                THROW(ERR_NOT_FOUND, "dot: invalid index len");
+
+            l--;  // skip last element
+
+            for (i = 0; i < l; i++) {
+                obj = cow_obj(obj);
+                obj = dot_obj(obj, AS_LIST(idx)[i]);
+                if (obj == NULL)
+                    THROW(ERR_NOT_FOUND, "dot: invalid index");
+            }
+
+            return obj;
+
+        default:
+            return *at_obj_ref(cow_obj(obj), idx);
+    }
+}
+
+obj_p __alter(obj_p *obj, obj_p func, obj_p idx, obj_p val) {
+    obj_p v, *p, args[3], res;
+
+    // special case for set/let
+    if (func->type == TYPE_BINARY && (func->i64 == (i64_t)ray_set || func->i64 == (i64_t)ray_let))
+        return set_obj(obj, idx, clone_obj(val));
 
     // special case for concat
-    if (x[1]->i64 == (i64_t)ray_concat) {
-        if (n != 3)
-            THROW(ERR_LENGTH, "alter: concat use expected 3 args");
+    if (func->type == TYPE_BINARY && func->i64 == (i64_t)ray_concat) {
+        if (idx->type == TYPE_NULL)
+            return push_obj(obj, clone_obj(val));
 
-        return push_obj(obj, clone_obj(x[2]));
+        p = at_obj_ref(*obj, idx);
+        if (p == NULL)
+            return error(ERR_NOT_FOUND, "alter: invalid index");
+        if (IS_ERROR(*p))
+            return *p;
+
+        return push_obj(p, clone_obj(val));
     }
 
     // special case for remove
-    if (x[1]->i64 == (i64_t)ray_remove) {
-        if (n != 3)
-            THROW(ERR_LENGTH, "alter: remove use expected 3 args");
-
-        return remove_obj(obj, x[2]);
-    }
+    if (func->type == TYPE_BINARY && func->i64 == (i64_t)ray_remove)
+        return remove_obj(obj, val);
 
     // retrieve the object via indices
-    v = at_obj(*obj, x[2]);
+    v = at_obj(*obj, idx);
 
     if (IS_ERROR(v))
         return v;
 
-    idx = x[2];
-    x[2] = v;
-    res = ray_apply(x + 1, n - 1);
-    x[2] = idx;
+    args[0] = func;
+    args[1] = v;
+    args[2] = val;
+
+    res = ray_apply(args, 3);
     drop_obj(v);
 
     if (IS_ERROR(res))
@@ -128,23 +200,8 @@ obj_p __alter(obj_p *obj, obj_p *x, u64_t n) {
     return set_obj(obj, idx, res);
 }
 
-obj_p __commit(obj_p src, obj_p obj, obj_p *val) {
-    // TODO: comparison val and *obj in case of shrink is only guaranteed
-    // to be correct with own allocator
-    if (src->type == -TYPE_SYMBOL) {
-        if ((val != NULL) && (*val != obj)) {
-            drop_obj(*val);
-            *val = obj;
-        }
-
-        return clone_obj(src);
-    }
-
-    return obj;
-}
-
 obj_p ray_alter(obj_p *x, u64_t n) {
-    obj_p *val = NULL, obj, res;
+    obj_p obj, res, *cur = NULL;
 
     if (n < 3)
         THROW(ERR_LENGTH, "alter: expected at least 3 arguments");
@@ -152,76 +209,40 @@ obj_p ray_alter(obj_p *x, u64_t n) {
     if (x[1]->type < TYPE_LAMBDA || x[1]->type > TYPE_VARY)
         THROW(ERR_TYPE, "alter: expected function as 2nd argument");
 
-    obj = __fetch(x[0], &val);
+    if (x[0]->type == -TYPE_SYMBOL) {
+        cur = resolve(x[0]->i64);
+        if (cur == NULL)
+            THROW(ERR_NOT_FOUND, "alter: undefined symbol");
+        obj = cow_obj(*cur);
+    } else {
+        obj = cow_obj(x[0]);
+    }
 
-    if (IS_ERROR(obj))
-        return obj;
+    res = obj;
+    res = (n == 4) ? __alter(&res, x[1], x[2], x[3]) : __alter(&res, x[1], NULL_OBJ, x[2]);
 
-    res = __alter(&obj, x, n);
     if (IS_ERROR(res)) {
-        UNCOW_OBJ(obj, val, res);
+        if (x[0]->type != -TYPE_SYMBOL)
+            drop_obj(obj);
+
         return res;
     }
 
-    return __commit(x[0], obj, val);
-}
+    if (x[0]->type != -TYPE_SYMBOL)
+        return res;
 
-obj_p at_obj_ref(obj_p obj, obj_p idx) {
-    i64_t j;
-    obj_p v, *p;
-
-    switch (MTYPE2(obj->type, idx->type)) {
-        case MTYPE2(TYPE_LIST, -TYPE_I64):
-            return AS_LIST(obj)[idx->i64];
-        default:
-            if (obj->type == TYPE_DICT) {
-                j = find_obj_idx(AS_LIST(obj)[0], idx);
-                if (j == NULL_I64)
-                    return NULL;
-                else {
-                    p = AS_LIST(AS_LIST(obj)[1]) + j;
-                    v = cow_obj(*p);
-                    if (v != *p) {
-                        drop_obj(*p);
-                        *p = v;
-                    }
-
-                    return v;
-                }
-            }
-
-            THROW(ERR_NOT_FOUND, "dot: symbol not found");
-    }
-}
-
-obj_p dot_obj(obj_p obj, obj_p idx) {
-    u64_t i, l;
-
-    if (idx->type == TYPE_NULL)
-        return obj;
-
-    if (IS_VECTOR(idx)) {
-        l = idx->len;
-        if (l == 0)
-            return obj;
-
-        l--;  // skip last element
-
-        for (i = 0; i < l; i++) {
-            obj = cow_obj(obj);
-            obj = dot_obj(obj, AS_LIST(idx)[i]);
-            if (obj == NULL)
-                THROW(ERR_NOT_FOUND, "dot: symbol not found");
-        }
-
-        return obj;
+    if ((*cur) != res) {
+        drop_obj(*cur);
+        *cur = res;
     }
 
-    return at_obj_ref(cow_obj(obj), idx);
+    return clone_obj(x[0]);
 }
 
 obj_p ray_modify(obj_p *x, u64_t n) {
     obj_p obj, res, *cur, idx;
+
+    cur = NULL;
 
     if (n < 3)
         THROW(ERR_LENGTH, "modify: expected at least 3 arguments, got %lld", n);
@@ -232,7 +253,7 @@ obj_p ray_modify(obj_p *x, u64_t n) {
     if (x[0]->type == -TYPE_SYMBOL) {
         cur = resolve(x[0]->i64);
         if (cur == NULL)
-            THROW(ERR_NOT_FOUND, "modify: symbol not found");
+            THROW(ERR_NOT_FOUND, "modify: undefined symbol");
         obj = cow_obj(*cur);
     } else {
         obj = cow_obj(x[0]);
@@ -246,7 +267,7 @@ obj_p ray_modify(obj_p *x, u64_t n) {
     if (IS_ERROR(idx))
         return idx;
 
-    res = set_obj(&res, idx, clone_obj(x[3]));
+    res = __alter(&res, x[1], idx, x[3]);
     drop_obj(idx);
 
     if (IS_ERROR(res))
@@ -254,6 +275,11 @@ obj_p ray_modify(obj_p *x, u64_t n) {
 
     if (x[0]->type != -TYPE_SYMBOL)
         return obj;
+
+    if (cur != NULL && (*cur) != obj) {
+        drop_obj(*cur);
+        *cur = obj;
+    }
 
     return clone_obj(x[0]);
 }
