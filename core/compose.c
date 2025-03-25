@@ -719,6 +719,7 @@ obj_p ray_row_index(obj_p *x, u64_t n) {
                 if (x->type == TYPE_LIST) {                                                            \
                     for ($j = 0; $j < $id - $last_id; $j++)                                            \
                         AS_LIST($v)[$j] = clone_obj(AS_LIST(x)[$last_id + $j]);                        \
+                    unify_list(&$v);                                                                   \
                 } else {                                                                               \
                     memcpy(__AS_##xt($v), &__AS_##xt(x)[$last_id], ($id - $last_id) * __SIZE_OF_##xt); \
                 }                                                                                      \
@@ -731,6 +732,9 @@ obj_p ray_row_index(obj_p *x, u64_t n) {
     })
 
 obj_p cut_vector(obj_p x, obj_p y) {
+    if (y->len == 0)
+        return NULL_OBJ;
+
     switch (x->type) {
         case TYPE_B8:
         case TYPE_U8:

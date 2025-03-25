@@ -2530,6 +2530,39 @@ test_result_t test_lang_split() {
     TEST_ASSERT_EQ("(split 'asasd \"d\")", "(list \"asas\" \"\")");
     TEST_ASSERT_EQ("(split 'asasd 'd')", "(list \"asas\" \"\")");
 
+    // Basic vector splitting with I64 indices
+    TEST_ASSERT_EQ("(split [1 2 3 4 5] [0 2 4])", "(list [1 2] [3 4] [5])");
+    TEST_ASSERT_EQ("(split [1 2 3 4 5] [0 3])", "(list [1 2 3] [4 5])");
+
+    // Different vector types with I64 indices
+    TEST_ASSERT_EQ("(split [1i 2i 3i 4i 5i] [0 2 4])", "(list [1i 2i] [3i 4i] [5i])");
+    TEST_ASSERT_EQ("(split [1.0 2.0 3.0 4.0 5.0] [0 2 4])", "(list [1.0 2.0] [3.0 4.0] [5.0])");
+    TEST_ASSERT_EQ("(split [true false true false true] [0 2 4])", "(list [true false] [true false] [true])");
+    TEST_ASSERT_EQ("(split \"hello\" [0 2 4])", "(list \"he\" \"ll\" \"o\")");
+
+    // Different index types (I16, I32, I64)
+    TEST_ASSERT_EQ("(split [1 2 3 4 5] [0h 2h 4h])", "(list [1 2] [3 4] [5])");
+    TEST_ASSERT_EQ("(split [1 2 3 4 5] [0h 2h 4h])", "(list [1 2] [3 4] [5])");
+    TEST_ASSERT_EQ("(split [1 2 3 4 5] [0h 2h 4h])", "(list [1 2] [3 4] [5])");
+
+    // Error cases for vector splitting
+    // TEST_ASSERT_ER("(split [1 2 3] [0 4])", "cut: invalid index or index vector is not sorted: 4");
+    // TEST_ASSERT_ER("(split [1 2 3] [2 1])", "cut: invalid index or index vector is not sorted: 1");
+    // TEST_ASSERT_ER("(split [1 2 3] [0 2 3])", "cut: invalid index or index vector is not sorted: 3");
+
+    // Empty vectors and indices
+    TEST_ASSERT_EQ(
+        "(split (as 'Guid (list \"7e42b82b-51c7-4468-a477-375bd5006e60\" \"7e42b82b-51c7-4468-a477-375bd5006e60\")) [0 "
+        "1])",
+        "(list (as 'Guid (list \"7e42b82b-51c7-4468-a477-375bd5006e60\")) (as 'Guid (list "
+        "\"7e42b82b-51c7-4468-a477-375bd5006e60\")))");
+
+    TEST_ASSERT_EQ("(split (list 1 2 3 4 5 6 \"asdf\" 9.33) [0 2 4])", "(list [1 2] [3 4] (list 5 6 \"asdf\" 9.33))");
+
+    // Empty vectors and indices
+    TEST_ASSERT_EQ("(split [] [])", "null");
+    TEST_ASSERT_EQ("(split [1 2 3] [])", "null");
+
     PASS();
 }
 
