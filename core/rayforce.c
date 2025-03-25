@@ -677,14 +677,24 @@ obj_p at_idx(obj_p obj, i64_t idx) {
             if (idx >= 0 && idx < (i64_t)obj->len)
                 return i16(AS_I16(obj)[idx]);
             return i16(NULL_I16);
-        // case TYPE_I32:
+        case TYPE_I32:
+            if (idx < 0)
+                idx = obj->len + idx;
+            if (idx >= 0 && idx < (i64_t)obj->len)
+                return i32(AS_I32(obj)[idx]);
+            return i32(NULL_I32);
         case TYPE_DATE:
-            // case TYPE_TIME:
             if (idx < 0)
                 idx = obj->len + idx;
             if (idx >= 0 && idx < (i64_t)obj->len)
                 return adate(AS_I32(obj)[idx]);
             return adate(NULL_I32);
+        case TYPE_TIME:
+            if (idx < 0)
+                idx = obj->len + idx;
+            if (idx >= 0 && idx < (i64_t)obj->len)
+                return atime(AS_I32(obj)[idx]);
+            return atime(NULL_I32);
         case TYPE_I64:
             if (idx < 0)
                 idx = obj->len + idx;

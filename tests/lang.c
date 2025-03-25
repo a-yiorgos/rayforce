@@ -230,6 +230,10 @@ test_result_t test_lang_math() {
     TEST_ASSERT_EQ("(+ [2025.03.04D15:41:47.087221025] [01:01:00.000])", "[2025.03.04D16:42:47.087221025]");
     TEST_ASSERT_ER("(+ 2025.03.04D15:41:47.087221025 2025.12.13)", "add: unsupported types: 'timestamp, 'date");
 
+    TEST_ASSERT_EQ("(+ (list -10i -10 -10.0) 5)", "(list -5 -5 -5.0)");
+    TEST_ASSERT_EQ("(+ (list -10i -10i -10.0) 5)", "(list -5 -5 -5.0)");
+    TEST_ASSERT_EQ("(+ (list -10 -10i -10.0) 5i)", "(list -5i -5i -5.0)");
+
     TEST_ASSERT_EQ("(- 3i 5i)", "-2i");
     TEST_ASSERT_EQ("(- 3i 5)", "-2");
     TEST_ASSERT_EQ("(- 3i 5.2)", "-2.2");
