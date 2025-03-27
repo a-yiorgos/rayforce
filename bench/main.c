@@ -198,13 +198,6 @@ void run_benchmark(bench_script_t* script, bench_result_t* result) {
     time(&now);
     strftime(result->timestamp, sizeof(result->timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
 
-    // Run init script if exists
-    if (script->init_script[0] != '\0') {
-        runtime_create(0, NULL);
-        eval_str(script->init_script);
-        runtime_destroy();
-    }
-
     // Run benchmark iterations
     double total_time = 0;
     result->min_time = 1e9;
@@ -212,13 +205,19 @@ void run_benchmark(bench_script_t* script, bench_result_t* result) {
 
     int iterations = script->iterations > 0 ? script->iterations : 10;  // Default to 10 iterations
 
+    // Initialize runtime environment once for all iterations
+    runtime_create(0, NULL);
+
+    // Run initialization script if present
+    if (script->init_script[0] != '\0') {
+        eval_str(script->init_script);
+    }
+
     for (int i = 0; i < iterations; i++) {
-        runtime_create(0, NULL);
         struct timeval start, end;
         gettimeofday(&start, NULL);
         eval_str(script->content);
         gettimeofday(&end, NULL);
-        runtime_destroy();
 
         double iteration_time = (end.tv_sec - start.tv_sec) * 1000.0;  // Convert to milliseconds
         iteration_time += (end.tv_usec - start.tv_usec) / 1000.0;      // Add microseconds part
@@ -231,6 +230,9 @@ void run_benchmark(bench_script_t* script, bench_result_t* result) {
     }
 
     result->avg_time = total_time / iterations;
+
+    // Cleanup runtime environment
+    runtime_destroy();
 }
 
 // Load previous benchmark results
@@ -465,79 +467,79 @@ void print_expected_time_diff(double actual, double expected) {
 }
 
 void process_script_file(const char* filename, bench_results_t* results) {
-    char full_path[MAX_PATH_LEN];
+    char script_path[MAX_PATH_LEN];
     char init_path[MAX_PATH_LEN];
-    bench_script_t script = {0};
+    char script_name[MAX_SCRIPT_NAME] = {0};  // Initialize to zero
 
-    // Get script name without extension
-    const char* base_name = strrchr(filename, '/');
-    if (!base_name)
-        base_name = filename;
+    // Extract script name without extension
+    const char* base = strrchr(filename, '/');
+    if (!base)
+        base = filename;
     else
-        base_name++;
+        base++;
 
-    char* dot = strrchr(base_name, '.');
-    if (dot) {
-        size_t name_len = dot - base_name;
-        if (name_len >= sizeof(script.name)) {
-            name_len = sizeof(script.name) - 1;
-        }
-        strncpy(script.name, base_name, name_len);
-        script.name[name_len] = '\0';
-    } else {
-        strncpy(script.name, base_name, sizeof(script.name) - 1);
-        script.name[sizeof(script.name) - 1] = '\0';
+    // Copy script name and remove .rf extension if present
+    size_t name_len = strlen(base);
+    if (name_len >= sizeof(script_name)) {
+        name_len = sizeof(script_name) - 1;
+    }
+    memcpy(script_name, base, name_len);
+    script_name[name_len] = '\0';
+
+    char* ext = strrchr(script_name, '.');
+    if (ext && strcmp(ext, ".rf") == 0) {
+        *ext = '\0';
+        name_len = ext - script_name;  // Update name_len after removing extension
     }
 
-    // Read main script
-    strncpy(full_path, filename, sizeof(full_path) - 1);
-    full_path[sizeof(full_path) - 1] = '\0';
-
-    FILE* file = fopen(full_path, "r");
-    if (!file) {
-        printf("Error: Could not open script file %s\n", full_path);
+    // Construct paths with bounds checking
+    size_t written = snprintf(script_path, sizeof(script_path), "%s/%s.rf", BENCH_SCRIPTS_DIR, script_name);
+    if (written >= sizeof(script_path)) {
+        printf("Error: Script path too long for %s\n", script_name);
+        return;
+    }
+    written = snprintf(init_path, sizeof(init_path), "%s/%s%s", BENCH_SCRIPTS_DIR, script_name, BENCH_INIT_SUFFIX);
+    if (written >= sizeof(init_path)) {
+        printf("Error: Init path too long for %s\n", script_name);
         return;
     }
 
-    size_t content_size = fread(script.content, 1, sizeof(script.content) - 1, file);
-    script.content[content_size] = '\0';
-    fclose(file);
-
-    // Try to read init script if it exists
-    size_t written =
-        snprintf(init_path, sizeof(init_path), "%s/%s%s.rf", BENCH_SCRIPTS_DIR, script.name, BENCH_INIT_SUFFIX);
-    if (written >= sizeof(init_path)) {
-        printf("Warning: Init script path truncated for %s\n", script.name);
+    // Read script content
+    FILE* script_file = fopen(script_path, "r");
+    if (!script_file) {
+        printf("Error: Could not open script file %s\n", script_path);
+        return;
     }
 
-    file = fopen(init_path, "r");
-    if (file) {
-        size_t init_size = fread(script.init_script, 1, sizeof(script.init_script) - 1, file);
+    bench_script_t script = {0};  // Initialize entire struct to zero
+
+    // Copy script name - we already know it fits since we used the same buffer size
+    memcpy(script.name, script_name, name_len);
+    script.name[name_len] = '\0';
+
+    // Read script content with bounds checking
+    size_t content_size = fread(script.content, 1, sizeof(script.content) - 1, script_file);
+    script.content[content_size] = '\0';
+    fclose(script_file);
+
+    // Read init script if exists
+    FILE* init_file = fopen(init_path, "r");
+    if (init_file) {
+        size_t init_size = fread(script.init_script, 1, sizeof(script.init_script) - 1, init_file);
         script.init_script[init_size] = '\0';
-        fclose(file);
+        fclose(init_file);
     }
 
     // Parse script parameters
     parse_script_params(script.content, &script);
 
-    // Run benchmark
-    bench_result_t current_result;
-    run_benchmark(&script, &current_result);
-
-    // Find previous result for comparison
-    bench_result_t* previous_result = NULL;
-    for (int i = 0; i < results->result_count; i++) {
-        if (strcmp(results->results[i].script_name, script.name) == 0) {
-            previous_result = &results->results[i];
-            break;
-        }
-    }
-
-    compare_and_print_results(&current_result, previous_result);
-
-    // Update results array
+    // Run benchmark and store results if there's space
     if (results->result_count < MAX_RESULTS) {
-        results->results[results->result_count++] = current_result;
+        bench_result_t result = {0};  // Initialize to zero
+        run_benchmark(&script, &result);
+        results->results[results->result_count++] = result;
+    } else {
+        printf("Warning: Maximum number of results reached, skipping %s\n", script_name);
     }
 }
 
@@ -556,9 +558,11 @@ void scan_benchmark_scripts(bench_results_t* results) {
     if (fgets(filename, sizeof(filename), pipe) != NULL) {
         filename[strcspn(filename, "\n")] = 0;
         bench_script_t script = {0};
-        strcpy(script.name, "system");
+        strncpy(script.name, "system", sizeof(script.name) - 1);
+        script.name[sizeof(script.name) - 1] = '\0';
         run_benchmark(&script, &results->results[0]);
         print_system_info(&results->results[0]);
+        results->result_count = 1;  // Initialize result count after system info
     }
 
     // Reset pipe to start from beginning
@@ -573,15 +577,55 @@ void scan_benchmark_scripts(bench_results_t* results) {
     pclose(pipe);
 }
 
-int main() {
-    bench_results_t results;
-    load_previous_results(&results);
+int main(int argc, char* argv[]) {
+    bench_results_t results = {0};  // Initialize entire struct to zero
+    bench_results_t previous_results;
+    load_previous_results(&previous_results);
 
-    // Scan and process all benchmark scripts
-    scan_benchmark_scripts(&results);
+    // Parse command line arguments for specific tests
+    char* test_names[MAX_RESULTS];
+    int num_tests = 0;
+    for (int i = 1; i < argc; i++) {
+        if (num_tests < MAX_RESULTS) {
+            test_names[num_tests++] = argv[i];
+        }
+    }
 
-    // Save updated results
-    save_results(&results);
+    // Scan and process benchmark scripts
+    if (num_tests > 0) {
+        // If specific tests were requested, only process those
+        for (int i = 0; i < num_tests; i++) {
+            char script_path[MAX_PATH_LEN];
+            // Check if .rf extension is already present
+            if (strstr(test_names[i], ".rf") == NULL) {
+                snprintf(script_path, sizeof(script_path), "%s/%s.rf", BENCH_SCRIPTS_DIR, test_names[i]);
+            } else {
+                snprintf(script_path, sizeof(script_path), "%s/%s", BENCH_SCRIPTS_DIR, test_names[i]);
+            }
+            process_script_file(script_path, &results);
+
+            // Find and print previous results if available
+            if (results.result_count > 0) {
+                bench_result_t* current = &results.results[results.result_count - 1];
+                bench_result_t* previous = NULL;
+                for (int j = 0; j < previous_results.result_count; j++) {
+                    if (strcmp(previous_results.results[j].script_name, current->script_name) == 0) {
+                        previous = &previous_results.results[j];
+                        break;
+                    }
+                }
+                compare_and_print_results(current, previous);
+            }
+        }
+    } else {
+        // Otherwise process all scripts
+        scan_benchmark_scripts(&results);
+    }
+
+    // Save updated results if we have any
+    if (results.result_count > 0) {
+        save_results(&results);
+    }
 
     return 0;
 }
