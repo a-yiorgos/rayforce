@@ -3194,3 +3194,26 @@ test_result_t test_lang_concat() {
     TEST_ASSERT_EQ("(concat 'a' 5)", "(list 'a' 5)");
     PASS();
 }
+test_result_t test_lang_filter() {
+    TEST_ASSERT_EQ("(filter [true false true false] [true true false false])", "[true false]");
+    TEST_ASSERT_EQ("(filter [0x12 0x11 0x10] [true false true])", "[0x12 0x10]");
+    TEST_ASSERT_EQ("(filter \"test\" [true false true false])", "\"ts\"");
+    TEST_ASSERT_EQ("(filter [1h 2h 3h] [false true false])", "[2h]");
+    TEST_ASSERT_EQ("(filter [1i 0Ni 2i] [false true true])", "[0Ni 2i]");
+    TEST_ASSERT_EQ("(filter [2012.12.12 2012.12.13] [true false])", "[2012.12.12]");
+    TEST_ASSERT_EQ("(filter [10:00:00.000] [true])", "[10:00:00.000]");
+    TEST_ASSERT_EQ("(filter [1 0Nl 2] [true true true])", "[1 0Nl 2]");
+    TEST_ASSERT_EQ("(filter ['a 'b 'c 'dd] [true false false true])", "['a 'dd]");
+    TEST_ASSERT_EQ("(filter [2024.01.01D10:00:00.000000000] [true])", "[2024.01.01D10:00:00.000000000]");
+    TEST_ASSERT_EQ("(filter [1.0 2.0 3.0] [true false true])", "[1.0 3.0]");
+    TEST_ASSERT_EQ("(filter (guid 2) [false false])", "[]");
+    TEST_ASSERT_EQ("(filter (take 2 (as 'guid \"d49f18a4-1969-49e8-9b8a-6bb9a4832eea\")) [false true])",
+                   "[d49f18a4-1969-49e8-9b8a-6bb9a4832eea]");
+    TEST_ASSERT_EQ("(filter (list [3i 0Ni] 2i [3i 3i] 2i) [true true false false])", "(list [3i 0Ni] 2i)");
+    TEST_ASSERT_EQ("(first (filter (table [a b] (list [1 2 3] (list 'a 'b 'c))) [false true true]))", "{a:2 b:'b}");
+
+    TEST_ASSERT_ER("(filter [1i 0Ni 2i] [true true])", "filter: arguments must be the same length");
+    TEST_ASSERT_ER("(filter [true false] [1 2])", "filter: unsupported types: 'B8, 'I64");
+
+    PASS();
+}

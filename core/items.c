@@ -327,141 +327,60 @@ obj_p ray_find(obj_p x, obj_p y) {
     }
 }
 
+#define COMMA ,
+#define __FILTER(x, y, tx, s1, s2, s3)                                                 \
+    ({                                                                                 \
+        if (x->len != y->len)                                                          \
+            return error_str(ERR_LENGTH, "filter: arguments must be the same length"); \
+        l = x->len;                                                                    \
+        res = tx(l);                                                                   \
+        for (i = 0; i < l; i++)                                                        \
+            if (AS_B8(y)[i])                                                           \
+                s1(AS_##tx(res)[j++] s2(AS_##tx(x)[i]) s3);                            \
+        resize_obj(&res, j);                                                           \
+        return res;                                                                    \
+    })
+
 obj_p ray_filter(obj_p x, obj_p y) {
     u64_t i, j = 0, l;
-    obj_p res, vals, col;
-
+    obj_p res, vals;
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(TYPE_B8, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = B8(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_B8(res)
-            [j++] = AS_B8(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
-
+            __FILTER(x, y, B8, , =, );
+        case MTYPE2(TYPE_U8, TYPE_B8):
+            __FILTER(x, y, U8, , =, );
+        case MTYPE2(TYPE_C8, TYPE_B8):
+            __FILTER(x, y, C8, , =, );
+        case MTYPE2(TYPE_I16, TYPE_B8):
+            __FILTER(x, y, I16, , =, );
+        case MTYPE2(TYPE_I32, TYPE_B8):
+            __FILTER(x, y, I32, , =, );
+        case MTYPE2(TYPE_DATE, TYPE_B8):
+            __FILTER(x, y, DATE, , =, );
+        case MTYPE2(TYPE_TIME, TYPE_B8):
+            __FILTER(x, y, TIME, , =, );
         case MTYPE2(TYPE_I64, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = I64(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_I64(res)
-            [j++] = AS_I64(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
-
+            __FILTER(x, y, I64, , =, );
         case MTYPE2(TYPE_SYMBOL, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = SYMBOL(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_SYMBOL(res)
-            [j++] = AS_SYMBOL(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
-
-        case MTYPE2(TYPE_F64, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = F64(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_F64(res)
-            [j++] = AS_F64(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
-
+            __FILTER(x, y, SYMBOL, , =, );
         case MTYPE2(TYPE_TIMESTAMP, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = TIMESTAMP(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_TIMESTAMP(res)
-            [j++] = AS_TIMESTAMP(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
+            __FILTER(x, y, TIMESTAMP, , =, );
+        case MTYPE2(TYPE_F64, TYPE_B8):
+            __FILTER(x, y, F64, , =, );
 
         case MTYPE2(TYPE_GUID, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = GUID(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    memcpy(AS_GUID(res)[j++], AS_GUID(x)[i], sizeof(guid_t));
-
-            resize_obj(&res, j);
-
-            return res;
-
-        case MTYPE2(TYPE_C8, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = C8(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_C8(res)
-            [j++] = AS_C8(x)[i];
-
-            resize_obj(&res, j);
-
-            return res;
+            __FILTER(x, y, GUID, memcpy, COMMA, COMMA sizeof(guid_t));
 
         case MTYPE2(TYPE_LIST, TYPE_B8):
-            if (x->len != y->len)
-                return error_str(ERR_LENGTH, "filter: vector and filter vector must be of same length");
-
-            l = x->len;
-            res = LIST(l);
-            for (i = 0; i < l; i++)
-                if (AS_B8(y)[i])
-                    AS_LIST(res)
-            [j++] = clone_obj(AS_LIST(x)[i]);
-
-            resize_obj(&res, j);
-
-            return res;
+            __FILTER(x, y, LIST, , = clone_obj, );
 
         case MTYPE2(TYPE_TABLE, TYPE_B8):
             vals = AS_LIST(x)[1];
             l = vals->len;
             res = LIST(l);
-
             for (i = 0; i < l; i++) {
-                col = ray_filter(AS_LIST(vals)[i], y);
-                AS_LIST(res)
-                [i] = col;
+                AS_LIST(res)[i] = ray_filter(AS_LIST(vals)[i], y);
             }
-
             return table(clone_obj(AS_LIST(x)[0]), res);
 
         default:
