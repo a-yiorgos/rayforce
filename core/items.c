@@ -39,6 +39,7 @@
 #include "string.h"
 #include "pool.h"
 #include "cmp.h"
+#include "iter.h"
 
 obj_p ray_at(obj_p x, obj_p y) {
     u64_t i, j, yl, xl, n, size;
@@ -666,18 +667,6 @@ obj_p ray_in(obj_p x, obj_p y) {
     u64_t range;
     b8_t nl = 0;
 
-    if ((IS_VECTOR(y) || y->type == TYPE_LIST) && y->len == 0) {
-        if (IS_VECTOR(x) || x->type == TYPE_LIST) {
-            vec = B8(x->len);
-            memset(AS_B8(vec), 0, x->len);
-            return vec;
-        } else
-            return b8(0);
-    }
-
-    if (!IS_VECTOR(x))
-        return b8(find_obj_idx(y, x) != NULL_I64);
-
     switch (MTYPE2(x->type, y->type)) {
         case MTYPE2(TYPE_U8, TYPE_U8):
         case MTYPE2(TYPE_B8, TYPE_B8):
@@ -853,6 +842,21 @@ obj_p ray_in(obj_p x, obj_p y) {
             return vec;
 
         default:
+            if ((IS_VECTOR(y) || y->type == TYPE_LIST) && y->len == 0) {
+                if (IS_VECTOR(x) || x->type == TYPE_LIST) {
+                    vec = B8(x->len);
+                    memset(AS_B8(vec), 0, x->len);
+                    return vec;
+                } else
+                    return b8(0);
+            }
+
+            if (!IS_VECTOR(x))
+                return b8(find_obj_idx(y, x) != NULL_I64);
+
+            if (!IS_VECTOR(y))
+                return map_binary_left_fn(ray_in, 0, x, y);
+
             if (y->type == TYPE_LIST) {
                 yl = y->len;
                 vec = B8(yl);
