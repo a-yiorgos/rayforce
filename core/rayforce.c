@@ -1347,6 +1347,8 @@ i64_t find_obj_idx(obj_p obj, obj_p val) {
             return find_raw(obj, &val->i64);
         case MTYPE2(TYPE_F64, -TYPE_F64):
             return find_raw(obj, &val->f64);
+        case MTYPE2(TYPE_GUID, -TYPE_GUID):
+            return find_raw(obj, AS_GUID(val));
         default:
             if (!IS_VECTOR(obj) && !IS_VECTOR(val))
                 return (cmp_obj(obj, val) == 0) ? 0 : NULL_I64;
@@ -1880,38 +1882,52 @@ i64_t cmp_obj(obj_p a, obj_p b) {
     }
 }
 
-#define __FIND_RAW(t, tv)                     \
-    l = obj->len;                             \
-    for (i = 0; i < l; i++)                   \
-        if (AS_##tv(obj)[i] == *(t##_t *)val) \
-            return i;                         \
-    return NULL_I64;
-
 i64_t find_raw(obj_p obj, raw_p val) {
     i64_t i, l;
 
     if (!IS_VECTOR(obj))
         return NULL_I64;
 
+    l = obj->len;
+
     switch (obj->type) {
         case TYPE_U8:
         case TYPE_B8:
         case TYPE_C8:
-            __FIND_RAW(u8, U8)
+            for (i = 0; i < l; i++)
+                if (AS_U8(obj)[i] == *(u8_t *)val)
+                    return i;
+            return NULL_I64;
         case TYPE_I16:
-            __FIND_RAW(i16, I16)
+            for (i = 0; i < l; i++)
+                if (AS_I16(obj)[i] == *(i16_t *)val)
+                    return i;
+            return NULL_I64;
         case TYPE_I32:
         case TYPE_DATE:
         case TYPE_TIME:
-            __FIND_RAW(i32, I32)
+            for (i = 0; i < l; i++)
+                if (AS_I32(obj)[i] == *(i32_t *)val)
+                    return i;
+            return NULL_I64;
         case TYPE_I64:
         case TYPE_SYMBOL:
         case TYPE_TIMESTAMP:
-            __FIND_RAW(i64, I64)
+            for (i = 0; i < l; i++)
+                if (AS_I64(obj)[i] == *(i64_t *)val)
+                    return i;
+            return NULL_I64;
         case TYPE_F64:
-            __FIND_RAW(f64, F64)
+            for (i = 0; i < l; i++)
+                if (AS_F64(obj)[i] == *(f64_t *)val)
+                    return i;
+            return NULL_I64;
+        case TYPE_GUID:
+            for (i = 0; i < l; i++)
+                if (memcmp(AS_GUID(obj)[i], *(guid_t *)val, sizeof(guid_t)) == 0)
+                    return i;
+            return NULL_I64;
         case TYPE_LIST:
-            l = obj->len;
             for (i = 0; i < l; i++)
                 if (cmp_obj(AS_LIST(obj)[i], *(obj_p *)val) == 0)
                     return i;
