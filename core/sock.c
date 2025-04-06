@@ -64,10 +64,11 @@ i64_t sock_set_nonblocking(i64_t fd, b8_t flag) {
     return 0;
 }
 
-i64_t sock_open(sock_addr_t *addr) {
+i64_t sock_open(sock_addr_t *addr, i64_t timeout) {
     SOCKET fd;
     struct sockaddr_in addrin;
     i32_t code;
+    struct timeval tm;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == INVALID_SOCKET)
@@ -77,6 +78,20 @@ i64_t sock_open(sock_addr_t *addr) {
     addrin.sin_family = AF_INET;
     addrin.sin_port = htons(addr->port);
     addrin.sin_addr.s_addr = inet_addr(addr->ip);
+
+    // Set timeout for connect operation
+    if (timeout > 0) {
+        tm.tv_sec = timeout / 1000;
+        tm.tv_usec = (timeout % 1000) * 1000;
+        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
+            closesocket(fd);
+            return -1;
+        }
+        if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
+            closesocket(fd);
+            return -1;
+        }
+    }
 
     if (connect(fd, (struct sockaddr *)&addrin, sizeof(addrin)) == SOCKET_ERROR) {
         code = WSAGetLastError();
