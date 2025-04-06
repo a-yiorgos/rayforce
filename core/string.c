@@ -318,8 +318,8 @@ b8_t str_ends_with(str_p str, str_p pat) {
 b8_t str_match(str_p str, u64_t str_len, str_p pat, u64_t pat_len) {
     b8_t inv = B8_FALSE, match = B8_FALSE;
     u64_t str_pos = 0, pat_pos = 0, s_pos;
-    u64_t last_star_pat_pos = UINT64_MAX;  // Track position of last '*' in pattern
-    u64_t last_star_str_pos = 0;           // Track corresponding string position
+    u64_t last_star_pat_pos = MAX_U64;  // Track position of last '*' in pattern
+    u64_t last_star_str_pos = 0;        // Track corresponding string position
 
     while (str_pos < str_len) {
         if (pat_pos >= pat_len)

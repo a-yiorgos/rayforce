@@ -137,6 +137,7 @@ typedef u8_t guid_t[16];
 #define NULL_F64 ((f64_t)(0 / 0.0))
 #define MAX_I32 ((i32_t)0x7FFFFFFF)
 #define MAX_I64 ((i64_t)0x7FFFFFFFFFFFFFFFLL)
+#define MAX_U64 ((u64_t)0xFFFFFFFFFFFFFFFFULL)
 #define B8_TRUE (char)1
 #define B8_FALSE (char)0
 
