@@ -53,7 +53,7 @@ i64_t fs_fopen(lit_p path, i64_t attrs) {
 
     // Handle append flag
     if (attrs & ATTR_APPEND) {
-        flags |= FILE_FLAG_APPEND_DATA;
+        flags |= FILE_APPEND_DATA;
     }
 
     return (i64_t)CreateFile(path, attrs, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, disposition, flags, NULL);
