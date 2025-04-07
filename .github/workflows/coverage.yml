@@ -55,4 +55,43 @@ jobs:
         filename: coverage.json
         label: coverage
         message: ${{ steps.coverage.outputs.coverage }}%
-        color: ${{ steps.coverage.outputs.coverage > 80 && 'success' || steps.coverage.outputs.coverage > 60 && 'warning' || 'critical' }} 
+        color: ${{ steps.coverage.outputs.coverage > 80 && 'success' || steps.coverage.outputs.coverage > 60 && 'warning' || 'critical' }}
+        
+    - name: Update README badge
+      if: github.ref == 'refs/heads/main'
+      run: |
+        if [ -f coverage.info ]; then
+          COVERAGE=$(lcov --summary coverage.info | grep "lines" | awk '{print $4}' | cut -d'%' -f1)
+        else
+          COVERAGE=0
+        fi
+        
+        if [ $COVERAGE -gt 80 ]; then
+          COLOR="success"
+        elif [ $COVERAGE -gt 60 ]; then
+          COLOR="warning"
+        else
+          COLOR="critical"
+        fi
+        
+        BADGE_URL="https://img.shields.io/badge/coverage-$COVERAGE%25-$COLOR"
+        ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        
+        # Update README.md if it exists
+        if [ -f README.md ]; then
+          # Check if badge already exists
+          if grep -q "!\[coverage\]" README.md; then
+            # Replace existing badge
+            sed -i "s|!\[coverage\].*|![coverage]($BADGE_URL)|" README.md
+          else
+            # Add badge at the top of the file
+            sed -i "1i ![coverage]($BADGE_URL)" README.md
+          fi
+          
+          # Commit changes
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update coverage badge" || echo "No changes to commit"
+          git push
+        fi 
