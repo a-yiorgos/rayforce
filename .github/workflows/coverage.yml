@@ -51,6 +51,7 @@ jobs:
     - name: Setup site structure
       run: |
         # Create site directories
+        rm -rf site
         mkdir -p site/coverage
         mkdir -p site/badges
         
@@ -68,8 +69,30 @@ jobs:
           LINE_COVERAGE=$(lcov --summary coverage.info 2>&1 | grep "lines" | awk '{print $4}' | cut -d'%' -f1)
           FUNC_COVERAGE=$(lcov --summary coverage.info 2>&1 | grep "functions" | awk '{print $4}' | cut -d'%' -f1)
           
-          # Create coverage badges
-          echo "<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='96' height='20' role='img' aria-label='coverage: ${LINE_COVERAGE}%'><title>coverage: ${LINE_COVERAGE}%</title><linearGradient id='s' x2='0' y2='100%'><stop offset='0' stop-color='#bbb' stop-opacity='.1'/><stop offset='1' stop-opacity='.1'/></linearGradient><clipPath id='r'><rect width='96' height='20' rx='3' fill='#fff'/></clipPath><g clip-path='url(#r)'><rect width='61' height='20' fill='#555'/><rect x='61' width='35' height='20' fill='#97ca00'/><rect width='96' height='20' fill='url(#s)'/></g><g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='110'><text aria-hidden='true' x='315' y='150' fill='#010101' fill-opacity='.3' transform='scale(.1)' textLength='510'>coverage</text><text x='315' y='140' transform='scale(.1)' fill='#fff' textLength='510'>coverage</text><text aria-hidden='true' x='775' y='150' fill='#010101' fill-opacity='.3' transform='scale(.1)' textLength='250'>${LINE_COVERAGE}%</text><text x='775' y='140' transform='scale(.1)' fill='#fff' textLength='250'>${LINE_COVERAGE}%</text></g></svg>" > site/badges/coverage.svg
+          # Ensure badges directory exists and create badge
+          mkdir -p site/badges
+          cat > site/badges/coverage.svg << 'EOL'
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="96" height="20">
+            <title>coverage: ${LINE_COVERAGE}%</title>
+            <linearGradient id="s" x2="0" y2="100%">
+              <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+              <stop offset="1" stop-opacity=".1"/>
+            </linearGradient>
+            <clipPath id="r"><rect width="96" height="20" rx="3" fill="#fff"/></clipPath>
+            <g clip-path="url(#r)">
+              <rect width="61" height="20" fill="#555"/>
+              <rect x="61" width="35" height="20" fill="#97ca00"/>
+              <rect width="96" height="20" fill="url(#s)"/>
+            </g>
+            <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
+              <text x="315" y="140" transform="scale(.1)" fill="#fff">coverage</text>
+              <text x="775" y="140" transform="scale(.1)" fill="#fff">${LINE_COVERAGE}%</text>
+            </g>
+          </svg>
+          EOL
+          
+          # Update badge with actual coverage
+          sed -i "s/\${LINE_COVERAGE}/$LINE_COVERAGE/g" site/badges/coverage.svg
           
           echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_OUTPUT
           echo "func_coverage=$FUNC_COVERAGE" >> $GITHUB_OUTPUT
@@ -79,6 +102,7 @@ jobs:
             echo "::warning::Coverage is below 40% (current: ${LINE_COVERAGE}%). Consider adding more tests."
           fi
         else
+          mkdir -p site/coverage
           echo "<html><body><h1>Coverage Report</h1><p>No coverage data available. Coverage generation may have failed.</p></body></html>" > site/coverage/index.html
           echo "line_coverage=0" >> $GITHUB_OUTPUT
           echo "func_coverage=0" >> $GITHUB_OUTPUT
