@@ -52,25 +52,28 @@ jobs:
       run: |
         set +e
         total_tests=$(head -n 1 test_output.txt | grep -oE '[0-9]+')
-        echo '<html><head>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f5f5f5; }
-          .passed { color: #28a745; font-weight: bold; }
-          .failed { color: #dc3545; font-weight: bold; }
-          .test-name { font-family: monospace; }
-        </style>
-        </head>
-        <body>
-        <h1>Test Report</h1>
-        <h2>Total Tests: ${total_tests}</h2>
-        <table>
-          <tr>
-            <th>Test Name</th>
-            <th>Status</th>
-          </tr>' > site/tests_report/index.html
+        {
+          echo '<html><head>'
+          echo '<style>'
+          echo '  body { font-family: Arial, sans-serif; margin: 20px; }'
+          echo '  table { border-collapse: collapse; width: 100%; margin-top: 20px; }'
+          echo '  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }'
+          echo '  th { background-color: #f5f5f5; }'
+          echo '  .passed { color: #28a745; font-weight: bold; }'
+          echo '  .failed { color: #dc3545; font-weight: bold; }'
+          echo '  .test-name { font-family: monospace; }'
+          echo '</style>'
+          echo '</head>'
+          echo '<body>'
+          echo '<h1>Test Report</h1>'
+          echo "<h2>Total Tests: $total_tests</h2>"
+          echo '<table>'
+          echo '  <tr>'
+          echo '    <th>Test Name</th>'
+          echo '    <th>Status</th>'
+          echo '  </tr>'
+        } > site/tests_report/index.html
+        
         grep -E "Running test_.* \.\.\. (Passed|Failed)" test_output.txt | while read -r line; do
           if [[ $line =~ Running\ (test_[^ ]+)\ \.\.\.\ (Passed|Failed) ]]; then
             test_name="${BASH_REMATCH[1]}"
