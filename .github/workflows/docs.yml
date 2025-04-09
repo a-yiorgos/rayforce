@@ -1,0 +1,56 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.x
+
+    - name: Cache MkDocs dependencies
+      uses: actions/cache@v3
+      with:
+        key: mkdocs-material-${{ hashFiles('requirements.txt') }}
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
+        
+    - name: Install MkDocs
+      run: |
+        pip install mkdocs-material
+        pip install mkdocs-git-revision-date-plugin
+        
+    - name: Build documentation
+      run: mkdocs build
+      
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: site
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4 
