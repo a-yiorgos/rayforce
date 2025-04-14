@@ -271,6 +271,13 @@ obj_p parse_csv_field(i8_t type, str_p start, str_p end, i64_t row, obj_p out) {
     i64_t n;
 
     switch (type) {
+        case TYPE_B8:
+            if (start == NULL || end == NULL) {
+                AS_B8(out)[row] = 0;
+                break;
+            }
+            AS_B8(out)[row] = 0 != i64_from_str(start, end - start);
+            break;
         case TYPE_U8:
             if (start == NULL || end == NULL) {
                 AS_U8(out)[row] = 0;
@@ -549,7 +556,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n) {
             }
 
             path = cstring_from_obj(x[1]);
-            fd = fs_fopen(AS_C8(path), ATTR_RDONLY);
+            fd = fs_fopen(AS_C8(path), ATTR_RDWR);
 
             if (fd == -1) {
                 drop_obj(types);
