@@ -246,40 +246,7 @@ u64_t ops_rank(obj_p *x, u64_t n) {
     return l;
 }
 
-obj_p ops_where_partial(b8_t *mask, u64_t len, i64_t *ids, u64_t offset) {
-    u64_t i, j, k, m, n64, b, *block;
-
-    mask += offset;
-    ids += offset;
-
-    n64 = len / 64 * 64;
-
-    // Process 64 bytes at a time
-    for (i = 0, j = 0; i < n64; i += 64) {
-        block = (u64_t *)(mask + i);
-        for (k = 0; k < 8; k++)  // 8 u64_t in 64 bytes
-        {
-            b = block[k];
-            if (b) {
-                for (m = 0; m < 8; m++)  // 8 bytes in each u64_t
-                {
-                    if (b & 0xFF)
-                        ids[j++] = i + k * 8 + m + offset;
-                    b >>= 8;
-                }
-            }
-        }
-    }
-
-    // Handle remaining bytes
-    for (; i < len; i++) {
-        if (mask[i])
-            ids[j++] = i + offset;
-    }
-
-    return i64(j);
-}
-
+// TODO: optimize this via parallel processing
 obj_p ops_where(b8_t *mask, u64_t len) {
     u64_t i, j,count;
     i64_t *ids;

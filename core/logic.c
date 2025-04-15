@@ -28,26 +28,42 @@
 #include "error.h"
 #include "string.h"
 
-obj_p ray_and(obj_p x, obj_p y) {
-    i32_t i;
-    i64_t l;
-    obj_p res;
+obj_p ray_and(obj_p *x, u64_t n) {
+    b8_t *lhs, *rhs, *res;
+    u64_t i, j, l;
+    obj_p vec;
 
-    switch (MTYPE2(x->type, y->type)) {
-        case MTYPE2(-TYPE_B8, -TYPE_B8):
-            return (b8(x->b8 && y->b8));
+    if (n == 0)
+        return B8(B8_FALSE);
 
-        case MTYPE2(TYPE_B8, TYPE_B8):
-            l = x->len;
-            res = B8(x->len);
-            for (i = 0; i < l; i++)
-                AS_B8(res)[i] = AS_B8(x)[i] & AS_B8(y)[i];
+    if (n == 1)
+        return clone_obj(x[0]);
 
-            return res;
-
-        default:
-            THROW(ERR_TYPE, "and: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
+    for (i = 0; i < n; i++) {
+        if (x[i]->type != TYPE_B8)
+            THROW(ERR_TYPE, "and: unsupported types: '%s, '%s", type_name(x[i]->type), type_name(TYPE_B8));
     }
+
+    l = x[0]->len;
+
+    for (i = 0; i < n; i++) {
+        if (x[i]->len != l)
+            THROW(ERR_TYPE, "and: different lengths: '%ld, '%ld", l, x[i]->len);
+    }
+
+    vec = B8(l);
+    res = AS_B8(vec);
+    lhs = AS_B8(x[0]);
+
+    for (i = 1; i < n; i++) {
+        rhs = AS_B8(x[i]);
+        for (j = 0; j < l; j++)
+            res[j] = lhs[j] && rhs[j];
+
+        lhs = res;
+    }
+
+    return vec;
 }
 
 obj_p ray_or(obj_p x, obj_p y) {
