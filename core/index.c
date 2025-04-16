@@ -2151,7 +2151,7 @@ obj_p index_join_obj(obj_p lcols, obj_p rcols, u64_t len) {
 
     drop_obj(ht);
 
-    resize_obj(&res, len);
+    resize_obj(&res, MINU64(ll, rl));
 
     return res;
 }

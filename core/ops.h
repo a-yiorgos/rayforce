@@ -137,6 +137,7 @@ extern struct obj_t __NULL_OBJECT;
 #define MAXF64(x, y) (ops_is_nan((x)) ? (y) : ops_is_nan((y)) ? (x) : ((x) > (y) ? (x) : (y)))
 #define MINI32(x, y) (((x) == NULL_I32) ? (y) : ((y) == NULL_I32) ? (x) : ((x) < (y) ? (x) : (y)))
 #define MINI64(x, y) (((x) == NULL_I64) ? (y) : ((y) == NULL_I64) ? (x) : ((x) < (y) ? (x) : (y)))
+#define MINU64(x, y) ((x) < (y) ? (x) : (y))
 #define MINF64(x, y) (ops_is_nan((x)) ? (y) : ops_is_nan((y)) ? (x) : ((x) < (y) ? (x) : (y)))
 #define ROTI32(x, y) (((x) << (y)) | ((x) >> (32 - (y))))
 #define ROTI64(x, y) (((x) << (y)) | ((x) >> (64 - (y))))
