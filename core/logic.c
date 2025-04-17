@@ -28,14 +28,47 @@
 #include "error.h"
 #include "string.h"
 #include "eval.h"
+#include "runtime.h"
+typedef obj_p (*logic_op_f)(raw_p, raw_p, raw_p, raw_p);
 
-typedef nil_t (*logic_op_f)(b8_t *, b8_t *, u64_t);
+// Operation functions
+static obj_p and_op_partial(raw_p x, raw_p y, raw_p z, raw_p k) {
+    b8_t *mask, *next_mask;
+    u64_t i, n, offset;
+
+    offset = (u64_t)k;
+    n = (u64_t)z;
+
+    mask = AS_B8((obj_p)x) + offset;
+    next_mask = AS_B8((obj_p)y) + offset;
+
+    for (i = 0; i < n; i++)
+        mask[i] &= next_mask[i];
+
+    return NULL_OBJ;
+}
+
+static obj_p or_op_partial(raw_p x, raw_p y, raw_p z, raw_p k) {
+    b8_t *mask, *next_mask;
+    u64_t i, n, offset;
+
+    offset = (u64_t)k;
+    n = (u64_t)z;
+
+    mask = AS_B8((obj_p)x) + offset;
+    next_mask = AS_B8((obj_p)y) + offset;
+
+    for (i = 0; i < n; i++)
+        mask[i] |= next_mask[i];
+
+    return NULL_OBJ;
+}
 
 // Actual logic operation
-static obj_p ray_logic_op(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) {
-    b8_t *mask, *next_mask;
-    u64_t i, l;
-    obj_p next, res;
+static obj_p logic_map(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) {
+    u64_t i, m, l, chunk;
+    obj_p next, res, v;
+    pool_p pool = runtime_get()->pool;
 
     if (n == 0)
         return B8(B8_FALSE);
@@ -51,7 +84,8 @@ static obj_p ray_logic_op(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) 
     }
 
     l = res->len;
-    mask = AS_B8(res);
+
+    m = pool_split_by(pool, res->len, 0);
 
     // Process remaining expressions
     for (i = 1; i < n; i++) {
@@ -74,8 +108,28 @@ static obj_p ray_logic_op(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) 
         }
 
         // Perform element-wise operation using the provided function
-        next_mask = AS_B8(next);
-        op_func(mask, next_mask, l);
+
+        if (m == 1) {
+            op_func(res, next, (raw_p)l, (raw_p)0);
+        } else {
+            pool_prepare(pool);
+            chunk = l / m;
+
+            for (i = 0; i < m - 1; i++)
+                pool_add_task(pool, op_func, 5, res, next, chunk, i * chunk, res);
+
+            pool_add_task(pool, op_func, 5, res, next, l - i * chunk, i * chunk, res);
+
+            v = pool_run(pool);
+
+            if (IS_ERR(v)) {
+                drop_obj(res);
+                drop_obj(next);
+                return v;
+            }
+
+            drop_obj(v);
+        }
 
         drop_obj(next);
     }
@@ -83,24 +137,9 @@ static obj_p ray_logic_op(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) 
     return res;
 }
 
-// Operation functions
-static nil_t and_op(b8_t *mask, b8_t *next_mask, u64_t n) {
-    u64_t i;
+obj_p ray_and(obj_p *x, u64_t n) { return logic_map(x, n, "and", and_op_partial); }
 
-    for (i = 0; i < n; i++)
-        mask[i] &= next_mask[i];
-}
-
-static nil_t or_op(b8_t *mask, b8_t *next_mask, u64_t n) {
-    u64_t i;
-
-    for (i = 0; i < n; i++)
-        mask[i] |= next_mask[i];
-}
-
-obj_p ray_and(obj_p *x, u64_t n) { return ray_logic_op(x, n, "and", and_op); }
-
-obj_p ray_or(obj_p *x, u64_t n) { return ray_logic_op(x, n, "or", or_op); }
+obj_p ray_or(obj_p *x, u64_t n) { return logic_map(x, n, "or", or_op_partial); }
 
 // obj_p ray_or(obj_p x, obj_p y) {
 //     u64_t i, l;
