@@ -29,6 +29,7 @@
 #include "string.h"
 #include "eval.h"
 #include "runtime.h"
+
 typedef obj_p (*logic_op_f)(raw_p, raw_p, raw_p, raw_p);
 
 // Operation functions
@@ -108,7 +109,6 @@ static obj_p logic_map(obj_p *x, u64_t n, lit_p op_name, logic_op_f op_func) {
         }
 
         // Perform element-wise operation using the provided function
-
         if (m == 1) {
             op_func(res, next, (raw_p)l, (raw_p)0);
         } else {
