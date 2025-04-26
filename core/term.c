@@ -394,7 +394,8 @@ term_p term_create() {
 
 nil_t term_destroy(term_p term) {
     // Restore the terminal attributes
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &term->oldattr);
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &term->oldattr) == -1)
+        perror("Failed to restore terminal attributes");
 
     hist_destroy(term->hist);
 

@@ -151,7 +151,6 @@ nil_t poll_deregister(poll_p poll, i64_t id) {
         selector->close_fn(poll, selector);
 
     epoll_ctl(poll->fd, EPOLL_CTL_DEL, selector->fd, NULL);
-    close(selector->fd);
 
     heap_free(selector->rx.buf);
     heap_free(selector->tx.buf);
