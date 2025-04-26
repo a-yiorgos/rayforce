@@ -49,6 +49,12 @@ i64_t repl_recv(poll_p poll, selector_p selector) {
     if (str == NULL)
         return 0;
 
+    // it is not going to call repl_read next, so we need to prompt again
+    if (str->type == TYPE_NULL) {
+        term_prompt(repl->term);
+        return 0;
+    }
+
     selector->rx.buf = str;
 
     return str->len;
