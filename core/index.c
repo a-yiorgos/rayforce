@@ -1222,7 +1222,8 @@ obj_p index_in_i64_i64(i64_t x[], i64_t xl, i64_t y[], i64_t yl) {
 
     min = (scope_x.min > scope_y.min) ? scope_x.min : scope_y.min;
     max = (scope_x.max < scope_y.max) ? scope_x.max : scope_y.max;
-    range = min==NULL_I64 ? MAX_I64 : max - min + 1;
+    __int128 rng = (__int128)max - (__int128)min;
+    range = rng > (__int128)MAX_RANGE ? MAX_I64 : (i64_t)rng + 1;
 
     vec = B8(xl);
     r = AS_B8(vec);
