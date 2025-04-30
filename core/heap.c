@@ -32,6 +32,7 @@
 #include "string.h"
 #include "sys.h"
 #include "os.h"
+#include "log.h"
 
 #ifndef __EMSCRIPTEN__
 RAYASSERT(sizeof(struct block_t) == (2 * sizeof(struct obj_t)), heap_h);
@@ -49,10 +50,11 @@ __thread c8_t HEAP_SWAP[64] = {0};
 #define DEFAULT_HEAP_SWAP "/tmp/"
 
 heap_p heap_create(i64_t id) {
+    LOG_INFO("Creating heap with id %lld", id);
     __HEAP = (heap_p)mmap_alloc(sizeof(struct heap_t));
 
     if (__HEAP == NULL) {
-        perror("heap mmap_alloc");
+        LOG_ERROR("Failed to allocate heap: %s", strerror(errno));
         exit(1);
     }
 
@@ -68,6 +70,7 @@ heap_p heap_create(i64_t id) {
     if (HEAP_SWAP[strlen(HEAP_SWAP) - 1] != '/')
         strcat(HEAP_SWAP, "/");
 
+    LOG_DEBUG("Heap created successfully with swap path: %s", HEAP_SWAP);
     return __HEAP;
 }
 
@@ -75,9 +78,11 @@ nil_t heap_destroy(nil_t) {
     i64_t i;
     block_p block, next;
 
+    LOG_INFO("Destroying heap");
+
     // Ensure foreign blocks are freed
     if (__HEAP->foreign_blocks != NULL)
-        DEBUG_PRINT("%s-- HEAP[%lld]: foreign blocks not freed%s", RED, __HEAP->id, RESET);
+        LOG_WARN("Heap[%lld]: foreign blocks not freed", __HEAP->id);
 
     // All the nodes remains are pools, so just munmap them
     for (i = MIN_BLOCK_ORDER; i <= MAX_POOL_ORDER; i++) {
@@ -86,7 +91,7 @@ nil_t heap_destroy(nil_t) {
         while (block) {
             next = block->next;
             if (i != block->pool_order) {
-                DEBUG_PRINT("%s-- HEAP[%lld]: leak order: %lld block: %p%s", RED, __HEAP->id, i, block, RESET);
+                LOG_ERROR("Heap[%lld]: leak order: %lld block: %p", __HEAP->id, i, block);
                 return;
             }
 
@@ -99,9 +104,13 @@ nil_t heap_destroy(nil_t) {
     mmap_free(__HEAP, sizeof(struct heap_t));
 
     __HEAP = NULL;
+    LOG_DEBUG("Heap destroyed successfully");
 }
 
-heap_p heap_get(nil_t) { return __HEAP; }
+heap_p heap_get(nil_t) {
+    LOG_TRACE("Getting heap instance");
+    return __HEAP;
+}
 
 #ifdef SYS_MALLOC
 

@@ -26,7 +26,7 @@
 
 #include "rayforce.h"
 
-#define AVAIL_MASK ((i64_t)0xffffffffffffffff)
+#define AVAIL_MASK ((u64_t)0xffffffffffffffff)
 #define MIN_BLOCK_ORDER 5   // 2^5 = 32B
 #define MAX_BLOCK_ORDER 26  // 2^26 = 64MB
 #define MAX_POOL_ORDER 38   // 2^38 = 256GB
