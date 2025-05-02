@@ -1059,7 +1059,7 @@ obj_p index_in_i32_i64(i32_t x[], i64_t xl, i64_t y[], i64_t yl) {
     for (i = 0; i < yl; i++)
         if (y[i] == NULL_I64)
             AS_I64(AS_LIST(set)[0])[ht_oa_tab_next(&set, (i64_t)NULL_I32)] = (i64_t)NULL_I32;
-        else if (y[i] > (i64_t)NULL_I32 && y[i] <= (i64_t)MAX_I32)
+        else if (y[i] > (i64_t)NULL_I32 && y[i] <= (i64_t)INF_I32)
             AS_I64(AS_LIST(set)[0])[ht_oa_tab_next(&set, y[i])] = y[i];
 
     for (i = 0; i < xl; i++)
@@ -1197,7 +1197,7 @@ obj_p index_in_i64_i32(i64_t x[], i64_t xl, i32_t y[], i64_t yl) {
     for (i = 0; i < xl; i++)
         if (x[i] == NULL_I64)
             r[i] = ht_oa_tab_get(set, (i64_t)NULL_I32) != NULL_I64;
-        else if (x[i] > (i64_t)NULL_I32 && x[i] <= (i64_t)MAX_I32)
+        else if (x[i] > (i64_t)NULL_I32 && x[i] <= (i64_t)INF_I32)
             r[i] = ht_oa_tab_get(set, x[i]) != NULL_I64;
         else
             r[i] = B8_FALSE;
@@ -1222,8 +1222,10 @@ obj_p index_in_i64_i64(i64_t x[], i64_t xl, i64_t y[], i64_t yl) {
 
     min = (scope_x.min > scope_y.min) ? scope_x.min : scope_y.min;
     max = (scope_x.max < scope_y.max) ? scope_x.max : scope_y.max;
+
+    // TODO: fix this
     __int128 rng = (__int128)max - (__int128)min;
-    range = rng > (__int128)MAX_RANGE ? MAX_I64 : (i64_t)rng + 1;
+    range = rng > (__int128)MAX_RANGE ? INF_I64 : (i64_t)rng + 1;
 
     vec = B8(xl);
     r = AS_B8(vec);

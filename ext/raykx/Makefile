@@ -7,10 +7,10 @@ LIBS = -lm -ldl -lpthread
 default: debug
 
 debug:
-	$(CC) $(CFLAGS) -shared -fPIC -I../core -o $(TARGET) raykx.c -DDEBUG $(LIBS)
+	$(CC) $(CFLAGS) -shared -fPIC -I. -o $(TARGET) raykx.c -DDEBUG $(LIBS)
 
 release:
-	$(CC) $(CFLAGS) -shared -fPIC -I../core -o $(TARGET) raykx.c $(LIBS)
+	$(CC) $(CFLAGS) -shared -fPIC -I. -o $(TARGET) raykx.c $(LIBS)
 
 clean:
 	rm -f $(TARGET)
