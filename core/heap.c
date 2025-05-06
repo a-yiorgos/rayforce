@@ -136,6 +136,8 @@ block_p heap_add_pool(i64_t size) {
     block_p block;
     c8_t filename[128];
 
+    LOG_TRACE("Adding pool of size %lld", size);
+
     block = (block_p)mmap_alloc(size);
 
     if (block == NULL) {
@@ -267,6 +269,7 @@ raw_p __attribute__((hot)) heap_alloc(i64_t size) {
     // add a new pool and split as well
     if (i == 0) {
         if (order >= MAX_BLOCK_ORDER) {
+            LOG_TRACE("Adding pool of size %lld requested size %lld", BSIZEOF(order), size);
             size = BSIZEOF(order);
             block = heap_add_pool(size);
 
