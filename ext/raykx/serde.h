@@ -21,33 +21,13 @@
  *   SOFTWARE.
  */
 
-#ifndef RAYKX_H
-#define RAYKX_H
+#ifndef RAYKX_SERDE_H
+#define RAYKX_SERDE_H
 
 #include "../../core/rayforce.h"
 
-// KDB+ IPC Protocol Constants
-#define KDB_MSG_ASYN 0
-#define KDB_MSG_SYNC 1
-#define KDB_MSG_RESP 2
-#define KDB_MSG_ERR 128
+i64_t raykx_size_obj(obj_p obj);
+i64_t raykx_ser_obj(u8_t *buf, i64_t len, obj_p obj);
+obj_p raykx_des_obj(u8_t *buf, i64_t len);
 
-// KDB+ IPC Context
-typedef struct raykx_ctx_t {
-    obj_p name;
-    u8_t msgtype;
-} *raykx_ctx_p;
-
-// KDB+ IPC Header
-typedef struct raykx_header_t {
-    u8_t endianness;
-    u8_t msgtype;
-    u8_t compressed;
-    u8_t reserved;
-    u32_t size;
-} *raykx_header_p;
-
-obj_p raykx_hopen(obj_p addr);
-obj_p raykx_send(obj_p fd, obj_p msg);
-
-#endif  // RAYKX_H
+#endif  // RAYKX_SERDE_H

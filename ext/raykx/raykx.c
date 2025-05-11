@@ -36,9 +36,7 @@
 #include "../../core/runtime.h"
 #include "raykx.h"
 #include "types.h"
-
-// Just to test the ipc.h file
-#include "../../core/ipc.h"
+#include "serde.h"
 
 // Forward declarations
 static option_t raykx_read_header(poll_p poll, selector_p selector);
@@ -54,7 +52,7 @@ obj_p raykx_hopen(obj_p addr) {
     i64_t fd, id;
     struct poll_registry_t registry = ZERO_INIT_STRUCT;
     raykx_ctx_p ctx;
-    u8_t handshake[2] = {0x00, 0x00};  // KDB+ handshake
+    u8_t handshake[2] = {0x03, 0x00};  // KDB+ handshake
     sock_addr_t sock_addr;
     selector_p selector;
 
@@ -93,9 +91,9 @@ obj_p raykx_hopen(obj_p addr) {
     registry.events = POLL_EVENT_READ | POLL_EVENT_ERROR | POLL_EVENT_HUP;
     registry.recv_fn = sock_recv;
     registry.send_fn = sock_send;
-    registry.read_fn = ipc_read_header;
-    registry.close_fn = ipc_on_close;
-    registry.error_fn = ipc_on_error;
+    registry.read_fn = raykx_read_header;
+    registry.close_fn = raykx_on_close;
+    registry.error_fn = raykx_on_error;
     registry.data = ctx;
 
     LOG_DEBUG("Registering connection in poll registry");
@@ -108,25 +106,39 @@ obj_p raykx_hopen(obj_p addr) {
     return i64(id);
 }
 
+obj_p raykx_hclose(obj_p fd) {
+    if (fd->type != -TYPE_I64)
+        THROW(ERR_TYPE, "hclose: expected i64, got %s", type_name(fd->type));
+
+    poll_deregister(runtime_get()->poll, fd->i64);
+
+    return null(0);
+}
+
 // ============================================================================
 // Message Reading
 // ============================================================================
 
 static option_t raykx_read_header(poll_p poll, selector_p selector) {
     UNUSED(poll);
-    u8_t header[8];  // KDB+ message header: 1 byte msg type, 1 byte compression, 2 bytes unused, 4 bytes size
+    raykx_header_p header;
+    raykx_ctx_p ctx;
 
-    if (sock_recv(selector->fd, header, 8) == -1) {
-        LOG_ERROR("Failed to read KDB+ message header");
-        return option_error(sys_error(ERR_IO, "raykx_read_header: failed to read header"));
-    }
+    LOG_DEBUG("Reading KDB+ message header from connection %lld", selector->id);
 
-    i32_t size = *(i32_t *)(header + 4);
-    LOG_DEBUG("Reading KDB+ message of size %d", size);
+    ctx = (raykx_ctx_p)selector->data;
+    header = (raykx_header_p)selector->rx.buf->data;
 
-    // Request buffer for the message
-    poll_rx_buf_request(poll, selector, size);
+    LOG_TRACE("Header read: {.endianness: %d, .msgtype: %d, .size: %lld}", header->endianness, header->msgtype,
+              header->size);
+
+    // request the buffer for the entire message (including the header)
+    LOG_DEBUG("Requesting buffer for message of size %lld", header->size);
+    poll_rx_buf_request(poll, selector, header->size);
+
+    LOG_DEBUG("Switching to message reading mode");
     selector->rx.read_fn = raykx_read_msg;
+    ctx->msgtype = header->msgtype;
 
     return option_some(NULL);
 }
@@ -136,11 +148,13 @@ static option_t raykx_read_msg(poll_p poll, selector_p selector) {
     obj_p res;
 
     LOG_DEBUG("Reading KDB+ message from connection %lld", selector->id);
-    // TODO: Implement KDB+ message deserialization
-    res = null(0);
+    res = raykx_des_obj(selector->rx.buf->data, selector->rx.buf->size);
 
-    // Prepare for next message
+    LOG_TRACE_OBJ("Deserialized message: ", res);
+
+    // Prepare for the next message
     poll_rx_buf_release(poll, selector);
+    poll_rx_buf_request(poll, selector, ISIZEOF(struct raykx_header_t));
     selector->rx.read_fn = raykx_read_header;
 
     return option_some(res);
@@ -161,30 +175,103 @@ static nil_t raykx_on_close(poll_p poll, selector_p selector) {
 
     LOG_INFO("KDB+ connection %lld closed", selector->id);
 
-    // Clear any pending read operations
-    selector->rx.read_fn = NULL;
-    if (selector->rx.buf != NULL) {
-        poll_rx_buf_release(poll, selector);
-    }
-
     // Free context
     ctx = (raykx_ctx_p)selector->data;
-    if (ctx != NULL) {
-        drop_obj(ctx->name);
-        heap_free(ctx);
-    }
+    drop_obj(ctx->name);
+    heap_free(ctx);
 }
 
 // ============================================================================
 // Message Sending
 // ============================================================================
 
+obj_p raykx_process_msg(poll_p poll, selector_p selector, obj_p msg) {
+    UNUSED(poll);
+
+    obj_p res;
+    raykx_ctx_p ctx;
+
+    ctx = (raykx_ctx_p)selector->data;
+
+    LOG_TRACE_OBJ("Processing message: ", msg);
+
+    if (IS_ERR(msg) || is_null(msg))
+        res = msg;
+    else if (msg->type == TYPE_C8) {
+        LOG_TRACE("Evaluating string message: %.*s", (i32_t)msg->len, AS_C8(msg));
+        res = ray_eval_str(msg, ctx->name);
+        drop_obj(msg);
+    } else {
+        LOG_TRACE("Evaluating object message");
+        res = eval_obj(msg);
+        drop_obj(msg);
+    }
+
+    LOG_TRACE_OBJ("Resulting object: ", res);
+
+    return res;
+}
+
+nil_t raykx_send_msg(poll_p poll, selector_p selector, obj_p msg, u8_t msgtype) {
+    i64_t size;
+    poll_buffer_p buf;
+    raykx_header_p header;
+
+    LOG_TRACE("Serializing message");
+    size = raykx_size_obj(msg);
+    buf = poll_buf_create(ISIZEOF(struct raykx_header_t) + size);
+    raykx_ser_obj(buf->data, size, msg);
+    header = (raykx_header_p)buf->data;
+    header->msgtype = msgtype;
+    poll_send_buf(poll, selector, buf);
+    LOG_DEBUG("Message sent");
+}
+
 obj_p raykx_send(obj_p fd, obj_p msg) {
     selector_p selector;
     raykx_ctx_p ctx;
     poll_p poll = runtime_get()->poll;
+    i64_t id = fd->i64;
+    u8_t msgtype = KDB_MSG_SYNC;
+    option_t result;
+    obj_p res;
 
     LOG_DEBUG("Starting synchronous KDB+ send");
 
-    return ipc_send(poll, fd->i64, msg, 1);
+    selector = poll_get_selector(poll, id);
+    if (selector == NULL) {
+        LOG_ERROR("Invalid selector for fd %lld", id);
+        return sys_error(ERR_IO, "ipc_send: invalid selector for fd");
+    }
+
+    ctx = (raykx_ctx_p)selector->data;
+    raykx_send_msg(poll, selector, msg, msgtype);
+
+    res = NULL_OBJ;
+
+    // wait for the response
+    if (msgtype == KDB_MSG_SYNC) {
+        do {
+            LOG_DEBUG("Waiting for response from connection %lld", selector->id);
+            result = poll_block_on(poll, selector);
+            LOG_DEBUG("Response received from connection %lld RESULT: %s", selector->id,
+                      option_is_some(&result) ? "some" : "none");
+            if (option_is_some(&result) && result.value != NULL) {
+                res = option_take(&result);
+                // If the message is a response, break the loop
+                if (ctx->msgtype == KDB_MSG_RESP)
+                    break;
+
+                // Process the request otherwise
+                res = raykx_process_msg(poll, selector, res);
+                drop_obj(res);
+            } else if (option_is_error(&result)) {
+                LOG_ERROR("Error occurred on connection %lld", selector->id);
+                return option_take(&result);
+            }
+
+        } while (option_is_none(&result));
+    }
+
+    return res;
 }

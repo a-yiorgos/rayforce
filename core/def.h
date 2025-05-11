@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <arpa/inet.h>
 #include <sys/mman.h>
 #include <unistd.h>

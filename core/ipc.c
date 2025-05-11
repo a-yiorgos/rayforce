@@ -378,7 +378,7 @@ nil_t ipc_on_close(poll_p poll, selector_p selector) {
 obj_p ipc_send(poll_p poll, i64_t id, obj_p msg, u8_t msgtype) {
     selector_p selector;
     option_t result;
-    obj_p v, res;
+    obj_p res;
     ipc_ctx_p ctx;
 
     LOG_DEBUG("Starting synchronous IPC send for id %lld", id);
@@ -403,15 +403,13 @@ obj_p ipc_send(poll_p poll, i64_t id, obj_p msg, u8_t msgtype) {
                       option_is_some(&result) ? "some" : "none");
             if (option_is_some(&result) && result.value != NULL) {
                 res = option_take(&result);
-                LOG_DEBUG("Response received: %.*s", (i32_t)res->len, AS_C8(res));
                 // If the message is a response, break the loop
                 if (ctx->msgtype == MSG_TYPE_RESP)
                     break;
 
                 // Process the request otherwise
-                v = ipc_process_msg(poll, selector, res);
+                res = ipc_process_msg(poll, selector, res);
                 drop_obj(res);
-                drop_obj(v);
             } else if (option_is_error(&result)) {
                 LOG_ERROR("Error occurred on connection %lld", selector->id);
                 return option_take(&result);

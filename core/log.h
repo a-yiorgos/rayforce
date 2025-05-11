@@ -2,6 +2,7 @@
 #define LOG_H
 
 #include "rayforce.h"
+#include "def.h"
 
 #ifdef DEBUG
 

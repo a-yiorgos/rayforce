@@ -402,15 +402,14 @@ option_t poll_block_on(poll_p poll, selector_p selector) {
     struct timeval timeout;
     i64_t nbytes, ret;
 
-    LOG_TRACE("Blocking on selector %lld", selector->id);
+    LOG_TRACE("Blocking on selector id: %lld, fd: %lld", selector->id, selector->fd);
 
     // Setup select
     FD_ZERO(&readfds);
     FD_SET(selector->fd, &readfds);
     timeout.tv_sec = 0;
-    timeout.tv_usec = 30000000;  // 30 seconds
-
-    LOG_TRACE("File descriptor %lld is ready for reading", selector->id);
+    // timeout.tv_usec = 30000000;  // 30 seconds
+    timeout.tv_usec = 3000000;
 
     // Perform the read operation
     while (selector->rx.buf != NULL) {
@@ -420,6 +419,8 @@ option_t poll_block_on(poll_p poll, selector_p selector) {
             LOG_ERROR("select failed");
             return option_error(sys_error(ERR_IO, "recv select failed"));
         }
+
+        LOG_TRACE("select returned %lld", ret);
 
         if (ret == 0)
             return option_error(sys_error(ERR_IO, "recv timeout"));
@@ -448,6 +449,8 @@ option_t poll_block_on(poll_p poll, selector_p selector) {
         if (option_is_some(&result) && result.value != NULL)
             return result;
     }
+
+    LOG_DEBUG("empty buffer");
 
     return option_none();
 }
