@@ -119,6 +119,11 @@ i64_t raykx_save_obj(u8_t *buf, obj_p obj) {
             buf++;
             memcpy(buf, &obj->i32, sizeof(i32_t));
             return ISIZEOF(i8_t) + ISIZEOF(i32_t);
+        case -TYPE_I64:
+            buf[0] = -KJ;
+            buf++;
+            memcpy(buf, &obj->i64, sizeof(i64_t));
+            return ISIZEOF(i8_t) + ISIZEOF(i64_t);
         case TYPE_C8:
             buf[0] = KC;
             buf++;
@@ -141,8 +146,8 @@ i64_t raykx_ser_obj(u8_t *buf, i64_t len, obj_p obj) {
     size = len + ISIZEOF(struct raykx_header_t);
 
     header = (raykx_header_p)buf;
-    header->endianness = 0x01;
-    header->msgtype = KDB_MSG_SYNC;
+    header->endianness = 1;
+    header->msgtype = 0;
     header->compressed = 0;
     header->reserved = 0;
     header->size = size;
@@ -156,6 +161,7 @@ i64_t raykx_ser_obj(u8_t *buf, i64_t len, obj_p obj) {
 }
 
 obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
+    i64_t l;
     obj_p obj;
     i8_t type;
 
@@ -177,6 +183,16 @@ obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
             memcpy(&obj->i64, buf, sizeof(i64_t));
             buf += sizeof(i64_t);
             len -= sizeof(i64_t);
+            return obj;
+        case KC:
+            buf++;  // attrs
+            memcpy(&l, buf, sizeof(i32_t));
+            buf += sizeof(i32_t);
+            len -= sizeof(i32_t);
+            obj = C8(l);
+            memcpy(AS_C8(obj), buf, l);
+            buf += l;
+            len -= l;
             return obj;
         default:
             return NULL_OBJ;

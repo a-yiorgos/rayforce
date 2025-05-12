@@ -233,6 +233,14 @@ i64_t poll_recv(poll_p poll, selector_p selector) {
     return total;
 }
 
+nil_t debug_buffer(poll_buffer_p buf) {
+    i64_t i;
+    for (i = 0; i < buf->size; i++) {
+        printf("%02x ", buf->data[i]);
+    }
+    printf("\n");
+}
+
 i64_t poll_send(poll_p poll, selector_p selector) {
     UNUSED(poll);
 
@@ -241,9 +249,10 @@ i64_t poll_send(poll_p poll, selector_p selector) {
     struct epoll_event ev;
 
     LOG_TRACE("Sending data to selector %lld", selector->id);
+    debug_buffer(selector->tx.buf);
 
     total = 0;
-
+    LOG_TRACE("OFFSET: %lld", selector->tx.buf->offset);
 send_loop:
     do {
         size = selector->tx.send_fn(selector->fd, &selector->tx.buf->data[selector->tx.buf->offset],
