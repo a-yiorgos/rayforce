@@ -91,9 +91,17 @@ b8_t is_alphanum(c8_t c) { return is_alpha(c) || is_digit(c); }
 
 b8_t is_op(c8_t c) { return c && strchr("+-*/%&|^~<>!=._?", c) != NULL; }
 
-b8_t at_eof(parser_t *parser) { return parser->current >= parser->input + parser->input_len; }
+b8_t at_eof(parser_t *parser) {
+    return parser->current >= parser->input + parser->input_len || *parser->current == '\0';
+}
 
-b8_t at_term(c8_t c) { return c == ')' || c == ']' || c == '}' || c == ':' || c == ' ' || c == '\r' || c == '\n'; }
+b8_t before_eof(parser_t *parser) {
+    return parser->current + 1 >= parser->input + parser->input_len || *parser->current == '\0';
+}
+
+b8_t at_term(c8_t c) {
+    return c == ')' || c == ']' || c == '}' || c == ':' || c == ' ' || c == '\r' || c == '\n' || c == '\0';
+}
 
 b8_t is_at(obj_p token, c8_t c) { return token && token->type == TYPE_TOKEN && token->c8 == c; }
 
@@ -553,7 +561,7 @@ obj_p parse_char(parser_t *parser) {
     c8_t ch;
 
     // Handle empty quoted symbol (single quote)
-    if (at_eof(parser) || at_term(*parser->current)) {
+    if (before_eof(parser) || at_term(*pos)) {
         // Return a null symbol (0Ns)
         shift(parser, 1);  // Skip the opening quote
         span_extend(parser, &span);
@@ -1236,18 +1244,6 @@ obj_p parse_do(parser_t *parser) {
                 drop_obj(lst);
             }
             return tok;
-        }
-
-        // Check if we've reached the end of input (including newline)
-        if (at_eof(parser)) {
-            if (car == PARSE_ADVANCE) {
-                car = tok;
-            } else if (lst == NULL_OBJ) {
-                lst = vn_list(3, env_get_internal_function_by_id(SYMBOL_DO), car, tok);
-            } else {
-                push_obj(&lst, tok);
-            }
-            break;
         }
 
         if (is_at_term(tok)) {
