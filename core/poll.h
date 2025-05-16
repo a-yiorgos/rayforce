@@ -24,15 +24,9 @@
 #ifndef POLL_H
 #define POLL_H
 
-#if defined(OS_LINUX)
-#include <sys/epoll.h>
-#elif defined(OS_MACOS)
-#include <sys/event.h>
-#elif defined(OS_WINDOWS)
-#include <windows.h>
-#endif
-
+// Core includes
 #include "rayforce.h"
+#include "def.h"
 #include "parse.h"
 #include "serde.h"
 #include "format.h"
@@ -40,17 +34,18 @@
 #include "chrono.h"
 #include "term.h"
 #include "option.h"
-#include "def.h"
 
+// Constants
 #define MAX_EVENTS 1024
 #define BUF_SIZE 2048
 #define TX_QUEUE_SIZE 16
-#define SELECTOR_ID_OFFSET 3  // shifts all selector ids by 2 to avoid 0, 1 ,2 ids (stdin, stdout, stderr)
+#define SELECTOR_ID_OFFSET 3  // shifts all selector ids by 2 to avoid 0, 1, 2 ids (stdin, stdout, stderr)
 
-// forward declarations
+// Forward declarations
 struct poll_t;
 struct selector_t;
 
+// Type definitions
 typedef enum selector_type_t {
     SELECTOR_TYPE_STDIN = 0,
     SELECTOR_TYPE_STDOUT = 1,
@@ -59,50 +54,13 @@ typedef enum selector_type_t {
     SELECTOR_TYPE_FILE = 4,
 } selector_type_t;
 
-// Low level IO function (to read/write from/to the fd)
-typedef i64_t (*poll_io_fn)(i64_t, u8_t *, i64_t);
+// Function type definitions
+typedef i64_t (*poll_io_fn)(i64_t, u8_t *, i64_t);                              // Low level IO
+typedef option_t (*poll_rdwr_fn)(struct poll_t *, struct selector_t *);         // High level IO
+typedef option_t (*poll_data_fn)(struct poll_t *, struct selector_t *, raw_p);  // Data callback
+typedef nil_t (*poll_evts_fn)(struct poll_t *, struct selector_t *);            // Event callbacks
 
-// High level functions (to read/write from/to the selector buffer)
-typedef option_t (*poll_rdwr_fn)(struct poll_t *, struct selector_t *);
-
-// Callback on retrieved data
-typedef option_t (*poll_data_fn)(struct poll_t *, struct selector_t *, raw_p);
-
-// Callback functions for the rest of the events (open, close, error)
-typedef nil_t (*poll_evts_fn)(struct poll_t *, struct selector_t *);
-
-#if defined(OS_LINUX)
-
-typedef enum poll_events_t {
-    POLL_EVENT_READ = EPOLLIN,
-    POLL_EVENT_WRITE = EPOLLOUT,
-    POLL_EVENT_ERROR = EPOLLERR,
-    POLL_EVENT_HUP = EPOLLHUP,
-    POLL_EVENT_RDHUP = EPOLLRDHUP,
-    POLL_EVENT_EDGE = EPOLLET,
-} poll_events_t;
-
-#elif defined(OS_MACOS)
-
-typedef enum poll_events_t {
-    POLL_EVENT_READ = EVFILT_READ,
-    POLL_EVENT_WRITE = EVFILT_WRITE,
-    POLL_EVENT_ERROR = EV_ERROR,
-    POLL_EVENT_HUP = EV_EOF,
-    POLL_EVENT_RDHUP = EV_EOF,
-    POLL_EVENT_EDGE = 0,
-} poll_events_t;
-
-#elif defined(OS_WINDOWS)
-
-typedef enum poll_events_t {
-    POLL_EVENT_READ = POLLIN,
-    POLL_EVENT_WRITE = POLLOUT,
-    POLL_EVENT_ERROR = POLLERR,
-} poll_events_t;
-
-#endif
-
+// Buffer structure
 typedef struct poll_buffer_t {
     struct poll_buffer_t *next;
     u32_t size;
@@ -110,7 +68,14 @@ typedef struct poll_buffer_t {
     u8_t data[];
 } *poll_buffer_p;
 
+// Platform-specific event definitions and structures
 #if defined(OS_WINDOWS)
+#include <windows.h>
+typedef enum poll_events_t {
+    POLL_EVENT_READ = POLLIN,
+    POLL_EVENT_WRITE = POLLOUT,
+    POLL_EVENT_ERROR = POLLERR,
+} poll_events_t;
 
 typedef struct selector_t {
     i64_t fd;  // socket fd
@@ -139,15 +104,33 @@ typedef struct selector_t {
         WSABUF wsa_buf;
         queue_p queue;  // queue for async messages waiting to be sent
     } tx;
-
 } *selector_p;
-
 #else
+#if defined(OS_LINUX)
+#include <sys/epoll.h>
+typedef enum poll_events_t {
+    POLL_EVENT_READ = EPOLLIN,
+    POLL_EVENT_WRITE = EPOLLOUT,
+    POLL_EVENT_ERROR = EPOLLERR,
+    POLL_EVENT_HUP = EPOLLHUP,
+    POLL_EVENT_RDHUP = EPOLLRDHUP,
+    POLL_EVENT_EDGE = EPOLLET,
+} poll_events_t;
+#elif defined(OS_MACOS)
+#include <sys/event.h>
+typedef enum poll_events_t {
+    POLL_EVENT_READ = EVFILT_READ,
+    POLL_EVENT_WRITE = EVFILT_WRITE,
+    POLL_EVENT_ERROR = EV_ERROR,
+    POLL_EVENT_HUP = EV_EOF,
+    POLL_EVENT_RDHUP = EV_EOF,
+    POLL_EVENT_EDGE = 0,
+} poll_events_t;
+#endif
 
 typedef struct selector_t {
     i64_t fd;  // socket fd
     i64_t id;  // selector id
-
     selector_type_t type;
     poll_events_t interest;
 
@@ -155,7 +138,6 @@ typedef struct selector_t {
     poll_evts_fn close_fn;
     poll_evts_fn error_fn;
     poll_data_fn data_fn;
-
     raw_p data;
 
     struct {
@@ -169,7 +151,6 @@ typedef struct selector_t {
         poll_io_fn send_fn;     // to be called when the selector is ready to send
         poll_rdwr_fn write_fn;  // to be called when the selector is ready to send
     } tx;
-
 } *selector_p;
 
 typedef struct poll_t {
@@ -179,22 +160,24 @@ typedef struct poll_t {
     timers_p timers;       // timers heap
 } *poll_p;
 
-// Structure used to pass information when registering a new file descriptor.
+// Registry structure for new file descriptor registration
 typedef struct poll_registry_t {
-    i64_t fd;               // The file descriptor to register.
-    selector_type_t type;   // Type of the file descriptor.
-    poll_events_t events;   // Initial set of events to monitor (e.g., POLL_EVENT_READ).
-    poll_evts_fn open_fn;   // Called upon registration.
-    poll_evts_fn close_fn;  // Called upon deregistration.
-    poll_evts_fn error_fn;  // Handles errors.
-    poll_io_fn recv_fn;     // to be called when the selector is ready to read
-    poll_io_fn send_fn;     // to be called when the selector is ready to send
-    poll_rdwr_fn read_fn;   // Processes received data.
-    poll_rdwr_fn write_fn;  // Processes data to be sent.
-    poll_data_fn data_fn;   // Processes retrieved data.
-    raw_p data;             // User-defined data to associate with the selector.
+    i64_t fd;               // The file descriptor to register
+    selector_type_t type;   // Type of the file descriptor
+    poll_events_t events;   // Initial set of events to monitor
+    poll_evts_fn open_fn;   // Called upon registration
+    poll_evts_fn close_fn;  // Called upon deregistration
+    poll_evts_fn error_fn;  // Handles errors
+    poll_io_fn recv_fn;     // Called when ready to read
+    poll_io_fn send_fn;     // Called when ready to send
+    poll_rdwr_fn read_fn;   // Processes received data
+    poll_rdwr_fn write_fn;  // Processes data to be sent
+    poll_data_fn data_fn;   // Processes retrieved data
+    raw_p data;             // User-defined data
 } *poll_registry_p;
+#endif
 
+// Function declarations
 poll_p poll_create();
 nil_t poll_destroy(poll_p poll);
 i64_t poll_run(poll_p poll);
@@ -208,10 +191,7 @@ i64_t poll_rx_buf_release(poll_p poll, selector_p selector);
 i64_t poll_rx_buf_reset(poll_p poll, selector_p selector);
 i64_t poll_send_buf(poll_p poll, selector_p selector, poll_buffer_p buf);
 option_t poll_block_on(poll_p poll, selector_p selector);
-// Exit the app
 nil_t poll_exit(poll_p poll, i64_t code);
 nil_t poll_set_usr_fd(i64_t fd);
-
-#endif  // OS
 
 #endif  // POLL_H

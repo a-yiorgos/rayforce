@@ -39,7 +39,7 @@ obj_p lambda(obj_p args, obj_p body, obj_p nfo) {
     obj->type = TYPE_LAMBDA;
     obj->rc = 1;
 
-    f = (lambda_p)obj->arr;
+    f = (lambda_p)obj->raw;
     f->name = NULL_OBJ;
     f->args = args;
     f->body = body;

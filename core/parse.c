@@ -639,8 +639,8 @@ obj_p parse_char(parser_t *parser) {
     }
 
     // If not a char literal, parse as quoted symbol
-    while (is_alphanum(*pos) || is_op(*pos))
-        pos++;
+    for (; (pos < parser->input + parser->input_len) && (is_alphanum(*pos) || is_op(*pos)); pos++)
+        ;
 
     if (*pos == '\'') {
         span.end_column += (pos - parser->current);

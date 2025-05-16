@@ -39,7 +39,7 @@ obj_p error_obj(i8_t code, obj_p msg) {
     obj->type = TYPE_ERR;
     obj->rc = 1;
 
-    e = (ray_error_p)obj->arr;
+    e = (ray_error_p)obj->raw;
     e->code = code;
     e->msg = msg;
     e->locs = NULL_OBJ;

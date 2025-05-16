@@ -542,7 +542,7 @@ obj_p ray_read_csv(obj_p *x, i64_t n) {
                 if (type < 0)
                     type = -type;
 
-                types->arr[i] = type;
+                types->raw[i] = type;
             }
 
             path = cstring_from_obj(x[1]);

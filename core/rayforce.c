@@ -63,7 +63,7 @@ nil_t zero_obj(obj_p obj) {
     i64_t size;
 
     size = size_of(obj) - sizeof(struct obj_t);
-    memset(obj->arr, 0, size);
+    memset(obj->raw, 0, size);
 }
 
 obj_p atom(i8_t type) {
@@ -119,7 +119,7 @@ obj_p nullv(i8_t type, i64_t len) {
         case TYPE_B8:
         case TYPE_U8:
         case TYPE_C8:
-            memset(vec->arr, 0, len);
+            memset(vec->raw, 0, len);
             break;
         case TYPE_I64:
         case TYPE_SYMBOL:
@@ -140,7 +140,7 @@ obj_p nullv(i8_t type, i64_t len) {
                 AS_LIST(vec)[i] = NULL_OBJ;
             break;
         default:
-            memset(vec->arr, 0, len * size_of_type(t));
+            memset(vec->raw, 0, len * size_of_type(t));
             break;
     }
 
@@ -385,7 +385,7 @@ obj_p push_raw(obj_p *obj, raw_p val) {
         *obj = (obj_p)heap_realloc(*obj, req);
     else {
         new_obj = (obj_p)heap_alloc(req);
-        memcpy(new_obj->arr, (*obj)->arr, off);
+        memcpy(new_obj->raw, (*obj)->raw, off);
         new_obj->mmod = MMOD_INTERNAL;
         new_obj->type = (*obj)->type;
         new_obj->rc = 1;
@@ -393,7 +393,7 @@ obj_p push_raw(obj_p *obj, raw_p val) {
         *obj = new_obj;
     }
 
-    memcpy((*obj)->arr + off, val, size);
+    memcpy((*obj)->raw + off, val, size);
     (*obj)->len++;
 
     return *obj;
@@ -461,25 +461,25 @@ obj_p append_list(obj_p *obj, obj_p vals) {
             size1 = size_of(*obj) - sizeof(struct obj_t);
             size2 = size_of(vals) - sizeof(struct obj_t);
             res = resize_obj(obj, (*obj)->len + vals->len);
-            memcpy((*obj)->arr + size1, AS_I64(vals), size2);
+            memcpy((*obj)->raw + size1, AS_I64(vals), size2);
             return res;
         case MTYPE2(TYPE_F64, TYPE_F64):
             size1 = size_of(*obj) - sizeof(struct obj_t);
             size2 = size_of(vals) - sizeof(struct obj_t);
             res = resize_obj(obj, (*obj)->len + vals->len);
-            memcpy((*obj)->arr + size1, AS_F64(vals), size2);
+            memcpy((*obj)->raw + size1, AS_F64(vals), size2);
             return res;
         case MTYPE2(TYPE_C8, TYPE_C8):
             size1 = size_of(*obj) - sizeof(struct obj_t);
             size2 = size_of(vals) - sizeof(struct obj_t);
             res = resize_obj(obj, (*obj)->len + vals->len);
-            memcpy((*obj)->arr + size1, AS_C8(vals), size2);
+            memcpy((*obj)->raw + size1, AS_C8(vals), size2);
             return res;
         case MTYPE2(TYPE_GUID, TYPE_GUID):
             size1 = size_of(*obj) - sizeof(struct obj_t);
             size2 = size_of(vals) - sizeof(struct obj_t);
             res = resize_obj(obj, (*obj)->len + vals->len);
-            memcpy((*obj)->arr + size1, AS_GUID(vals), size2);
+            memcpy((*obj)->raw + size1, AS_GUID(vals), size2);
             return res;
         default:
             if ((*obj)->type == TYPE_LIST) {
@@ -577,7 +577,7 @@ obj_p ins_raw(obj_p *obj, i64_t idx, raw_p val) {
     i32_t size;
 
     size = size_of_type((*obj)->type);
-    memcpy((*obj)->arr + idx * size, val, size);
+    memcpy((*obj)->raw + idx * size, val, size);
 
     return *obj;
 }
@@ -2416,7 +2416,7 @@ obj_p copy_obj(obj_p obj) {
         case TYPE_F64:
         case TYPE_GUID:
             res = vector(obj->type, obj->len);
-            memcpy(res->arr, obj->arr, size_of(obj) - sizeof(struct obj_t));
+            memcpy(res->raw, obj->raw, size_of(obj) - sizeof(struct obj_t));
             return res;
         case TYPE_LIST:
             l = obj->len;

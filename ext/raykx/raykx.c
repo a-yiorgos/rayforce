@@ -364,6 +364,7 @@ nil_t raykx_send_msg(poll_p poll, selector_p selector, obj_p msg, u8_t msgtype) 
 
     LOG_TRACE("Serializing message");
     size = raykx_size_obj(msg);
+    LOG_TRACE("Serialized message size: %lld", size);
 
     // Create buffer with exact size needed
     buf = poll_buf_create(ISIZEOF(struct raykx_header_t) + size);
@@ -375,7 +376,7 @@ nil_t raykx_send_msg(poll_p poll, selector_p selector, obj_p msg, u8_t msgtype) 
     LOG_TRACE("poll buf size: %lld", buf->size);
 
     // Serialize the message
-    size = raykx_ser_obj(buf->data + ISIZEOF(struct raykx_header_t), size, msg);
+    size = raykx_ser_obj(buf->data + ISIZEOF(struct raykx_header_t), msg);
     if (size < 0) {
         LOG_ERROR("Failed to serialize message");
         poll_buf_destroy(buf);

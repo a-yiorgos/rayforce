@@ -165,7 +165,7 @@ typedef struct obj_t {
         struct obj_t *obj;
         struct {
             i64_t len;
-            i8_t arr[];
+            i8_t raw[];
         };
     };
 } *obj_p;

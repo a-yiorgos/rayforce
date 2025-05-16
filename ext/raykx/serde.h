@@ -27,7 +27,7 @@
 #include "../../core/rayforce.h"
 
 i64_t raykx_size_obj(obj_p obj);
-i64_t raykx_ser_obj(u8_t *buf, i64_t len, obj_p obj);
+i64_t raykx_ser_obj(u8_t *buf, obj_p obj);
 obj_p raykx_des_obj(u8_t *buf, i64_t len);
 
 #endif  // RAYKX_SERDE_H
