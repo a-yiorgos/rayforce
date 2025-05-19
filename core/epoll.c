@@ -211,6 +211,9 @@ i64_t poll_recv(poll_p poll, selector_p selector) {
 
     total = selector->rx.buf->offset;
 
+    LOG_TRACE("RX BUFFER: %p, size: %lld, offset: %lld", selector->rx.buf, selector->rx.buf->size,
+              selector->rx.buf->offset);
+
     while (selector->rx.buf->offset < selector->rx.buf->size) {
         LOG_DEBUG("buf size, offset: %lld, %lld", selector->rx.buf->size, selector->rx.buf->offset);
         LOG_DEBUG("READ SIZE: %lld", selector->rx.buf->size - selector->rx.buf->offset);

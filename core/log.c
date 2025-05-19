@@ -13,8 +13,20 @@ static str_p file_filters = NULL;
 static i32_t num_filters = 0;
 static b8_t level_initialized = B8_FALSE;
 
+// Cleanup function to free allocated memory
+static void cleanup_log_config(nil_t) {
+    if (file_filters) {
+        free(file_filters);
+        file_filters = NULL;
+        num_filters = 0;
+    }
+}
+
 // Parse log level and file filters from environment variable
 static void parse_log_config(c8_t* config) {
+    // Free any existing filters before parsing new ones
+    cleanup_log_config();
+
     str_p level_end = strchr(config, '[');
     str_p files_start = level_end;
     str_p files_end = strchr(config, ']');
@@ -73,6 +85,7 @@ static void init_log_level(nil_t) {
         } else {
             // If environment variable is not set, use default level
             current_level = LOG_LEVEL_OFF;
+            cleanup_log_config();  // Clean up any existing filters
         }
         level_initialized = B8_TRUE;
     }
@@ -198,5 +211,8 @@ nil_t log_internal(log_level_t level, lit_p file, i32_t line, lit_p func, lit_p 
 
     va_end(args);
 }
+
+// Cleanup function to be called at program exit
+void log_cleanup(nil_t) { cleanup_log_config(); }
 
 #endif  // DEBUG

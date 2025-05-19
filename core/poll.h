@@ -187,6 +187,7 @@ selector_p poll_get_selector(poll_p poll, i64_t id);
 poll_buffer_p poll_buf_create(i64_t size);
 nil_t poll_buf_destroy(poll_buffer_p buf);
 i64_t poll_rx_buf_request(poll_p poll, selector_p selector, i64_t size);
+i64_t poll_rx_buf_extend(poll_p poll, selector_p selector, i64_t size);
 i64_t poll_rx_buf_release(poll_p poll, selector_p selector);
 i64_t poll_rx_buf_reset(poll_p poll, selector_p selector);
 i64_t poll_send_buf(poll_p poll, selector_p selector, poll_buffer_p buf);

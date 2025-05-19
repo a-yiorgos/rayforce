@@ -226,13 +226,12 @@ option_t raykx_read_handshake(poll_p poll, selector_p selector) {
         LOG_DEBUG("Handshake completed, switching to header reading mode");
 
         poll_rx_buf_request(poll, selector, ISIZEOF(struct raykx_header_t));
-        poll_rx_buf_reset(poll, selector);
 
         return option_some(NULL);
     }
 
     // extend the buffer to the next 1 byte
-    poll_rx_buf_request(poll, selector, selector->rx.buf->size + 1);
+    poll_rx_buf_extend(poll, selector, 1);
 
     return option_some(NULL);
 }
@@ -252,7 +251,7 @@ static option_t raykx_read_header(poll_p poll, selector_p selector) {
 
     // request the buffer for the entire message (including the header)
     LOG_DEBUG("Requesting buffer for message of size %lld", header->size);
-    poll_rx_buf_request(poll, selector, header->size);
+    poll_rx_buf_request(poll, selector, header->size - ISIZEOF(struct raykx_header_t));
 
     LOG_DEBUG("Switching to message reading mode");
     selector->rx.read_fn = raykx_read_msg;
@@ -264,11 +263,13 @@ static option_t raykx_read_header(poll_p poll, selector_p selector) {
 static option_t raykx_read_msg(poll_p poll, selector_p selector) {
     UNUSED(poll);
     obj_p res;
+    i64_t len;
 
     LOG_DEBUG("Reading KDB+ message from connection %lld", selector->id);
-    res = raykx_des_obj(selector->rx.buf->data, selector->rx.buf->size);
+    len = selector->rx.buf->size;
+    res = raykx_des_obj(selector->rx.buf->data, &len);
 
-    LOG_TRACE_OBJ("Deserialized message: ", res);
+    // LOG_TRACE_OBJ("Deserialized message: ", res);
 
     // Prepare for the next message
     poll_rx_buf_request(poll, selector, ISIZEOF(struct raykx_header_t));

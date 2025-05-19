@@ -169,12 +169,13 @@ static const i8_t raykx_type_to_k_table[128] = {
         i32_t $n;                         \
         i64_t $m;                         \
         obj_p $o;                         \
-        memcpy(&$n, ++b, sizeof(i32_t));  \
+        b++;                              \
+        memcpy(&$n, b, sizeof(i32_t));    \
         b += sizeof(i32_t);               \
         $o = t($n);                       \
         $m = $n * ISIZEOF(t##_t);         \
-        printf("M: %lld\n", $m);          \
-        memcpy($o->raw, b, $m);           \
+        memcpy($o->raw, b, 32);           \
+        b += $m;                          \
         (*l) -= ($m + sizeof(i32_t) + 1); \
         $o->type = TYPE_##r;              \
         $o;                               \
@@ -291,7 +292,7 @@ i64_t raykx_ser_obj(u8_t *buf, obj_p obj) {
     }
 }
 
-obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
+obj_p raykx_des_obj(u8_t *buf, i64_t *len) {
     i64_t id, i, l, n;
     obj_p k, v, obj;
     i8_t type;
@@ -371,11 +372,11 @@ obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
             return obj;
         case XD:
             l = *len;
-            k = raykx_load_obj(buf, len);
+            k = raykx_des_obj(buf, len);
             if (IS_ERR(k))
                 return k;
             buf += l - *len;
-            v = raykx_load_obj(buf, len);
+            v = raykx_des_obj(buf, len);
             if (IS_ERR(v))
                 return v;
             obj = table(k, v);
@@ -386,13 +387,11 @@ obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
             buf++;  // dict
             (*len) -= 2;
             l = *len;
-            k = raykx_load_obj(buf, len);
-            DEBUG_OBJ(k);
+            k = raykx_des_obj(buf, len);
             if (IS_ERR(k))
                 return k;
             buf += l - *len;
-            v = raykx_load_obj(buf, len);
-            DEBUG_OBJ(v);
+            v = raykx_des_obj(buf, len);
             if (IS_ERR(v))
                 return v;
             return table(k, v);
@@ -403,16 +402,16 @@ obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
             buf += sizeof(i32_t);
             (*len) -= sizeof(i32_t);
             obj = LIST(l);
-            n = *len;
             for (i = 0; i < l; i++) {
-                printf("LEN: %lld\n", *len);
-                k = raykx_load_obj(buf + (n - *len), len);
+                i64_t start_len = *len;
+                k = raykx_des_obj(buf, len);
                 if (IS_ERR(k)) {
                     obj->len = i;
                     drop_obj(obj);
                     return k;
                 }
                 AS_LIST(obj)[i] = k;
+                buf += (start_len - *len);  // Update buffer position based on consumed bytes
             }
             return obj;
         case -128:  // ERROR
@@ -420,42 +419,4 @@ obj_p raykx_load_obj(u8_t *buf, i64_t *len) {
         default:
             return NULL_OBJ;
     }
-}
-
-obj_p raykx_des_obj(u8_t *buf, i64_t len) {
-    i64_t l;
-    raykx_header_p header;
-    obj_p res;
-
-    // Check if buffer is large enough to contain a header
-    if (len < ISIZEOF(struct raykx_header_t))
-        return error_str(ERR_IO, "raykx_des_obj: buffer too small to contain header");
-
-    header = (raykx_header_p)buf;
-    LOG_DEBUG("Deserializing object of size %lld", header->size);
-
-    // Check for reasonable size values
-    if (header->size > 1000000000)  // 1GB max size
-        return error_str(ERR_IO, "raykx_des_obj: unreasonable size in header, possible corruption");
-
-    // Check for reasonable size values
-    if (header->size != len)
-        return error_str(ERR_IO, "raykx_des_obj: corrupted data in a buffer");
-
-    buf += sizeof(struct raykx_header_t);
-    l = header->size - sizeof(struct raykx_header_t);
-
-    LOG_TRACE("Deserializing object of size %lld", l);
-
-    res = raykx_load_obj(buf, &l);
-    if (IS_ERR(res))
-        return res;
-
-    if (l != 0) {
-        LOG_ERROR("raykx_des_obj: corrupted data in a buffer: l = %lld", l);
-        drop_obj(res);
-        return error_str(ERR_IO, "raykx_des_obj: corrupted data in a buffer");
-    }
-
-    return res;
 }

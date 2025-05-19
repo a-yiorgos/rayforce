@@ -70,38 +70,28 @@ nil_t poll_buf_destroy(poll_buffer_p buf) { heap_free(buf); }
 i64_t poll_rx_buf_request(poll_p poll, selector_p selector, i64_t size) {
     UNUSED(poll);
 
-    if (selector->rx.buf == NULL) {
-        selector->rx.buf = heap_alloc(ISIZEOF(struct poll_buffer_t) + size);
+    LOG_TRACE("Requesting buffer of %d", size);
+    selector->rx.buf = heap_realloc(selector->rx.buf, ISIZEOF(struct poll_buffer_t) + size);
+    LOG_TRACE("New buffer: %p", selector->rx.buf);
+    if (selector->rx.buf == NULL)
+        return -1;
 
-        if (selector->rx.buf == NULL)
-            return -1;
+    selector->rx.buf->size = size;
+    selector->rx.buf->offset = 0;
 
-        selector->rx.buf->next = NULL;
-        selector->rx.buf->size = size;
-        selector->rx.buf->offset = 0;
+    return 0;
+}
 
-    } else if (selector->rx.buf->size < size) {
-        LOG_TRACE("Extending buffer from %d to %d", selector->rx.buf->size, size);
-        selector->rx.buf = heap_realloc(selector->rx.buf, ISIZEOF(struct poll_buffer_t) + size);
-        LOG_TRACE("New buffer: %p", selector->rx.buf);
-        if (selector->rx.buf == NULL)
-            return -1;
+i64_t poll_rx_buf_extend(poll_p poll, selector_p selector, i64_t size) {
+    UNUSED(poll);
 
-        LOG_TRACE("New buffer offset: %d", selector->rx.buf->offset);
+    LOG_TRACE("Extending buffer from %d to %d", selector->rx.buf->size, size);
+    selector->rx.buf = heap_realloc(selector->rx.buf, ISIZEOF(struct poll_buffer_t) + size);
+    LOG_TRACE("New buffer: %p", selector->rx.buf);
+    if (selector->rx.buf == NULL)
+        return -1;
 
-        selector->rx.buf->size = size;
-    } else {
-        LOG_TRACE("Cropping buffer from %d to %d", selector->rx.buf->size, size);
-        selector->rx.buf = heap_realloc(selector->rx.buf, ISIZEOF(struct poll_buffer_t) + size);
-        LOG_TRACE("New buffer: %p", selector->rx.buf);
-        if (selector->rx.buf == NULL)
-            return -1;
-
-        selector->rx.buf->size = size;
-        selector->rx.buf->offset = 0;
-
-        LOG_TRACE("New buffer offset: %d", selector->rx.buf->offset);
-    }
+    selector->rx.buf->size = size;
 
     return 0;
 }
