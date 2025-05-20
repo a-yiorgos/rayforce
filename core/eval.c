@@ -526,7 +526,7 @@ obj_p ray_eval_str(obj_p str, obj_p file) {
     if (str->type != TYPE_C8)
         THROW(ERR_TYPE, "eval: expected string, got %s", type_name(str->type));
 
-    info = nfo(clone_obj(file), clone_obj(str));
+    info = (file != NULL && file != NULL_OBJ) ? nfo(clone_obj(file), clone_obj(str)) : NULL_OBJ;
 
     return eval_str_w_attr(AS_C8(str), str->len, info);
 }
