@@ -295,3 +295,5 @@ obj_p runtime_fdmap_get(runtime_p runtime, obj_p assoc) {
 
     return fdmap;
 }
+
+runtime_p runtime_get_ext(nil_t) { return __RUNTIME; }

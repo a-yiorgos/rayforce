@@ -60,5 +60,6 @@ nil_t runtime_fdmap_push(runtime_p runtime, obj_p assoc, obj_p fdmap);
 obj_p runtime_fdmap_pop(runtime_p runtime, obj_p assoc);
 obj_p runtime_fdmap_get(runtime_p runtime, obj_p assoc);
 inline __attribute__((always_inline)) runtime_p runtime_get(nil_t) { return __RUNTIME; }
+runtime_p runtime_get_ext(nil_t);
 
 #endif  // RUNTIME_H
