@@ -28,6 +28,7 @@
 #include "string.h"
 #include "util.h"
 #include "log.h"
+#include "ops.h"
 
 i64_t sock_addr_from_str(str_p str, i64_t len, sock_addr_t *addr) {
     str_p tok;
@@ -39,6 +40,9 @@ i64_t sock_addr_from_str(str_p str, i64_t len, sock_addr_t *addr) {
     // Get IP part
     tok = (str_p)memchr(str, ':', len);
     if (tok == NULL)
+        return -1;
+
+    if (tok - str >= ISIZEOF(addr->ip))
         return -1;
 
     memcpy(addr->ip, str, tok - str);
