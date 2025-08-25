@@ -335,8 +335,26 @@ obj_p raykx_des_obj(u8_t *buf, i64_t *len) {
             return RAYKX_DES_VEC(buf, len, i16, I16);
         case KI:
             return RAYKX_DES_VEC(buf, len, i32, I32);
+        case KT:
+            v = RAYKX_DES_VEC(buf, len, i32, I32);
+            v->type = TYPE_TIME;
+            return v;
+        case KD:
+            v = RAYKX_DES_VEC(buf, len, i32, I32);
+            v->type = TYPE_DATE;
+            return v;
+        case KZ:
+            v = RAYKX_DES_VEC(buf, len, i64, I64);
+            v->type = TYPE_TIMESTAMP;
+            return v;
+        case KN:
+            v = RAYKX_DES_VEC(buf, len, i64, I64);
+            v->type = TYPE_TIMESTAMP;
+            return v;
         case KJ:
             return RAYKX_DES_VEC(buf, len, i64, I64);
+        case UU:
+            return RAYKX_DES_VEC(buf, len, guid, GUID);
         case KS:
             buf++;  // attrs
             (*len)--;
@@ -359,16 +377,8 @@ obj_p raykx_des_obj(u8_t *buf, i64_t *len) {
             (*len) -= sizeof(i32_t);
             obj = F64(l);
             memcpy(obj->raw, buf, l * ISIZEOF(f64_t));
-            return obj;
-        case KT:
-            buf++;  // attrs
-            memcpy(&l, buf, sizeof(i32_t));
-            buf += sizeof(i32_t);
-            (*len) -= sizeof(i32_t);
-            obj = TIME(l);
-            memcpy(obj->raw, buf, l * ISIZEOF(i32_t));
-            buf += l;
-            (*len) -= l;
+            buf += l * ISIZEOF(f64_t);
+            (*len) -= l * ISIZEOF(f64_t);
             return obj;
         case XD:
             l = *len;

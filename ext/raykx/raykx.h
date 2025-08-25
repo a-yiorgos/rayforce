@@ -36,6 +36,7 @@
 typedef struct raykx_ctx_t {
     obj_p name;
     u8_t msgtype;
+    u8_t compressed;
 } *raykx_ctx_p;
 
 // KDB+ IPC Header

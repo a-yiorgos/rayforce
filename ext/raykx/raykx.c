@@ -65,6 +65,7 @@ option_t raykx_listener_accept(poll_p poll, selector_p selector) {
         ctx = (raykx_ctx_p)heap_alloc(sizeof(struct raykx_ctx_t));
         ctx->name = string_from_str("raykx", 6);
         ctx->msgtype = KDB_MSG_RESP;
+        ctx->compressed = 0;
 
         registry.fd = fd;
         registry.type = SELECTOR_TYPE_SOCKET;
@@ -172,6 +173,7 @@ obj_p raykx_hopen(obj_p addr) {
     ctx = (raykx_ctx_p)heap_alloc(sizeof(struct raykx_ctx_t));
     ctx->name = string_from_str("raykx", 6);
     ctx->msgtype = KDB_MSG_SYNC;
+    ctx->compressed = 0;
 
     registry.fd = fd;
     registry.type = SELECTOR_TYPE_SOCKET;
@@ -253,6 +255,7 @@ static option_t raykx_read_header(poll_p poll, selector_p selector) {
     // Store message size before requesting new buffer
     msg_size = header->size - ISIZEOF(struct raykx_header_t);
     ctx->msgtype = header->msgtype;
+    ctx->compressed = header->compressed;
 
     // request the buffer for the entire message (including the header)
     LOG_DEBUG("Requesting buffer for message of size %lld", msg_size);
@@ -264,14 +267,93 @@ static option_t raykx_read_header(poll_p poll, selector_p selector) {
     return option_some(NULL);
 }
 
+static option_t raykx_decompress(const u8_t* compressed, i64_t compressed_size, u8_t** decompressed, i64_t* decompressed_size) {
+    if (compressed_size < (i64_t)sizeof(u32_t)) 
+        return option_error(sys_error(ERR_IO, "unable to uncompress data: invalid compressed buffer"));
+
+    i64_t i = 0;
+    i64_t n = 0;
+    i64_t f = 0;
+    i64_t s = 0;
+    i64_t p = 0;
+    i64_t d = 4;  // Skip the header size
+
+    // Get uncompressed length from the first 4 bytes (minus header size)
+    const u32_t* header_size = (const u32_t*)compressed;
+    i64_t len = (i64_t)(*header_size - sizeof(struct raykx_header_t));
+
+    if (len == 0) 
+        return option_error(sys_error(ERR_IO, "unable to uncompress data: uncompressed size is 0"));
+
+    u32_t buffer[256] = {0};
+    u8_t* result = (u8_t*)heap_alloc(len);
+    if (result == NULL) 
+        return option_error(sys_error(ERR_IO, "unable to allocate memory for decompressed data"));
+
+    while (s < len) {
+        if (i == 0) {
+            f = compressed[d];
+            d++;
+            i = 1;
+        }
+        if (f & i) {
+            i64_t r = buffer[compressed[d]];
+            d++;
+            result[s] = result[r];
+            s++;
+            r++;
+            result[s] = result[r];
+            s++;
+            r++;
+            n = compressed[d];
+            d++;
+            for (i64_t m = 0; m < n; m++) {
+                result[s + m] = result[r + m];
+            }
+        } else {
+            result[s] = compressed[d];
+            s++;
+            d++;
+        }
+        while (p < s - 1) {
+            i64_t pp = p;
+            p++;
+            buffer[result[pp] ^ result[p]] = pp;
+        }
+        if (f & i) {
+            s += n;
+            p = s;
+        }
+        i *= 2;
+        if (i == 256) {
+            i = 0;
+        }
+    }
+
+    *decompressed = result;
+    *decompressed_size = len;
+    return option_none();
+}
+
 static option_t raykx_read_msg(poll_p poll, selector_p selector) {
     UNUSED(poll);
     obj_p res;
     i64_t len;
+    raykx_ctx_p ctx;
 
     LOG_DEBUG("Reading KDB+ message from connection %lld", selector->id);
     len = selector->rx.buf->size;
-    res = raykx_des_obj(selector->rx.buf->data, &len);
+
+    ctx = (raykx_ctx_p)selector->data;
+    if (ctx->compressed) {
+        u8_t* decompressed;
+        i64_t decompressed_size;
+        raykx_decompress(selector->rx.buf->data, len, &decompressed, &decompressed_size);
+        res = raykx_des_obj(decompressed, &decompressed_size);
+        heap_free(decompressed);
+    } else {
+        res = raykx_des_obj(selector->rx.buf->data, &len);
+    }
 
     // LOG_TRACE_OBJ("Deserialized message: ", res);
 

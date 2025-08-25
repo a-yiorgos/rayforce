@@ -24,11 +24,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include "sock.h"
 #include "string.h"
-#include "util.h"
 #include "log.h"
 #include "ops.h"
+#include "format.h"
 
 i64_t sock_addr_from_str(str_p str, i64_t len, sock_addr_t *addr) {
     i64_t r;
@@ -38,7 +39,7 @@ i64_t sock_addr_from_str(str_p str, i64_t len, sock_addr_t *addr) {
     if (str == NULL || addr == NULL)
         return -1;
 
-    // Get IP part
+    // Get host part
     tok = (str_p)memchr(str, ':', len);
     if (tok == NULL)
         return -1;
@@ -71,37 +72,66 @@ i64_t sock_set_nonblocking(i64_t fd, b8_t flag) {
 }
 
 i64_t sock_open(sock_addr_t *addr, i64_t timeout) {
-    SOCKET fd;
-    struct sockaddr_in addrin;
+    SOCKET fd = INVALID_SOCKET;
+    struct addrinfo hints, *result = NULL, *rp;
     i32_t code;
     struct timeval tm;
+    char port_str[16];
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == INVALID_SOCKET)
+    // Convert port to string for getaddrinfo
+    _snprintf(port_str, sizeof(port_str), "%lld", addr->port);
+
+    // Set up hints for getaddrinfo
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;     // Allow IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;           // Any protocol
+
+    // Get address info
+    if (getaddrinfo(addr->ip, port_str, &hints, &result) != 0) {
+        code = WSAGetLastError();
+        LOG_ERROR("Failed to resolve hostname %s: %d", addr->ip, code);
+        WSASetLastError(code);
         return -1;
-
-    memset(&addrin, 0, sizeof(addrin));
-    addrin.sin_family = AF_INET;
-    addrin.sin_port = htons(addr->port);
-    addrin.sin_addr.s_addr = inet_addr(addr->ip);
-
-    // Set timeout for connect operation
-    if (timeout > 0) {
-        tm.tv_sec = timeout / 1000;
-        tm.tv_usec = (timeout % 1000) * 1000;
-        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
-            closesocket(fd);
-            return -1;
-        }
-        if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
-            closesocket(fd);
-            return -1;
-        }
     }
 
-    if (connect(fd, (struct sockaddr *)&addrin, sizeof(addrin)) == SOCKET_ERROR) {
+    // Try each address until we successfully connect
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (fd == INVALID_SOCKET)
+            continue;
+
+        // Set timeout for connect operation
+        if (timeout > 0) {
+            tm.tv_sec = timeout / 1000;
+            tm.tv_usec = (timeout % 1000) * 1000;
+            if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
+                code = WSAGetLastError();
+                closesocket(fd);
+                continue;
+            }
+            if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tm, sizeof(tm)) == SOCKET_ERROR) {
+                code = WSAGetLastError();
+                closesocket(fd);
+                continue;
+            }
+        }
+
+        // Try to connect
+        if (connect(fd, rp->ai_addr, rp->ai_addrlen) != SOCKET_ERROR)
+            break;  // Success
+
         code = WSAGetLastError();
         closesocket(fd);
+        fd = INVALID_SOCKET;
+    }
+
+    freeaddrinfo(result);
+
+    if (fd == INVALID_SOCKET) {
+        code = WSAGetLastError();
+        LOG_ERROR("Could not connect to %s:%lld: %d", addr->ip, addr->port, code);
         WSASetLastError(code);
         return -1;
     }
@@ -257,40 +287,62 @@ i64_t sock_set_nonblocking(i64_t fd, b8_t flag) {
 }
 
 i64_t sock_open(sock_addr_t *addr, i64_t timeout) {
-    i64_t fd;
-    struct sockaddr_in addrin;
+    i64_t fd = -1;
+    struct addrinfo hints, *result, *rp;
     struct linger linger_opt;
     struct timeval tm;
+    char port_str[16];
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);
+    // Convert port to string for getaddrinfo
+    snprintf(port_str, sizeof(port_str), "%lld", addr->port);
 
-    if (fd == -1)
-        return -1;
+    // Set up hints for getaddrinfo
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;     // Allow IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;           // Any protocol
 
-    memset(&addrin, 0, sizeof(addrin));
-    addrin.sin_family = AF_INET;
-    addrin.sin_port = htons(addr->port);
-    inet_pton(AF_INET, addr->ip, &addrin.sin_addr);
-
-    // Set timeout
-    tm.tv_sec = timeout;  // Timeout in seconds
-    tm.tv_usec = 0;       // Timeout in microseconds
-    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tm, sizeof(tm)) < 0) {
-        close(fd);
-        return -1;
-    }
-
-    // Set the behavior of a socket when it is closed using close()
-    linger_opt.l_onoff = 1;   // Enable SO_LINGER
-    linger_opt.l_linger = 0;  // Timeout in seconds (0 means terminate immediately)
-    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(linger_opt))) {
-        close(fd);
+    // Get address info
+    if (getaddrinfo(addr->ip, port_str, &hints, &result) != 0) {
+        LOG_ERROR("Failed to resolve hostname %s: %s", addr->ip, strerror(errno));
         return -1;
     }
 
-    // Connect to the server
-    if (connect(fd, (struct sockaddr *)&addrin, sizeof(addrin)) == -1) {
+    // Try each address until we successfully connect
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (fd == -1)
+            continue;
+
+        // Set timeout
+        tm.tv_sec = timeout;  // Timeout in seconds
+        tm.tv_usec = 0;       // Timeout in microseconds
+        if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tm, sizeof(tm)) < 0) {
+            close(fd);
+            continue;
+        }
+
+        // Set the behavior of a socket when it is closed using close()
+        linger_opt.l_onoff = 1;   // Enable SO_LINGER
+        linger_opt.l_linger = 0;  // Timeout in seconds (0 means terminate immediately)
+        if (setsockopt(fd, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(linger_opt))) {
+            close(fd);
+            continue;
+        }
+
+        // Try to connect
+        if (connect(fd, rp->ai_addr, rp->ai_addrlen) != -1)
+            break;  // Success
+
         close(fd);
+        fd = -1;
+    }
+
+    freeaddrinfo(result);
+
+    if (fd == -1) {
+        LOG_ERROR("Could not connect to %s:%lld: %s", addr->ip, addr->port, strerror(errno));
         return -1;
     }
 

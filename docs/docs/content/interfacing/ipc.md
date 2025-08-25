@@ -18,7 +18,7 @@ To start a Rayforce process that listens to a port, use the `-p` flag:
 To connect to a port call `hopen` function:
 
 ``` clj
-(set h (hopen "127.0.0.1:5110"))
+(set h (hopen "localhost:5110"))  ; Supports both hostnames and IP addresses
 ```
 
 Now, you can send data to the remote process:
