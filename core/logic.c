@@ -29,7 +29,6 @@
 #include "string.h"
 #include "eval.h"
 #include "runtime.h"
-#include <stdio.h>
 
 typedef obj_p (*logic_op_f)(raw_p, raw_p, raw_p, raw_p, raw_p);
 
@@ -48,7 +47,7 @@ static obj_p and_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
     // both vectors are the same length
     if (c == 1) {
         for (i = 0; i < n; i++)
-            mask[i] &= next_mask[i];
+            mask[i] = mask[i] && next_mask[i];
 
         return NULL_OBJ;
     }
@@ -56,7 +55,7 @@ static obj_p and_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
     // else right is scalar
     m = next_mask[0];
     for (i = 0; i < n; i++)
-        mask[i] &= m;
+        mask[i] = mask[i] && m;
 
     return NULL_OBJ;
 }
@@ -75,7 +74,7 @@ static obj_p or_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
     // both vectors are the same length
     if (c == 1) {
         for (i = 0; i < n; i++)
-            mask[i] |= next_mask[i];
+            mask[i] = mask[i] || next_mask[i];
 
         return NULL_OBJ;
     }
@@ -83,7 +82,7 @@ static obj_p or_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
     // else right is scalar
     m = next_mask[0];
     for (i = 0; i < n; i++)
-        mask[i] |= m;
+        mask[i] = mask[i] || m;
 
     return NULL_OBJ;
 }
