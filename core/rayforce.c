@@ -412,6 +412,11 @@ obj_p push_obj(obj_p *obj, obj_p val) {
     i64_t i, l;
     obj_p res, lst = NULL_OBJ;
 
+    if (*obj == NULL_OBJ) {
+        *obj = vector(val->type, 1);
+        return ins_obj(obj, 0, val);
+    }
+
     // change object type to a coresponding list
     if ((*obj)->type != TYPE_LIST && (*obj)->type != -val->type) {
         l = ops_count(*obj);
@@ -595,6 +600,11 @@ obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val) {
     i64_t i;
     i64_t l;
     obj_p ret;
+
+    if (*obj == NULL_OBJ) {
+        *obj = vector(val->type, 1);
+        return ins_obj(obj, 0, val);
+    }
 
     if (!IS_VECTOR(*obj))
         return *obj;

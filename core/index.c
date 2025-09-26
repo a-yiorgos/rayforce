@@ -33,6 +33,7 @@
 #include "pool.h"
 #include "runtime.h"  // for RAY_PAGE_SIZE
 #include "serde.h"    // for size_of_type
+#include "filter.h"
 
 const i64_t MAX_RANGE = 1 << 20;
 
@@ -2294,12 +2295,12 @@ obj_p index_upsert_obj(obj_p lcols, obj_p rcols, i64_t len) {
     return res;
 }
 
-static inline i64_t __asof_idx_i32(i32_t lv, i32_t rvs[], i64_t ids[], i64_t len) {
+static inline i64_t __bin_idx_i32(i32_t val, i32_t vals[], i64_t ids[], i64_t len) {
     i64_t v, i, left, right, mid, idx;
     left = 0, right = len - 1, idx = NULL_I64;
     while (left <= right) {
         mid = left + (right - left) / 2;
-        if (rvs[ids[mid]] <= lv) {
+        if (vals[ids[mid]] <= val) {
             idx = mid;
             left = mid + 1;
         } else {
@@ -2322,8 +2323,8 @@ static obj_p __asof_ids_partial(__index_list_ctx_t *ctx, obj_p lxcol, obj_p rxco
                 idx = ht_oa_tab_get_with(ht, i, &__index_list_hash_get, &__index_list_cmp_row, ctx);
                 if (idx != NULL_I64)
                     AS_I64(ids)
-                [i] = __asof_idx_i32(AS_I32(lxcol)[i], AS_I32(rxcol), AS_I64(AS_LIST(AS_LIST(ht)[1])[idx]),
-                                     AS_LIST(AS_LIST(ht)[1])[idx]->len);
+                [i] = __bin_idx_i32(AS_I32(lxcol)[i], AS_I32(rxcol), AS_I64(AS_LIST(AS_LIST(ht)[1])[idx]),
+                                    AS_LIST(AS_LIST(ht)[1])[idx]->len);
                 else AS_I64(ids)[i] = NULL_I64;
             }
             break;
@@ -2404,12 +2405,109 @@ clean:
     return ids;
 }
 
+static inline obj_p __window_aggr_i32(i32_t min, i32_t max, i32_t vals[], obj_p tab, obj_p expr, obj_p filter) {
+    i64_t left = __bin_idx_i32(min, vals, AS_I64(filter), filter->len);
+    i64_t right = __bin_idx_i32(max, vals, AS_I64(filter), filter->len);
+    i64_t i, l;
+    obj_p t, v, f;
+
+    if (left == NULL_I64)
+        left = 0;
+    if (right == NULL_I64)
+        right = filter->len - 1;
+
+    l = right - left + 1;
+    f = I64(l);
+    for (i = 0; i < l; i++)
+        AS_I64(f)[i] = AS_I64(filter)[left + i];
+
+    t = filter_map(tab, f);
+    mount_env(t);
+    v = eval(expr);
+    unmount_env(AS_LIST(t)[0]->len);
+    drop_obj(f);
+    drop_obj(t);
+
+    return v;
+}
+
 obj_p index_window_join_obj(obj_p lcols, obj_p lxcol, obj_p rcols, obj_p rxcol, obj_p windows, obj_p ltab, obj_p rtab,
                             obj_p aggr) {
-    DEBUG_OBJ(windows);
-    DEBUG_OBJ(ltab);
-    DEBUG_OBJ(rtab);
-    DEBUG_OBJ(aggr);
+    i64_t i, j, ll, rl, n, chunk;
+    obj_p v, ht, hashes, aggrvals;
+    i64_t idx;
+    __index_list_ctx_t ctx;
+    pool_p pool;
 
-    return i64(1231245);
+    ll = ops_count(ltab);
+    rl = ops_count(rtab);
+    ht = ht_oa_create(rl, TYPE_I64);
+    hashes = I64(MAXI64(ll, rl));
+
+    // Right hashes
+    __index_list_precalc_hash(rcols, (i64_t *)AS_I64(hashes), rcols->len, rl, NULL, B8_TRUE);
+    ctx = (__index_list_ctx_t){rcols, rcols, (i64_t *)AS_I64(hashes), NULL};
+    for (i = 0; i < rl; i++) {
+        idx = ht_oa_tab_next_with(&ht, i, &__index_list_hash_get, &__index_list_cmp_row, &ctx);
+        if (AS_I64(AS_LIST(ht)[0])[idx] == NULL_I64) {
+            AS_I64(AS_LIST(ht)[0])[idx] = i;
+            v = I64(1);
+            AS_I64(v)[0] = i;
+            AS_LIST(AS_LIST(ht)[1])[idx] = v;
+        } else {
+            push_raw(AS_LIST(AS_LIST(ht)[1]) + idx, (raw_p)&i);
+        }
+    }
+
+    aggrvals = LIST(aggr->len);
+    for (i = 0; i < aggr->len; i++)
+        AS_LIST(aggrvals)[i] = NULL_OBJ;
+
+    // Left hashes
+    __index_list_precalc_hash(lcols, (i64_t *)AS_I64(hashes), lcols->len, ll, NULL, B8_TRUE);
+    ctx = (__index_list_ctx_t){rcols, lcols, (i64_t *)AS_I64(hashes), NULL};
+
+    switch (lxcol->type) {
+        case TYPE_I32:
+        case TYPE_DATE:
+        case TYPE_TIME:
+            for (i = 0; i < ll; i++) {
+                idx = ht_oa_tab_get_with(ht, i, &__index_list_hash_get, &__index_list_cmp_row, &ctx);
+                if (idx != NULL_I64) {
+                    for (j = 0; j < aggr->len; j++) {
+                        v = __window_aggr_i32(AS_I32(AS_LIST(windows)[0])[i], AS_I32(AS_LIST(windows)[1])[i],
+                                              AS_I32(rxcol), rtab, AS_LIST(aggr)[j], AS_LIST(AS_LIST(ht)[1])[idx]);
+
+                        if (IS_ERR(v)) {
+                            for (j = 0; j < aggr->len; j++)
+                                AS_LIST(aggrvals)[j]->len = i;
+                            drop_obj(aggrvals);
+                            drop_obj(hashes);
+                            for (i = 0; i < rl; i++)
+                                if (AS_I64(AS_LIST(ht)[0])[i] != NULL_I64)
+                                    drop_obj(AS_LIST(AS_LIST(ht)[1])[i]);
+
+                            drop_obj(ht);
+                            return v;
+                        }
+                        push_obj(AS_LIST(aggrvals) + j, v);
+                    }
+                } else {
+                    for (j = 0; j < aggr->len; j++)
+                        push_obj(AS_LIST(aggrvals) + j, null(AS_LIST(aggrvals)[i]->type));
+                }
+            }
+            break;
+        default:
+            THROW(ERR_TYPE, "index_asof_join_obj: invalid type: %s", type_name(lxcol->type));
+    }
+
+    drop_obj(hashes);
+    for (i = 0; i < rl; i++)
+        if (AS_I64(AS_LIST(ht)[0])[i] != NULL_I64)
+            drop_obj(AS_LIST(AS_LIST(ht)[1])[i]);
+
+    drop_obj(ht);
+
+    return aggrvals;
 }

@@ -333,7 +333,6 @@ obj_p ray_xasc(obj_p x, obj_p y) {
                 return clone_obj(x);
             }
             // Fall through to default error case
-
         default:
             THROW(ERR_TYPE, "xasc: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }

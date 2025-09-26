@@ -347,6 +347,7 @@ obj_p ray_asof_join(obj_p *x, i64_t n) {
 
 obj_p ray_window_join(obj_p *x, i64_t n) {
     obj_p v, ajkl, ajkr, keys, lvals, rvals, res, idx;
+    obj_p resyms, recols;
 
     if (n != 5)
         THROW(ERR_ARITY, "window-join");
@@ -385,8 +386,8 @@ obj_p ray_window_join(obj_p *x, i64_t n) {
 
     keys = cow_obj(x[0]);
     keys = remove_idx(&keys, keys->len - 1);
-    lvals = at_obj(x[1], keys);
-    rvals = at_obj(x[2], keys);
+    lvals = at_obj(x[2], keys);
+    rvals = at_obj(x[3], keys);
 
     idx = index_window_join_obj(lvals, ajkl, rvals, ajkr, x[1], x[2], x[3], AS_LIST(x[4])[1]);
 
@@ -396,5 +397,10 @@ obj_p ray_window_join(obj_p *x, i64_t n) {
     drop_obj(ajkl);
     drop_obj(ajkr);
 
-    return idx;
+    resyms = ray_concat(AS_LIST(x[2])[0], AS_LIST(x[4])[0]);
+    recols = ray_concat(AS_LIST(x[2])[1], idx);
+
+    drop_obj(idx);
+
+    return table(resyms, recols);
 }
