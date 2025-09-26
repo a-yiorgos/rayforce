@@ -300,7 +300,7 @@ send_loop:
 
 i64_t poll_run(poll_p poll) {
     i64_t n, nbytes, nfds, timeout;
-    option_t poll_result;
+    option_t poll_result = option_none();  // Initialize with none
     selector_p selector;
     struct epoll_event ev, events[MAX_EVENTS];
 
