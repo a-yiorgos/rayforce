@@ -346,7 +346,7 @@ obj_p ray_asof_join(obj_p *x, i64_t n) {
 }
 
 obj_p ray_window_join(obj_p *x, i64_t n) {
-    obj_p v, ajkl, ajkr, keys, lvals, rvals, res, idx;
+    obj_p v, ajkl, ajkr, keys, lvals, rvals, idx;
     obj_p resyms, recols;
 
     if (n != 5)

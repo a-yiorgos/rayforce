@@ -2296,7 +2296,7 @@ obj_p index_upsert_obj(obj_p lcols, obj_p rcols, i64_t len) {
 }
 
 static inline i64_t __bin_idx_i32(i32_t val, i32_t vals[], i64_t ids[], i64_t len) {
-    i64_t v, i, left, right, mid, idx;
+    i64_t left, right, mid, idx;
     left = 0, right = len - 1, idx = NULL_I64;
     while (left <= right) {
         mid = left + (right - left) / 2;
@@ -2409,7 +2409,7 @@ static inline obj_p __window_filter_i32(i32_t min, i32_t max, i32_t vals[], obj_
     i64_t left = __bin_idx_i32(min, vals, AS_I64(filter), filter->len);
     i64_t right = __bin_idx_i32(max, vals, AS_I64(filter), filter->len);
     i64_t i, l;
-    obj_p t, v, f;
+    obj_p f;
 
     if (left == NULL_I64)
         left = 0;
@@ -2426,11 +2426,10 @@ static inline obj_p __window_filter_i32(i32_t min, i32_t max, i32_t vals[], obj_
 
 obj_p index_window_join_obj(obj_p lcols, obj_p lxcol, obj_p rcols, obj_p rxcol, obj_p windows, obj_p ltab, obj_p rtab,
                             obj_p aggr) {
-    i64_t i, j, ll, rl, n, chunk;
+    i64_t i, j, ll, rl;
     obj_p v, ht, hashes, aggrvals, f, t;
     i64_t idx;
     __index_list_ctx_t ctx;
-    pool_p pool;
 
     ll = ops_count(ltab);
     rl = ops_count(rtab);
