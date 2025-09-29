@@ -23,13 +23,13 @@
 
 #include "join.h"
 #include "rayforce.h"
-#include "util.h"
 #include "items.h"
 #include "ops.h"
 #include "compose.h"
 #include "error.h"
 #include "index.h"
-#include "aggr.h"
+#include "group.h"
+#include "eval.h"
 
 obj_p select_column(obj_p left_col, obj_p right_col, i64_t ids[], i64_t len) {
     i64_t i;
@@ -347,8 +347,9 @@ obj_p ray_asof_join(obj_p *x, i64_t n) {
 }
 
 obj_p ray_window_join(obj_p *x, i64_t n) {
+    i64_t i, l;
     obj_p v, wjkl, wjkr, keys, lvals, rvals, idx;
-    obj_p resyms, recols;
+    obj_p agrvals, resyms, recols, rtab;
 
     if (n != 5)
         THROW(ERR_ARITY, "window-join");
@@ -398,11 +399,31 @@ obj_p ray_window_join(obj_p *x, i64_t n) {
     drop_obj(wjkl);
     drop_obj(wjkr);
 
-    return idx;
+    rtab = group_map(x[3], idx);
+    mount_env(rtab);
+
+    l = ops_count(x[4]);
+    agrvals = LIST(l);
+
+    for (i = 0; i < l; i++) {
+        v = eval(AS_LIST(AS_LIST(x[4])[1])[i]);
+        if (IS_ERR(v)) {
+            unmount_env(AS_LIST(x[3])[0]->len);
+            agrvals->len = i;
+            drop_obj(agrvals);
+            drop_obj(rtab);
+            return v;
+        }
+        AS_LIST(agrvals)[i] = v;
+    }
+
+    unmount_env(AS_LIST(x[3])[0]->len);
+    drop_obj(rtab);
 
     resyms = ray_concat(AS_LIST(x[2])[0], AS_LIST(x[4])[0]);
-    recols = ray_concat(AS_LIST(x[2])[1], idx);
+    recols = ray_concat(AS_LIST(x[2])[1], agrvals);
 
+    drop_obj(agrvals);
     drop_obj(idx);
 
     return table(resyms, recols);
