@@ -453,12 +453,14 @@ upsert:
             for (i = 0; i < l; i++) {
                 if (!IS_VECTOR(AS_LIST(lst)[i])) {
                     drop_obj(obj);
-                    return error(ERR_TYPE, "upsert: expected vector as %lldth element of a list, got '%s'", i, type_name(AS_LIST(lst)[i]->type));
+                    return error(ERR_TYPE, "upsert: expected vector as %lldth element of a list, got '%s'", i,
+                                 type_name(AS_LIST(lst)[i]->type));
                 }
 
                 if (AS_LIST(lst)[i]->len != ll) {
                     drop_obj(obj);
-                    return error(ERR_LENGTH, "upsert: expected vector of length %lld, got %lld", ll, AS_LIST(lst)[i]->len);
+                    return error(ERR_LENGTH, "upsert: expected vector of length %lld, got %lld", ll,
+                                 AS_LIST(lst)[i]->len);
                 }
             }
 
@@ -493,15 +495,15 @@ upsert:
                     drop_obj(idx);
                     drop_obj(obj);
                     return error(ERR_TYPE, "upsert: expected '%s' as %lldth element, got '%s'",
-                                    type_name(AS_LIST(AS_LIST(obj)[1])[i]->type), i, type_name(AS_LIST(lst)[i]->type));
+                                 type_name(AS_LIST(AS_LIST(obj)[1])[i]->type), i, type_name(AS_LIST(lst)[i]->type));
                 }
 
                 if (AS_LIST(lst)[i]->len != m) {
                     drop_obj(idx);
                     drop_obj(obj);
                     return error(ERR_LENGTH,
-                                    "upsert: expected list of length %lld, as %lldth element in a values, got %lld",
-                                    AS_LIST(AS_LIST(obj)[1])[i]->len, i, n);
+                                 "upsert: expected list of length %lld, as %lldth element in a values, got %lld",
+                                 AS_LIST(AS_LIST(obj)[1])[i]->len, i, n);
                 }
             }
 
@@ -520,13 +522,12 @@ upsert:
 
                     // Insert record
                     if (row == NULL_I64) {
-                        v = (i < l) ?  at_idx(AS_LIST(lst)[i], j)
-                                    : null(AS_LIST(AS_LIST(obj)[1])[i]->type);
+                        v = (i < l) ? at_idx(AS_LIST(lst)[i], j) : null(AS_LIST(AS_LIST(obj)[1])[i]->type);
                         push_obj(AS_LIST(AS_LIST(obj)[1]) + i, v);
                     }
                     // Update record (we can skip the keys since they are matches)
                     else if (i >= keys && i < l) {
-                        v =  at_idx(AS_LIST(lst)[i], j);
+                        v = at_idx(AS_LIST(lst)[i], j);
                         set_idx(AS_LIST(AS_LIST(obj)[1]) + i, row, v);
                     }
                 }
@@ -585,7 +586,8 @@ upsert:
 
         default:
             drop_obj(obj);
-            return error(ERR_TYPE, "upsert: unsupported type '%s' in values (forgot to use list?)", type_name(lst->type));
+            return error(ERR_TYPE, "upsert: unsupported type '%s' in values (forgot to use list?)",
+                         type_name(lst->type));
     }
 }
 
@@ -618,7 +620,7 @@ obj_p __update_table(obj_p tab, obj_p keys, obj_p vals, obj_p filters, obj_p gro
         l = keys->len;
 
         index = index_group(groupby, filters);
-        gids = aggr_row_index(groupby, index);
+        gids = aggr_row(groupby, index);
         drop_obj(index);
         drop_obj(groupby);
         n = gids->len;

@@ -825,7 +825,7 @@ obj_p ray_group(obj_p x) {
     obj_p k, v, index;
 
     index = index_group(x, NULL_OBJ);
-    v = aggr_row_index(x, index);
+    v = aggr_row(x, index);
     k = aggr_first(x, index);
     drop_obj(index);
 
@@ -846,29 +846,13 @@ obj_p ray_unify(obj_p x) {
     return unify_list(&res);
 }
 
-obj_p ray_row_index(obj_p *x, i64_t n) {
-    UNUSED(x);
-    UNUSED(n);
-
-    query_ctx_p ctx;
-    runtime_p rt;
-    obj_p v, res;
-
-    rt = runtime_get();
-    ctx = rt->query_ctx;
-
-    if (ctx == NULL || ctx->tablen == 0)
-        return I64(0);
-
-    if (ctx->group_index != NULL_OBJ)
-        return aggr_row_index(AS_LIST(AS_LIST(ctx->table)[1])[0], ctx->group_index);
-
-    v = i64(ops_count(ctx->table));
-
-    res = __til(v, ctx->filter);
-    drop_obj(v);
-
-    return res;
+obj_p ray_row(obj_p x) {
+    switch (x->type) {
+        case TYPE_MAPGROUP:
+            return aggr_row(AS_LIST(x)[0], AS_LIST(x)[1]);
+        default:
+            return i64(ops_count(x));
+    }
 }
 
 #define CUT_VECTOR(x, xt, y, yt)                                                                       \

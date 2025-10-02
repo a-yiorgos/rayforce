@@ -71,46 +71,6 @@ i64_t indexl_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len) {
     return idx + offset;
 }
 
-nil_t index_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len, i64_t *left_bound, i64_t *right_bound) {
-    i64_t idx, left, right, mid;
-
-    vals += offset;
-
-    // Find leftmost boundary
-    idx = 0;
-    left = 0;
-    right = len - 1;
-
-    while (left <= right) {
-        mid = left + (right - left) / 2;
-        if (vals[mid] <= val) {
-            idx = mid;
-            left = mid + 1;
-        } else {
-            right = mid - 1;
-        }
-    }
-
-    *left_bound = idx + offset;
-
-    // Find rightmost boundary
-    idx = 0;
-    left = 0;
-    right = len - 1;
-
-    while (left <= right) {
-        mid = left + (right - left) / 2;
-        if (vals[mid] > val) {
-            right = mid - 1;
-        } else {  // vals[mid] <= val
-            idx = mid;
-            left = mid + 1;
-        }
-    }
-
-    *right_bound = idx + offset;
-}
-
 #define AGGR_ITER(Index, Len, Offset, Val, Res, Incoerce, Outcoerse, Ini, Aggr, Null)              \
     ({                                                                                             \
         i64_t $i, $x, $y, $n, $o, $li, $ri, $fi, $ti, $kl, $kr;                                    \
@@ -187,10 +147,10 @@ nil_t index_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len, i64_t *le
                     if ($rn == NULL_OBJ || AS_I32(AS_LIST(Index)[3])[$li] > $kr ||                 \
                         AS_I32(AS_LIST(Index)[3])[$ri] < $kl) {                                    \
                         Null;                                                                      \
-                        continue;                                                                  \
-                    }                                                                              \
-                    for ($x = $li; $x <= $ri; ++$x) {                                              \
-                        Aggr;                                                                      \
+                    } else {                                                                       \
+                        for ($x = $li; $x <= $ri; ++$x) {                                          \
+                            Aggr;                                                                  \
+                        }                                                                          \
                     }                                                                              \
                 }                                                                                  \
                 break;                                                                             \
@@ -1023,34 +983,18 @@ obj_p aggr_collect(obj_p val, obj_p index) {
     }
 }
 
-obj_p aggr_row_index(obj_p val, obj_p index) {
-    i64_t l, m, n;
-    i64_t *cnts;
-    obj_p cnt, res;
+obj_p aggr_row(obj_p val, obj_p index) {
+    i64_t i, l, n;
+    obj_p res;
 
-    cnt = aggr_count(val, index);
-    if (IS_ERR(cnt))
-        return cnt;
-
-    cnts = AS_I64(cnt);
-    n = cnt->len;
     l = index_group_len(index);
+    n = index_group_count(index);
 
     res = LIST(n);
-    AGGR_ITER(
-        index, l, 0, val, res, i64, list,
-        {
-            UNUSED($in);
-            m = cnts[$y];
-            $out[$y] = I64(m);
-            $out[$y]->len = 0;
-        },
-        AS_I64($out[$y])[$out[$y]->len++] = $x,
-        {
-            i64_t nil = NULL_I64;
-            AS_I64($out[$y])[$out[$y]->len++] = nil;
-        });
-    drop_obj(cnt);
+    for (i = 0; i < n; i++)
+        AS_LIST(res)[i] = I64(0);
+
+    AGGR_ITER(index, l, 0, val, res, i64, list, , push_raw($out + $y, &$x), );
 
     return res;
 }

@@ -172,6 +172,7 @@ nil_t init_functions(obj_p functions)
     REGISTER_FN(functions,  "system",              TYPE_UNARY,    FN_NONE,                   ray_system);
     REGISTER_FN(functions,  "unify",               TYPE_UNARY,    FN_NONE,                   ray_unify);
     REGISTER_FN(functions,  "diverse",             TYPE_UNARY,    FN_NONE,                   ray_diverse);
+    REGISTER_FN(functions,  "row",                 TYPE_UNARY,    FN_NONE | FN_AGGR,         ray_row);
     
     // Binary           
     REGISTER_FN(functions,  "try",                 TYPE_BINARY,   FN_NONE | FN_SPECIAL_FORM, try_obj);
@@ -259,7 +260,6 @@ nil_t init_functions(obj_p functions)
     REGISTER_FN(functions,  "set-parted",          TYPE_VARY,     FN_NONE,                   ray_set_parted);
     REGISTER_FN(functions,  "get-parted",          TYPE_VARY,     FN_NONE,                   ray_get_parted);
     REGISTER_FN(functions,  "internals",           TYPE_VARY,     FN_NONE,                   ray_internals);
-    REGISTER_FN(functions,  "row-index",           TYPE_VARY,     FN_NONE,                   ray_row_index);
 }    
     
 nil_t init_typenames(obj_p typenames)    
