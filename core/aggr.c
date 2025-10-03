@@ -37,7 +37,7 @@
 #include "cmp.h"
 #include "pool.h"
 
-i64_t indexr_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len) {
+i64_t indexr_bin_i32_(i32_t val, i32_t vals[], i64_t offset, i64_t len) {
     i64_t left, right, mid, idx;
     left = 0, right = len - 1, idx = 0;
     vals += offset;
@@ -54,7 +54,7 @@ i64_t indexr_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len) {
     return idx + offset;
 }
 
-i64_t indexl_bin_i32_(i32_t val, i32_t vals[], i32_t offset, i64_t len) {
+i64_t indexl_bin_i32_(i32_t val, i32_t vals[], i64_t offset, i64_t len) {
     i64_t left, right, mid, idx;
     left = 0, right = len - 1, idx = 0;
     vals += offset;
