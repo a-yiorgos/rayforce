@@ -62,7 +62,7 @@ static obj_p and_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
 
 static obj_p or_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
     b8_t m, *mask, *next_mask;
-    i64_t i, n, c, offset;
+    i64_t i, j, n, c, offset;
 
     n = (i64_t)z;
     offset = (i64_t)k;
@@ -89,7 +89,7 @@ static obj_p or_op_partial(raw_p x, raw_p y, raw_p z, raw_p k, raw_p l) {
 
 // Actual logic operation
 static obj_p logic_map(obj_p *x, i64_t n, lit_p op_name, logic_op_f op_func) {
-    i64_t i, c, m, l, chunk;
+    i64_t i, j, c, m, l, chunk;
     obj_p next, res, v;
     pool_p pool = runtime_get()->pool;
 
@@ -132,10 +132,10 @@ static obj_p logic_map(obj_p *x, i64_t n, lit_p op_name, logic_op_f op_func) {
                     pool_prepare(pool);
                     chunk = l / m;
 
-                    for (i = 0; i < m - 1; i++)
-                        pool_add_task(pool, op_func, 5, AS_B8(res), AS_B8(next), chunk, i * chunk, (raw_p)1);
+                    for (j = 0; j < m - 1; ++j)
+                        pool_add_task(pool, op_func, 5, AS_B8(res), AS_B8(next), chunk, j * chunk, (raw_p)1);
 
-                    pool_add_task(pool, op_func, 5, AS_B8(res), AS_B8(next), l - i * chunk, i * chunk, (raw_p)1);
+                    pool_add_task(pool, op_func, 5, AS_B8(res), AS_B8(next), l - j * chunk, j * chunk, (raw_p)1);
 
                     v = pool_run(pool);
 
@@ -156,16 +156,17 @@ static obj_p logic_map(obj_p *x, i64_t n, lit_p op_name, logic_op_f op_func) {
             va:
                 l = ops_count(res);
                 m = pool_split_by(pool, l, 0);
+
                 if (m == 1) {
                     op_func(AS_B8(res), &next->b8, (raw_p)l, (raw_p)0, (raw_p)0);
                 } else {
                     pool_prepare(pool);
                     chunk = l / m;
 
-                    for (i = 0; i < m - 1; i++)
-                        pool_add_task(pool, op_func, 5, AS_B8(res), &next->b8, chunk, i * chunk, (raw_p)0);
+                    for (j = 0; j < m - 1; j++)
+                        pool_add_task(pool, op_func, 5, AS_B8(res), &next->b8, chunk, j * chunk, (raw_p)0);
 
-                    pool_add_task(pool, op_func, 5, AS_B8(res), &next->b8, l - i * chunk, i * chunk, (raw_p)0);
+                    pool_add_task(pool, op_func, 5, AS_B8(res), &next->b8, l - j * chunk, j * chunk, (raw_p)0);
 
                     v = pool_run(pool);
 
