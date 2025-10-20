@@ -437,7 +437,7 @@ option_t poll_block_on(poll_p poll, selector_p selector) {
     }
 
     // Setup timeout
-    timeout.tv_sec = 3;  // 3 seconds
+    timeout.tv_sec = 30;  // 30 seconds
     timeout.tv_nsec = 0;
 
     // Perform the read operation
