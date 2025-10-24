@@ -344,7 +344,7 @@ obj_p anymap(obj_p sym, obj_p vec) {
     return e;
 }
 
-obj_p resize_obj(obj_p *obj, i64_t len) {
+obj_p resize_obj(obj_p* obj, i64_t len) {
     i64_t elem_size, obj_size;
     obj_p new_obj;
 
@@ -375,7 +375,7 @@ obj_p resize_obj(obj_p *obj, i64_t len) {
     return *obj;
 }
 
-obj_p push_raw(obj_p *obj, raw_p val) {
+obj_p push_raw(obj_p* obj, raw_p val) {
     i64_t off, req, size;
     obj_p new_obj;
 
@@ -401,7 +401,7 @@ obj_p push_raw(obj_p *obj, raw_p val) {
     return *obj;
 }
 
-obj_p push_obj(obj_p *obj, obj_p val) {
+obj_p push_obj(obj_p* obj, obj_p val) {
     i64_t i, l;
     obj_p res, lst = NULL_OBJ;
 
@@ -457,7 +457,7 @@ obj_p push_obj(obj_p *obj, obj_p val) {
     }
 }
 
-obj_p append_list(obj_p *obj, obj_p vals) {
+obj_p append_list(obj_p* obj, obj_p vals) {
     i64_t i, c, l, size1, size2;
     obj_p res;
 
@@ -503,7 +503,7 @@ obj_p append_list(obj_p *obj, obj_p vals) {
     }
 }
 
-obj_p unify_list(obj_p *obj) {
+obj_p unify_list(obj_p* obj) {
     i64_t i, l;
     obj_p res;
     i8_t type;
@@ -539,7 +539,7 @@ obj_p unify_list(obj_p *obj) {
     }
 }
 
-obj_p diverse_obj(obj_p *obj) {
+obj_p diverse_obj(obj_p* obj) {
     i64_t i, l;
     obj_p res;
 
@@ -575,7 +575,7 @@ obj_p diverse_obj(obj_p *obj) {
     }
 }
 
-obj_p push_sym(obj_p *obj, lit_p str) {
+obj_p push_sym(obj_p* obj, lit_p str) {
     i64_t sym;
 
     sym = symbols_intern(str, strlen(str));
@@ -583,7 +583,7 @@ obj_p push_sym(obj_p *obj, lit_p str) {
     return push_raw(obj, &sym);
 }
 
-obj_p ins_raw(obj_p *obj, i64_t idx, raw_p val) {
+obj_p ins_raw(obj_p* obj, i64_t idx, raw_p val) {
     i32_t size;
 
     size = size_of_type((*obj)->type);
@@ -592,7 +592,7 @@ obj_p ins_raw(obj_p *obj, i64_t idx, raw_p val) {
     return *obj;
 }
 
-obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val) {
+obj_p ins_obj(obj_p* obj, i64_t idx, obj_p val) {
     i64_t i;
     i64_t l;
     obj_p ret;
@@ -669,7 +669,7 @@ obj_p ins_obj(obj_p *obj, i64_t idx, obj_p val) {
     return ret;
 }
 
-obj_p ins_sym(obj_p *obj, i64_t idx, lit_p str) {
+obj_p ins_sym(obj_p* obj, i64_t idx, lit_p str) {
     i64_t sym;
 
     sym = symbols_intern(str, strlen(str));
@@ -681,7 +681,7 @@ obj_p at_idx(obj_p obj, i64_t idx) {
     i64_t size;
     i64_t i, m, n, l;
     obj_p k, v, res;
-    u8_t *buf;
+    u8_t* buf;
 
     if (idx == NULL_I64)
         return null(obj->type);
@@ -1243,7 +1243,7 @@ obj_p at_sym(obj_p obj, lit_p str, i64_t n) {
     return res;
 }
 
-obj_p set_idx(obj_p *obj, i64_t idx, obj_p val) {
+obj_p set_idx(obj_p* obj, i64_t idx, obj_p val) {
     if (idx < 0 || idx >= (i64_t)(*obj)->len) {
         drop_obj(val);
         THROW(ERR_INDEX, "set_idx: '%lld' is out of range '0..%lld'", idx, (*obj)->len - 1);
@@ -1281,7 +1281,7 @@ obj_p set_idx(obj_p *obj, i64_t idx, obj_p val) {
     }
 }
 
-obj_p set_ids(obj_p *obj, i64_t ids[], i64_t len, obj_p vals) {
+obj_p set_ids(obj_p* obj, i64_t ids[], i64_t len, obj_p vals) {
     i64_t i;
     switch (MTYPE2((*obj)->type, vals->type)) {
         case MTYPE2(TYPE_C8, -TYPE_C8):
@@ -1310,6 +1310,7 @@ obj_p set_ids(obj_p *obj, i64_t ids[], i64_t len, obj_p vals) {
             for (i = 0; i < len; i++)
                 AS_I32(*obj)[ids[i]] = vals->i32;
             drop_obj(vals);
+            return *obj;
         case MTYPE2(TYPE_I64, -TYPE_I64):
         case MTYPE2(TYPE_SYMBOL, -TYPE_I64):
         case MTYPE2(TYPE_TIMESTAMP, -TYPE_I64):
@@ -1551,7 +1552,7 @@ obj_p find_obj_ids(obj_p obj, obj_p val) {
     }
 }
 
-obj_p set_dict_obj(obj_p *obj, obj_p idx, obj_p val) {
+obj_p set_dict_obj(obj_p* obj, obj_p idx, obj_p val) {
     i64_t i;
     obj_p ids, res;
 
@@ -1597,7 +1598,7 @@ obj_p set_dict_obj(obj_p *obj, obj_p idx, obj_p val) {
     return *obj;
 }
 
-obj_p set_obj(obj_p *obj, obj_p idx, obj_p val) {
+obj_p set_obj(obj_p* obj, obj_p idx, obj_p val) {
     obj_p k, v, res;
     i64_t i, n, l;
     i64_t j, id = NULL_I64, *ids = NULL;
@@ -1721,7 +1722,7 @@ obj_p set_obj(obj_p *obj, obj_p idx, obj_p val) {
     }
 }
 
-obj_p pop_obj(obj_p *obj) {
+obj_p pop_obj(obj_p* obj) {
     if ((*obj)->len == 0)
         return NULL_OBJ;
 
@@ -1743,7 +1744,7 @@ obj_p pop_obj(obj_p *obj) {
     }
 }
 
-obj_p remove_idx(obj_p *obj, i64_t idx) {
+obj_p remove_idx(obj_p* obj, i64_t idx) {
     if (idx < 0 || idx >= (i64_t)(*obj)->len)
         return *obj;
 
@@ -1779,7 +1780,7 @@ obj_p remove_idx(obj_p *obj, i64_t idx) {
     }
 }
 
-obj_p remove_ids(obj_p *obj, i64_t ids[], i64_t len) {
+obj_p remove_ids(obj_p* obj, i64_t ids[], i64_t len) {
     i64_t i, j;
 
     if (len == 0 || (*obj)->len == 0 || len > (*obj)->len)
@@ -1851,7 +1852,7 @@ obj_p remove_ids(obj_p *obj, i64_t ids[], i64_t len) {
     }
 }
 
-obj_p remove_obj(obj_p *obj, obj_p idx) {
+obj_p remove_obj(obj_p* obj, obj_p idx) {
     i64_t i, j;
     obj_p v;
 
@@ -2092,44 +2093,44 @@ i64_t find_raw(obj_p obj, raw_p val) {
         case TYPE_B8:
         case TYPE_C8:
             for (i = 0; i < l; i++)
-                if (AS_U8(obj)[i] == *(u8_t *)val)
+                if (AS_U8(obj)[i] == *(u8_t*)val)
                     return i;
             return NULL_I64;
         case TYPE_I16:
             for (i = 0; i < l; i++)
-                if (AS_I16(obj)[i] == *(i16_t *)val)
+                if (AS_I16(obj)[i] == *(i16_t*)val)
                     return i;
             return NULL_I64;
         case TYPE_I32:
         case TYPE_DATE:
         case TYPE_TIME:
             for (i = 0; i < l; i++)
-                if (AS_I32(obj)[i] == *(i32_t *)val)
+                if (AS_I32(obj)[i] == *(i32_t*)val)
                     return i;
             return NULL_I64;
         case TYPE_I64:
         case TYPE_SYMBOL:
         case TYPE_TIMESTAMP:
             for (i = 0; i < l; i++)
-                if (AS_I64(obj)[i] == *(i64_t *)val)
+                if (AS_I64(obj)[i] == *(i64_t*)val)
                     return i;
             return NULL_I64;
         case TYPE_F64:
             for (i = 0; i < l; i++)
-                if (AS_F64(obj)[i] == *(f64_t *)val)
+                if (AS_F64(obj)[i] == *(f64_t*)val)
                     return i;
             return NULL_I64;
         case TYPE_GUID:
             for (i = 0; i < l; i++)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
-                if (memcmp(AS_GUID(obj)[i], *(guid_t *)val, sizeof(guid_t)) == 0)
+                if (memcmp(AS_GUID(obj)[i], *(guid_t*)val, sizeof(guid_t)) == 0)
 #pragma GCC diagnostic pop
                     return i;
             return NULL_I64;
         case TYPE_LIST:
             for (i = 0; i < l; i++)
-                if (cmp_obj(AS_LIST(obj)[i], *(obj_p *)val) == 0)
+                if (cmp_obj(AS_LIST(obj)[i], *(obj_p*)val) == 0)
                     return i;
             return NULL_I64;
         default:
@@ -2139,7 +2140,7 @@ i64_t find_raw(obj_p obj, raw_p val) {
 
 obj_p cast_obj(i8_t type, obj_p obj) {
     obj_p v, res, err, msg;
-    u8_t *g;
+    u8_t* g;
     i32_t num_i32;
     i64_t i, l, num_i64;
     f64_t num_f64;
@@ -2427,7 +2428,7 @@ obj_p cast_obj(i8_t type, obj_p obj) {
                                    : 24 + (i - 10) * 2;
 
                 c8_t hex[3] = {str[pos], str[pos + 1], '\0'};
-                c8_t *end;
+                c8_t* end;
                 u64_t val = strtoul(hex, &end, 16);
                 if (end != hex + 2) {
                     memset(AS_GUID(res)[0], 0, sizeof(guid_t));

@@ -278,7 +278,7 @@ obj_p ray_xasc(obj_p x, obj_p y) {
 
             i64_t nrow = AS_LIST(AS_LIST(x)[1])[0]->len;
             obj_p idx = I64(nrow);
-            i64_t *indices = AS_I64(idx);
+            i64_t* indices = AS_I64(idx);
             for (i64_t i = 0; i < nrow; i++)
                 indices[i] = i;
 
@@ -307,9 +307,9 @@ obj_p ray_xasc(obj_p x, obj_p y) {
                 }
 
                 // Reorder indices according to local_idx
-                i64_t *local = AS_I64(local_idx);
+                i64_t* local = AS_I64(local_idx);
                 obj_p obj_tmp = I64(nrow);
-                i64_t *tmp = AS_I64(obj_tmp);
+                i64_t* tmp = AS_I64(obj_tmp);
                 for (i64_t i = 0; i < nrow; i++)
                     tmp[i] = indices[local[i]];
 
@@ -327,10 +327,10 @@ obj_p ray_xasc(obj_p x, obj_p y) {
 
         case MTYPE2(TYPE_TABLE, TYPE_I64):
             // Handle empty vector [] (which has type I64 with length 0)
-            if (y->len == 0) {
+            if (y->len == 0)
                 return clone_obj(x);
-            }
-            // Fall through to default error case
+
+            THROW(ERR_TYPE, "xasc: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
         default:
             THROW(ERR_TYPE, "xasc: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
@@ -366,7 +366,7 @@ obj_p ray_xdesc(obj_p x, obj_p y) {
 
             i64_t nrow = AS_LIST(AS_LIST(x)[1])[0]->len;
             obj_p idx = I64(nrow);
-            i64_t *indices = AS_I64(idx);
+            i64_t* indices = AS_I64(idx);
             for (i64_t i = 0; i < nrow; i++)
                 indices[i] = i;
 
@@ -395,9 +395,9 @@ obj_p ray_xdesc(obj_p x, obj_p y) {
                 }
 
                 // Reorder indices according to local_idx
-                i64_t *local = AS_I64(local_idx);
+                i64_t* local = AS_I64(local_idx);
                 obj_p obj_tmp = I64(nrow);
-                i64_t *tmp = AS_I64(obj_tmp);
+                i64_t* tmp = AS_I64(obj_tmp);
                 for (i64_t i = 0; i < nrow; i++)
                     tmp[i] = indices[local[i]];
                 for (i64_t i = 0; i < nrow; i++)
@@ -415,11 +415,10 @@ obj_p ray_xdesc(obj_p x, obj_p y) {
 
         case MTYPE2(TYPE_TABLE, TYPE_I64):
             // Handle empty vector [] (which has type I64 with length 0)
-            if (y->len == 0) {
+            if (y->len == 0)
                 return clone_obj(x);
-            }
-            // Fall through to default error case
 
+            THROW(ERR_TYPE, "xdesc: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
         default:
             THROW(ERR_TYPE, "xdesc: unsupported types: '%s, '%s", type_name(x->type), type_name(y->type));
     }
