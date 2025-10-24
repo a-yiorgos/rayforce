@@ -35,8 +35,11 @@
 #include "env.h"
 #include "mmap.h"
 #include "fs.h"
-#if !defined(OS_WINDOWS)
+#if defined(OS_WINDOWS)
+#include <io.h>
+#else
 #include <sys/ioctl.h>
+#include <sys/file.h>
 #endif
 
 #define MAX_PATH_LEN 128
@@ -191,11 +194,33 @@ hist_p hist_create() {
         return NULL;
     }
 
+    // Lock file for reading existing history
+#if defined(OS_WINDOWS)
+    OVERLAPPED overlapped = {0};
+    if (!LockFileEx((HANDLE)_get_osfhandle(fd), 0, 0, MAXDWORD, MAXDWORD, &overlapped)) {
+        perror("can't lock history file for reading");
+        fs_fclose(fd);
+        return NULL;
+    }
+#else
+    if (flock(fd, LOCK_SH) == -1) {
+        perror("can't lock history file for reading");
+        fs_fclose(fd);
+        return NULL;
+    }
+#endif
+
     fsize = fs_fsize(fd);
     if (fsize == 0) {
         // Set initial file size if the file is empty
         if (fs_file_extend(fd, HIST_SIZE) == -1) {
             perror("can't truncate history file");
+#if defined(OS_WINDOWS)
+            OVERLAPPED overlapped_err = {0};
+            UnlockFileEx((HANDLE)_get_osfhandle(fd), 0, MAXDWORD, MAXDWORD, &overlapped_err);
+#else
+            flock(fd, LOCK_UN);
+#endif
             fs_fclose(fd);
             return NULL;
         }
@@ -207,6 +232,12 @@ hist_p hist_create() {
     lines = (str_p)mmap_file(fd, NULL, fsize, 0);
     if (lines == NULL) {
         perror("can't map history file");
+#if defined(OS_WINDOWS)
+        OVERLAPPED overlapped_err = {0};
+        UnlockFileEx((HANDLE)_get_osfhandle(fd), 0, MAXDWORD, MAXDWORD, &overlapped_err);
+#else
+        flock(fd, LOCK_UN);
+#endif
         fs_fclose(fd);
         return NULL;
     }
@@ -214,6 +245,12 @@ hist_p hist_create() {
     hist = (hist_p)heap_mmap(sizeof(struct hist_t));
     if (hist == NULL) {
         perror("can't allocate memory for history");
+#if defined(OS_WINDOWS)
+        OVERLAPPED overlapped_err = {0};
+        UnlockFileEx((HANDLE)_get_osfhandle(fd), 0, MAXDWORD, MAXDWORD, &overlapped_err);
+#else
+        flock(fd, LOCK_UN);
+#endif
         fs_fclose(fd);
         mmap_free(lines, fsize);
         return NULL;
@@ -233,12 +270,41 @@ hist_p hist_create() {
     hist->curr_saved = 0;
     hist->curr_len = 0;
 
+    // Unlock file after reading
+#if defined(OS_WINDOWS)
+    OVERLAPPED overlapped_unlock = {0};
+    UnlockFileEx((HANDLE)_get_osfhandle(fd), 0, MAXDWORD, MAXDWORD, &overlapped_unlock);
+#else
+    flock(fd, LOCK_UN);
+#endif
+
     return hist;
 }
 
 nil_t hist_destroy(hist_p hist) {
+    // Lock file exclusively for writing
+#if defined(OS_WINDOWS)
+    OVERLAPPED overlapped = {0};
+    if (!LockFileEx((HANDLE)_get_osfhandle(hist->fd), LOCKFILE_EXCLUSIVE_LOCK, 0, MAXDWORD, MAXDWORD, &overlapped)) {
+        perror("can't lock history file for writing");
+    }
+#else
+    if (flock(hist->fd, LOCK_EX) == -1) {
+        perror("can't lock history file for writing");
+    }
+#endif
+
+    // Sync history buffer to file
     if (mmap_sync(hist->lines, hist->size) == -1)
         perror("can't sync history buffer");
+
+    // Unlock file
+#if defined(OS_WINDOWS)
+    OVERLAPPED overlapped_unlock = {0};
+    UnlockFileEx((HANDLE)_get_osfhandle(hist->fd), 0, MAXDWORD, MAXDWORD, &overlapped_unlock);
+#else
+    flock(hist->fd, LOCK_UN);
+#endif
 
     mmap_free(hist->lines, hist->size);
     fs_fclose(hist->fd);
@@ -283,10 +349,6 @@ nil_t hist_add(hist_p hist, c8_t buf[], i64_t len) {
     hist->pos += len + 1;
     hist->index = hist->pos - 1;
     hist->search_dir = 1;
-
-    // Sync the history buffer to the file
-    if (mmap_sync(hist->lines, hist->size) == -1)
-        perror("can't sync history buffer");
 }
 
 i64_t hist_prev(hist_p hist, c8_t buf[]) {
