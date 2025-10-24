@@ -185,6 +185,7 @@ obj_p ray_read(obj_p x) {
             res = C8(size + 1);
             buf = AS_C8(res);
             c = fs_fread(fd, buf, size);
+            buf[size] = '\0';
             fs_fclose(fd);
 
             if (c != size) {

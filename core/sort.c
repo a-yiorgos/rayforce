@@ -62,7 +62,7 @@ static i64_t compare_lists(obj_p vec, i64_t idx_i, i64_t idx_j) {
 }
 
 // Merge Sort implementation for comparison with TimSort
-static void merge_sort_indices(obj_p vec, i64_t *indices, i64_t *temp, i64_t left, i64_t right,
+static void merge_sort_indices(obj_p vec, i64_t* indices, i64_t* temp, i64_t left, i64_t right,
                                compare_func_t compare_fn, i64_t asc) {
     if (left >= right)
         return;
@@ -103,7 +103,7 @@ obj_p mergesort_generic_obj(obj_p vec, i64_t asc) {
         return I64(0);
 
     obj_p indices = I64(len);
-    i64_t *ov = AS_I64(indices);
+    i64_t* ov = AS_I64(indices);
 
     // Initialize indices
     for (i64_t i = 0; i < len; i++) {
@@ -129,7 +129,7 @@ obj_p mergesort_generic_obj(obj_p vec, i64_t asc) {
         drop_obj(indices);
         return I64(0);
     }
-    i64_t *temp = AS_I64(obj_temp);
+    i64_t* temp = AS_I64(obj_temp);
 
     // Perform merge sort
     merge_sort_indices(vec, ov, temp, 0, len - 1, compare_fn, asc);
@@ -167,8 +167,8 @@ nil_t insertion_sort_desc(i64_t array[], i64_t indices[], i64_t left, i64_t righ
 obj_p ray_sort_asc_u8(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
-    i64_t *ov = AS_I64(indices);
-    u8_t *iv = AS_U8(vec);
+    i64_t* ov = AS_I64(indices);
+    u8_t* iv = AS_U8(vec);
 
     u64_t pos[257] = {0};
 
@@ -187,8 +187,8 @@ obj_p ray_sort_asc_u8(obj_p vec) {
 obj_p ray_sort_asc_i16(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i16_t *iv = AS_I16(vec);
+    i64_t* ov = AS_I64(indices);
+    i16_t* iv = AS_I16(vec);
 
     u64_t pos[65537] = {0};
 
@@ -210,9 +210,9 @@ obj_p ray_sort_asc_i32(obj_p vec) {
     i64_t i, t, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i32_t *iv = AS_I32(vec);
-    i64_t *ti = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    i32_t* iv = AS_I32(vec);
+    i64_t* ti = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -265,9 +265,9 @@ obj_p ray_sort_asc_i64(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i64_t *iv = AS_I64(vec);
-    i64_t *t = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    i64_t* iv = AS_I64(vec);
+    i64_t* t = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -323,9 +323,9 @@ obj_p ray_sort_asc_f64(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    f64_t *fv = AS_F64(vec);
-    i64_t *t = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    f64_t* fv = AS_F64(vec);
+    i64_t* t = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -381,7 +381,7 @@ obj_p ray_sort_asc_f64(obj_p vec) {
 obj_p ray_sort_asc(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices;
-    i64_t *ov;
+    i64_t* ov;
 
     if (vec->len == 0)
         return I64(0);
@@ -433,8 +433,8 @@ obj_p ray_sort_asc(obj_p vec) {
 obj_p ray_sort_desc_u8(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
-    i64_t *ov = AS_I64(indices);
-    u8_t *iv = AS_U8(vec);
+    i64_t* ov = AS_I64(indices);
+    u8_t* iv = AS_U8(vec);
 
     u64_t pos[257] = {0};
 
@@ -453,8 +453,8 @@ obj_p ray_sort_desc_u8(obj_p vec) {
 obj_p ray_sort_desc_i16(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i16_t *iv = AS_I16(vec);
+    i64_t* ov = AS_I64(indices);
+    i16_t* iv = AS_I16(vec);
 
     u64_t pos[65537] = {0};
 
@@ -474,9 +474,9 @@ obj_p ray_sort_desc_i32(obj_p vec) {
     i64_t i, t, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i32_t *iv = AS_I32(vec);
-    i64_t *ti = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    i32_t* iv = AS_I32(vec);
+    i64_t* ti = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -507,9 +507,9 @@ obj_p ray_sort_desc_i64(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    i64_t *iv = AS_I64(vec);
-    i64_t *t = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    i64_t* iv = AS_I64(vec);
+    i64_t* t = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -559,9 +559,9 @@ obj_p ray_sort_desc_f64(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices = I64(len);
     obj_p temp = I64(len);
-    i64_t *ov = AS_I64(indices);
-    f64_t *fv = AS_F64(vec);
-    i64_t *t = AS_I64(temp);
+    i64_t* ov = AS_I64(indices);
+    f64_t* fv = AS_F64(vec);
+    i64_t* t = AS_I64(temp);
 
     u64_t pos1[65537] = {0};
     u64_t pos2[65537] = {0};
@@ -610,7 +610,7 @@ obj_p ray_sort_desc_f64(obj_p vec) {
 obj_p ray_sort_desc(obj_p vec) {
     i64_t i, len = vec->len;
     obj_p indices;
-    i64_t *ov;
+    i64_t* ov;
 
     if (vec->len == 0)
         return I64(0);
@@ -662,7 +662,7 @@ obj_p ray_sort_desc(obj_p vec) {
 // Optimized sorting implementations
 
 // Fast binary insertion sort for small arrays with proper symbol comparison
-static void binary_insertion_sort_symbols(i64_t *indices, obj_p vec, i64_t len, i64_t asc) {
+static void binary_insertion_sort_symbols(i64_t* indices, obj_p vec, i64_t len, i64_t asc) {
     for (i64_t i = 1; i < len; i++) {
         i64_t key_idx = indices[i];
 
@@ -688,7 +688,7 @@ static void binary_insertion_sort_symbols(i64_t *indices, obj_p vec, i64_t len, 
 }
 
 // Fast binary insertion sort for small arrays with numeric comparison
-static void binary_insertion_sort_numeric(i64_t *indices, i64_t *data, i64_t len, i64_t asc) {
+static void binary_insertion_sort_numeric(i64_t* indices, i64_t* data, i64_t len, i64_t asc) {
     for (i64_t i = 1; i < len; i++) {
         i64_t key_idx = indices[i];
         i64_t key_val = data[key_idx];
@@ -720,7 +720,7 @@ static obj_p counting_sort_i64(obj_p vec, i64_t asc) {
     if (len == 0)
         return I64(0);
 
-    i64_t *data = AS_I64(vec);
+    i64_t* data = AS_I64(vec);
 
     // Find min/max symbol IDs
     i64_t min_sym = data[0], max_sym = data[0];
@@ -739,12 +739,13 @@ static obj_p counting_sort_i64(obj_p vec, i64_t asc) {
         return NULL;  // Fall back to other sorting
 
     // Allocate counting array
-    i64_t *counts = (i64_t *)heap_alloc(range * sizeof(i64_t));
+    i64_t* counts = (i64_t*)heap_alloc(range * sizeof(i64_t));
     if (!counts)
         return NULL;
+    memset(counts, 0, range * sizeof(i64_t));
 
     // Create buckets to store indices for each symbol
-    i64_t **buckets = (i64_t **)heap_alloc(range * sizeof(i64_t *));
+    i64_t** buckets = (i64_t**)heap_alloc(range * sizeof(i64_t*));
     if (!buckets) {
         heap_free(counts);
         return NULL;
@@ -755,20 +756,8 @@ static obj_p counting_sort_i64(obj_p vec, i64_t asc) {
         counts[data[i] - min_sym]++;
 
     // Allocate memory for each bucket
-    for (i64_t i = 0; i < range; i++) {
-        if (counts[i] > 0) {
-            buckets[i] = (i64_t *)heap_alloc(counts[i] * sizeof(i64_t));
-            if (!buckets[i]) {
-                // Cleanup on failure
-                for (i64_t j = 0; j < i; j++) {
-                    heap_free(buckets[j]);
-                }
-                heap_free(buckets);
-                heap_free(counts);
-                return NULL;
-            }
-        }
-    }
+    for (i64_t i = 0; i < range; i++)
+        buckets[i] = (counts[i] > 0) ? (i64_t*)heap_alloc(counts[i] * sizeof(i64_t)) : NULL;
 
     // Reset counts to use as bucket indices
     memset(counts, 0, range * sizeof(i64_t));
@@ -781,7 +770,7 @@ static obj_p counting_sort_i64(obj_p vec, i64_t asc) {
 
     // Create result indices array
     obj_p indices = I64(len);
-    i64_t *result = AS_I64(indices);
+    i64_t* result = AS_I64(indices);
     i64_t pos = 0;
 
     if (asc > 0) {
@@ -822,7 +811,7 @@ static obj_p optimized_sort(obj_p vec, i64_t asc) {
     // Small arrays: use insertion sort
     if (len <= 32) {
         obj_p indices = I64(len);
-        i64_t *result = AS_I64(indices);
+        i64_t* result = AS_I64(indices);
 
         // Initialize indices
         for (i64_t i = 0; i < len; i++) {
