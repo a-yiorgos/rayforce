@@ -32,6 +32,7 @@
 #include "util.h"
 #include "runtime.h"
 #include "atomic.h"
+#include "ops.h"
 
 str_p string_intern(symbols_p symbols, lit_p str, i64_t len) {
     i64_t rounds = 0, cap;
@@ -40,6 +41,7 @@ str_p string_intern(symbols_p symbols, lit_p str, i64_t len) {
     assert(len > 0);
 
     cap = sizeof(u32_t) + len + 1;
+    cap = ALIGNUP(cap, sizeof(u32_t));  // Align to 4-byte boundary for proper u32_t alignment
     curr = __atomic_fetch_add(&symbols->string_curr, cap, __ATOMIC_RELAXED);
     node = __atomic_load_n(&symbols->string_node, __ATOMIC_ACQUIRE);
 
