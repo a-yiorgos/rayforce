@@ -181,9 +181,9 @@ runtime_p runtime_create(i32_t argc, str_p argv[]) {
         }
 
     } else {
-        // Embedded mode (argc == 0)
-        // Still create poll for embedded use (connections, I/O plugins, etc.)
-        // but don't auto-create REPL to avoid stealing stdin from host process
+        // Library/embedded mode (argc == 0)
+        // Still create poll for async operations (connections, I/O plugins, etc.)
+        // REPL creation is controlled by RAYFORCE_NO_REPL flag
         __RUNTIME->sys_info = sys_info(1);
         if (__RUNTIME->sys_info.threads > 1)
             __RUNTIME->pool = pool_create(__RUNTIME->sys_info.threads - 1);
@@ -199,27 +199,12 @@ runtime_p runtime_create(i32_t argc, str_p argv[]) {
 }
 
 i32_t runtime_run(nil_t) {
+    i64_t port;
+    obj_p arg;
+
     if (!__RUNTIME->poll)
         return 0;
 
-#ifndef RAYFORCE_EMBEDDED
-    // Only auto-create REPL in standalone mode (not embedded mode)
-    // to avoid stealing stdin from host process
-    i64_t port;
-    obj_p arg;
-    b8_t silent_mode = B8_FALSE;
-
-    arg = runtime_get_arg("repl");
-    if (is_null(arg)) {
-        repl_create(__RUNTIME->poll, B8_FALSE);
-        drop_obj(arg);
-    } else {
-        silent_mode = (str_cmp(AS_C8(arg), arg->len, "0", 1) == 0) || (str_cmp(AS_C8(arg), arg->len, "false", 5) == 0);
-        drop_obj(arg);
-        repl_create(__RUNTIME->poll, silent_mode);
-    }
-
-    // Port listening for standalone mode
     arg = runtime_get_arg("port");
     if (!is_null(arg)) {
         i64_from_str(AS_C8(arg), arg->len, &port);
@@ -229,7 +214,6 @@ i32_t runtime_run(nil_t) {
             return 1;
         }
     }
-#endif
 
     return poll_run(__RUNTIME->poll);
 }

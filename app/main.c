@@ -25,6 +25,8 @@
 #include "../core/runtime.h"
 #include "../core/format.h"
 #include "../core/sys.h"
+#include "../core/repl.h"
+#include "../core/string.h"
 
 nil_t print_logo(sys_info_t *info) {
     printf(
@@ -64,6 +66,10 @@ i32_t main(i32_t argc, str_p argv[]) {
         info = &runtime_get()->sys_info;
         print_logo(info);
     }
+
+    // Create REPL for standalone app
+    if (runtime->poll)
+        repl_create(runtime->poll, silent_mode);
 
     code = runtime_run();
     runtime_destroy();
